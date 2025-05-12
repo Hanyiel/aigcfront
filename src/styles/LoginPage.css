@@ -1,0 +1,120 @@
+/* src/pages/styles/LoginPage.css */
+.main-container {
+  padding-top: 5rem;  /* 通过这个值控制整体距顶距离 */
+  min-height: 100vh;  /* 确保容器高度撑满视口 */
+}
+
+.login-container {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.login-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #555;
+}
+
+.form-input {
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.login-button {
+  background-color: #007bff;
+  color: white;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.login-button:hover {
+  background-color: #0056b3;
+}
+
+.error-message {
+  color: #dc3545;
+  text-align: center;
+  margin-top: 1rem;
+}
+/* 新增品牌样式 */
+.system-brand {
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.brand-icon {
+  font-size: 4rem;
+  color: #3498db;
+  filter: drop-shadow(0 2px 4px rgba(52, 152, 219, 0.3));
+}
+
+.brand-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.brand-main {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #3498db 0%, #2ecc71 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
+}
+
+.brand-sub {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.brand-underline {
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #3498db 0%, #2ecc71 100%);
+  margin: 1rem auto;
+  border-radius: 2px;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* 调整原有容器间距 */
+.login-container {
+  padding-top: 3rem;
+}
+
+.login-title {
+  margin-top: 2rem;
+}
+
