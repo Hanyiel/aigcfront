@@ -1,0 +1,142 @@
+/* 基础容器样式 */
+.notes-page-container {
+  height: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.main-layout {
+  margin-bottom: 48px;
+  height: 80%;
+}
+
+/* 上传区域 */
+.upload-card {
+  height: 100%;
+}
+
+.upload-card .ant-card-body {
+  height: calc(100% - 56px);
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-uploader {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-uploader .upload-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+/* 图片列表 */
+.image-list-card {
+  height: 600px;
+  overflow: hidden;
+}
+
+.image-list-card .ant-card-body {
+  height: calc(100% - 56px);
+  overflow-y: auto;
+}
+
+/* 图片卡片 */
+.image-card {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.image-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.image-card.selected {
+  border-color: #1890ff;
+  box-shadow: 0 2px 12px rgba(24, 144, 255, 0.2);
+}
+
+.thumbnail-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 底部功能导航 */
+.function-nav {
+  position: sticky;
+  bottom: 20px;
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 24px auto 0;
+  width: calc(100% - 32px);
+  max-width: 1600px;
+  z-index: 100;
+}
+
+.function-nav .ant-btn {
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.function-nav .ant-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .notes-page-container {
+    padding: 12px;
+  }
+
+  .image-list-card {
+    height: auto;
+  }
+
+  .image-list-card .ant-list-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .thumbnail-image {
+    height: 120px;
+  }
+
+  .function-nav {
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .function-nav .ant-btn {
+    height: auto;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .function-nav .anticon {
+    font-size: 14px;
+  }
+}

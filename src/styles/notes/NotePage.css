@@ -1,0 +1,85 @@
+/* 布局样式 */
+.note-layout {
+  min-height: 100vh;
+}
+
+.note-header {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.app-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.side-nav {
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+}
+
+.nav-header {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.nav-title {
+  margin: 0 !important;
+  color: #2c3e50;
+}
+
+.note-content {
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 64px);
+}
+
+/* 思维导图模拟样式 */
+.mock-mindmap {
+  padding: 20px;
+  background: #f8f9fa;
+  min-height: 600px;
+}
+
+.node {
+  padding: 8px 16px;
+  border: 2px solid #1890ff;
+  border-radius: 4px;
+  display: inline-block;
+  margin: 10px;
+}
+
+.root {
+  font-size: 18px;
+  background: #e6f7ff;
+}
+
+.branch {
+  font-size: 14px;
+  background: #fff;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .note-content {
+    padding: 12px;
+  }
+
+  .app-name {
+    font-size: 18px;
+  }
+
+  .side-nav {
+    width: 80px !important;
+  }
+}

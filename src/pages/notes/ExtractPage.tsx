@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Layout,
-  Menu,
   Button,
   Upload,
   Card,
@@ -11,24 +10,18 @@ import {
   Col,
   Typography,
   Spin,
-  Breadcrumb,
-  Dropdown
+  List,
+  Image
 } from 'antd';
 import {
-  HomeOutlined,
-  BookOutlined,
-  UserOutlined,
-  LogoutOutlined,
-  InboxOutlined,
   ArrowLeftOutlined,
-  FilePdfOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined
+  UploadOutlined,
+  FileImageOutlined
 } from '@ant-design/icons';
-import './extract.css';
+import { useImageContext } from '../../contexts/ImageContext';
+import '../../styles/notes/extract.css';
 
-const { Header, Sider, Content } = Layout;
-const { Dragger } = Upload;
+const { Content } = Layout;
 const { Title, Text } = Typography;
 
 interface ExtractResult {
@@ -39,48 +32,34 @@ interface ExtractResult {
 
 const ExtractPage = () => {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
-  const [currentFile, setCurrentFile] = useState<File>();
+  const { images } = useImageContext();
+  const [selectedImage, setSelectedImage] = useState<string>();
   const [extracting, setExtracting] = useState(false);
   const [result, setResult] = useState<ExtractResult | null>(null);
-  const [error, setError] = useState('');
 
   const mockResult = {
-    summary: '本文详细阐述了深度学习的核心概念...',
-    keywords: ['深度学习', '神经网络', '反向传播'],
+    summary: '这张图片展示了深度学习的核心概念...',
+    keywords: ['神经网络', '卷积层', '激活函数'],
     structure: [
-      {
-        title: '第一章 引言',
-        key: '0',
-        children: [
-          { title: '1.1 研究背景', key: '0-0' },
-          { title: '1.2 研究意义', key: '0-1' },
-        ],
-      }
+      { title: '核心概念', key: '0' },
+      { title: '网络结构', key: '1' },
+      { title: '训练方法', key: '2' }
     ],
   };
 
-  const userMenu = (
-      <Menu>
-        <Menu.Item key="profile" icon={<UserOutlined />}>个人中心</Menu.Item>
-        <Menu.Divider />
-        <Menu.Item
-            key="logout"
-            icon={<LogoutOutlined />}
-            onClick={() => navigate('/login')}
-        >
-          退出登录
-        </Menu.Item>
-      </Menu>
-  );
-
   const handleUpload = (file: File) => {
-    setCurrentFile(file);
-    setError('');
-    return false; // 阻止自动上传
+    const newImage = {
+      id: Date.now().toString(),
+      url: URL.createObjectURL(file),
+      name: file.name,
+      timestamp: Date.now(),
+    };
+    // 需要更新useImageContext中的setImages
+    return false;
   };
 
   const handleExtract = () => {
+    if (!selectedImage) return;
     setExtracting(true);
     setTimeout(() => {
       setResult(mockResult);
@@ -89,152 +68,111 @@ const ExtractPage = () => {
   };
 
   return (
-      <Layout className="extract-layout">
-        {/* 顶部导航栏 */}
-        <Header className="extract-header">
-          <div className="brand">
-            <span className="brand-name">LinkMind</span>
-            <span className="brand-sub">智能学习云脑引擎</span>
-            <Breadcrumb style={{ fontSize: '16px' , margin: '0 0 0 10px' }}>
-            <Breadcrumb.Item onClick={() => navigate('/')}>
-              <HomeOutlined/> 首页
-            </Breadcrumb.Item>
-            <Breadcrumb.Item>笔记功能</Breadcrumb.Item>
-            <Breadcrumb.Item>智能提取</Breadcrumb.Item>
-          </Breadcrumb>
-          </div>
+    <Layout className="extract-layout">
+      <Content className="extract-content">
+        <div className="content-wrapper">
+          <Title level={3} className="main-title">
+            <Button
+              type="link"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              className="back-btn"
+            />
+            笔记提取
+          </Title>
 
-          <Dropdown overlay={userMenu} trigger={['click']}>
-            <div className="user-center">
-              <UserOutlined className="user-icon"/>
-              <span>用户中心</span>
-            </div>
-          </Dropdown>
-        </Header>
-        <Layout>
-
-          {/* 侧边导航栏 */}
-          <Sider
-              collapsible
-              collapsed={collapsed}
-              onCollapse={setCollapsed}
-              width={250}
-              theme="light"
-              trigger={null}
-              className="site-sider"
-          >
-            <div className="sider-header">
-              <Button
-                  type="text"
-                  icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                  onClick={() => setCollapsed(!collapsed)}
-                  className="collapse-btn"
-              />
-            </div>
-            <Menu
-                mode="inline"
-                defaultSelectedKeys={['extract']}
-                className="side-menu"
-            >
-              <Menu.Item
-                  key="home"
-                  icon={<HomeOutlined />}
-                  onClick={() => navigate('/')}
+          <Row gutter={24} className="content-row">
+            {/* 左侧结果区域 */}
+            <Col xs={24} md={14} lg={16}>
+              <Card
+                title="提取结果"
+                className="result-card"
+                extra={
+                  <Button
+                    type="primary"
+                    onClick={handleExtract}
+                    disabled={!selectedImage}
+                    loading={extracting}
+                  >
+                    {extracting ? '解析中...' : '开始提取'}
+                  </Button>
+                }
               >
-                返回首页
-              </Menu.Item>
-              <Menu.ItemGroup title="笔记功能">
-                <Menu.Item key="mindmap" icon={<BookOutlined />}>思维导图</Menu.Item>
-                <Menu.Item key="extract" icon={<FilePdfOutlined />}>智能提取</Menu.Item>
-              </Menu.ItemGroup>
-            </Menu>
-          </Sider>
+                <Spin tip="AI正在解析内容..." spinning={extracting}>
+                  {result ? (
+                    <div className="result-content">
+                      <div className="section">
+                        <Text strong>内容摘要：</Text>
+                        <Text className="summary">{result.summary}</Text>
+                      </div>
+                      <div className="section">
+                        <Text strong>关键信息：</Text>
+                        <div className="keywords">
+                          {result.keywords.map((word, i) => (
+                            <Text key={i} className="keyword-tag">
+                              #{word}
+                            </Text>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="empty-result">
+                      <FileImageOutlined className="empty-icon" />
+                      <Text type="secondary">请选择需要解析的图片</Text>
+                    </div>
+                  )}
+                </Spin>
+              </Card>
+            </Col>
 
-
-          {/* 主要内容区域 */}
-          <Content className="extract-content">
-            <div className="content-wrapper">
-              <Title level={3} className="main-title">
-                笔记提取
-                <Button
-                    type="link"
-                    icon={<ArrowLeftOutlined />}
-                    onClick={() => navigate(-1)}
-                    className="back-btn"
-                >
-                  返回上一级
-                </Button>
-              </Title>
-
-              <Row gutter={[24, 24]} className="content-row">
-                {/* 上传区域 */}
-                <Col xs={24} md={12}>
-                  <Card title="内容上传" className="upload-card">
-                    <Dragger
-                        accept=".pdf,.docx,.txt,.md,.mp4,.mp3"
-                        beforeUpload={handleUpload}
-                        maxCount={1}
-                        showUploadList={false}
+            {/* 右侧图片列表 */}
+            <Col xs={24} md={10} lg={8}>
+              <Card
+                title="图片列表"
+                className="image-list-card"
+                extra={
+                  <Upload
+                    beforeUpload={handleUpload}
+                    showUploadList={false}
+                    accept="image/*"
+                  >
+                    <Button icon={<UploadOutlined />}>上传图片</Button>
+                  </Upload>
+                }
+              >
+                <List
+                  dataSource={images}
+                  renderItem={(item) => (
+                    <List.Item
+                      className={`list-item ${selectedImage === item.id ? 'selected' : ''}`}
+                      onClick={() => setSelectedImage(item.id)}
                     >
-                      <div className="upload-content">
-                        <InboxOutlined className="upload-icon" />
-                        <Text className="upload-text">
-                          {currentFile ? (
-                              <>
-                                已选择文件：<span className="file-name">{currentFile.name}</span>
-                                <br />
-                                <Button type="link" onClick={() => setCurrentFile(undefined)}>
-                                  重新选择
-                                </Button>
-                              </>
-                          ) : (
-                              '点击或拖拽文件到此区域上传'
-                          )}
+                      <Image
+                        src={item.url}
+                        alt={item.name}
+                        preview={false}
+                        width={80}
+                        height={60}
+                        className="thumbnail"
+                      />
+                      <div className="image-info">
+                        <Text ellipsis className="image-name">
+                          {item.name}
                         </Text>
-                        <Text type="secondary" className="format-tip">
-                          支持格式：PDF, DOCX, TXT, MD, MP4, MP3
+                        <Text type="secondary" className="image-date">
+                          {new Date(item.timestamp).toLocaleDateString()}
                         </Text>
                       </div>
-                    </Dragger>
-                  </Card>
-                </Col>
-
-                {/* 结果区域 */}
-                <Col xs={24} md={12}>
-                  <Card title="提取结果" className="result-card">
-                    <Spin spinning={extracting} tip="AI正在解析内容...">
-                      <div className="result-content">
-                        {currentFile ? (
-                            <>
-                              <div className="action-bar">
-                                <Button
-                                    type="primary"
-                                    onClick={handleExtract}
-                                    disabled={!currentFile}
-                                    className="extract-btn"
-                                >
-                                  开始智能提取
-                                </Button>
-                              </div>
-
-                              {result && (
-                                  <div className="result-details">
-                                    {/* 结果展示部分 */}
-                                  </div>
-                              )}
-                            </>
-                        ) : (
-                            <div className="empty-tip">请先上传需要解析的文件</div>
-                        )}
-                      </div>
-                    </Spin>
-                  </Card>
-                </Col>
-              </Row>
-            </div>
-          </Content>
-        </Layout>
-      </Layout>
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
+        </div>
+      </Content>
+    </Layout>
   );
 };
 

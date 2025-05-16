@@ -1,0 +1,143 @@
+/* src/pages/questions/QuestionPage.css */
+.question-layout {
+  min-height: 100vh;
+}
+
+.question-header {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.app-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.side-nav {
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+}
+
+.nav-header {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.nav-title {
+  margin: 0 !important;
+  color: #2c3e50;
+}
+
+.question-content {
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 64px);
+}
+
+/* 上传区域样式 */
+.upload-section {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 40px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.uploader {
+  padding: 60px 20px;
+  background: #fafafa;
+  border: 2px dashed #1890ff;
+}
+
+.upload-icon {
+  margin-bottom: 20px;
+  color: #1890ff;
+}
+
+.upload-text {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.upload-hint {
+  color: #999;
+  font-size: 14px;
+}
+
+/* 通用内容区块样式 */
+.content-block {
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 24px;
+}
+
+/* 知识点关键词样式 */
+.keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.keyword-tag {
+  padding: 8px 16px;
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+/* 题目讲解样式 */
+.explanation-content {
+  line-height: 1.8;
+  font-size: 15px;
+}
+
+/* 相关笔记列表 */
+.note-item {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.3s;
+}
+
+.note-item:hover {
+  background: #fafafa;
+}
+
+/* 自动批改结果 */
+.grade-result {
+  padding: 24px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+}
+
+/* 保存确认样式 */
+.save-confirm {
+  text-align: center;
+  padding: 40px;
+}
+
+@media (max-width: 768px) {
+  .question-content {
+    padding: 12px;
+  }
+
+  .upload-section {
+    margin: 20px;
+    padding: 20px;
+  }
+}

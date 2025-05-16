@@ -2,7 +2,7 @@
 import {Layout, Typography, Button, Menu, Dropdown} from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LogoutOutlined, ArrowLeftOutlined, UserOutlined } from '@ant-design/icons';
-import './RecordPage.css'; // 可以复用现有样式
+import '../../styles/questions/RecordPage.css'; // 可以复用现有样式
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;

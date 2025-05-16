@@ -1,0 +1,134 @@
+/* 在QuestionPage.css中添加以下样式 */
+/* 知识点页面布局 */
+.keywords-container {
+  margin-top: 24px;
+}
+
+.keywords-panel .ant-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  min-height: 600px;
+}
+
+/* 知识图谱可视化 */
+.keywords-visualization {
+  position: relative;
+  padding: 20px;
+  min-height: 500px;
+}
+
+.main-concept {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.core-tag {
+  font-size: 18px;
+  padding: 12px 24px;
+  border-radius: 24px;
+  transform: scale(1.2);
+}
+
+.related-concepts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin: 40px 0;
+}
+
+.concept-node {
+  position: relative;
+  text-align: center;
+  transition: transform 0.3s;
+}
+
+.concept-node:hover {
+  transform: translateY(-5px);
+}
+
+.kw-tag {
+  cursor: pointer;
+  position: relative;
+  padding-right: 28px;
+  transition: all 0.3s;
+}
+
+.weight-badge {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.1);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.8em;
+}
+
+/* 层级连线效果 */
+.concept-node::before {
+  content: '';
+  position: absolute;
+  background: #1890ff;
+  opacity: 0.2;
+}
+
+.depth-0::before {
+  width: 80px;
+  height: 2px;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.depth-1::before {
+  width: 2px;
+  height: 40px;
+  top: -30px;
+  left: 50%;
+}
+
+.depth-2::before {
+  width: 100px;
+  height: 2px;
+  top: -10px;
+  left: calc(50% - 20px);
+  transform: rotate(30deg);
+}
+
+/* 图例说明 */
+.legend-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.legend-list li {
+  margin: 8px 0;
+}
+
+/* 题目列表交互 */
+.list-item {
+  cursor: pointer;
+  padding: 12px;
+  transition: all 0.3s;
+}
+
+.list-item:hover {
+  background: #fafafa;
+}
+
+.list-item.selected {
+  background: #e6f7ff;
+  border-right: 3px solid #1890ff;
+}
+
+/* 响应式布局 */
+@media (max-width: 992px) {
+  .keywords-panel,
+  .question-list-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .related-concepts {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

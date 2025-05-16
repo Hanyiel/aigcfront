@@ -1,0 +1,154 @@
+/* SmartLecturePage.css */
+.lecture-container {
+  height: calc(100vh - 64px);
+  padding: 24px;
+  background: #f0f2f5;
+}
+
+.lecture-row {
+  height: 100%;
+}
+
+.content-col {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 600px;
+}
+
+.qa-col {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 主内容卡片 */
+.lecture-card {
+  flex: 1;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.lecture-card .ant-card-head {
+  border-bottom: 2px solid #1890ff;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.speed-slider {
+  width: 120px;
+}
+
+/* 思维导图视图 */
+.mindmap-viewer {
+  position: relative;
+  height: 300px;
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  overflow: auto;
+}
+
+.lecture-node {
+  position: absolute;
+  padding: 8px 16px;
+  border: 2px solid #91d5ff;
+  border-radius: 6px;
+  background: #fff;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.lecture-node.active {
+  border-color: #1890ff;
+  background: #e6f7ff;
+  box-shadow: 0 0 8px rgba(24,144,255,0.3);
+  transform: scale(1.05);
+}
+
+/* 讲解文稿 */
+.transcript {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+
+.transcript p {
+  color: #666;
+  margin: 8px 0;
+  padding: 8px;
+  transition: all 0.3s;
+  border-left: 3px solid transparent;
+}
+
+.transcript p.active {
+  background: #f8f9fa;
+  border-left-color: #1890ff;
+  color: #333;
+}
+
+/* 问答区 */
+.qa-card {
+  height: 100%;
+  margin-left: 24px;
+  border-radius: 8px;
+}
+
+.qa-list {
+  height: calc(100vh - 240px);
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.qa-item {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.question {
+  color: #1890ff;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.answer {
+  color: #666;
+  padding-left: 12px;
+  border-left: 2px solid #ddd;
+}
+
+/* 响应式布局 */
+@media (max-width: 1200px) {
+  .content-col {
+    min-width: 400px;
+  }
+
+  .qa-col {
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 992px) {
+  .lecture-row {
+    flex-direction: column;
+  }
+
+  .content-col,
+  .qa-col {
+    width: 100% !important;
+    min-width: 100% !important;
+    margin-bottom: 24px;
+  }
+
+  .qa-card {
+    margin-left: 0;
+  }
+}

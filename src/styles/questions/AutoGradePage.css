@@ -1,0 +1,103 @@
+/* src/pages/grading/AutoGradePage.css */
+/* 基础布局 */
+.grade-container {
+  margin-top: 24px;
+  min-height: calc(100vh - 100px);
+}
+
+.grading-panel .ant-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  margin-right: 12px;
+}
+
+/* 状态标识 */
+.status-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.status-header.correct {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.status-header.wrong {
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+}
+
+.status-icon {
+  font-size: 24px;
+  margin-right: 12px;
+}
+
+.status-header.correct .status-icon {
+  color: #52c41a;
+}
+
+.status-header.wrong .status-icon {
+  color: #ff4d4f;
+}
+
+/* 答案对比 */
+.answer-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 16px 0;
+}
+
+.answer-block {
+  padding: 16px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+}
+
+.answer-block pre {
+  margin: 12px 0 0;
+  white-space: pre-wrap;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* 错误分析 */
+.error-analysis ul {
+  margin: 8px 0 0 20px;
+}
+
+.error-analysis li {
+  color: #ff4d4f;
+  line-height: 1.8;
+}
+
+/* 知识点标签 */
+.knowledge-points {
+  margin-top: 24px;
+}
+
+.knowledge-points .tags {
+  margin-top: 12px;
+}
+
+/* 得分展示 */
+.score-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .answer-compare {
+    grid-template-columns: 1fr;
+  }
+
+  .grading-panel .ant-card {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+}

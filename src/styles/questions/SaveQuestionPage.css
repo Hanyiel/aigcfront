@@ -1,0 +1,53 @@
+/* src/pages/questions/SaveQuestionPage.css */
+.question-container {
+  margin-top: 24px;
+  min-height: calc(100vh - 100px);
+}
+
+.edit-panel .ant-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  margin-right: 12px;
+}
+
+/* 关键词管理 */
+.keyword-actions {
+  padding: 8px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 列表项样式 */
+.list-panel .ant-list-item {
+  padding: 12px;
+  border-radius: 8px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.list-panel .ant-list-item.selected {
+  background: #f0faff;
+  border-left: 3px solid #1890ff;
+}
+
+.meta-info .tags {
+  margin-bottom: 8px;
+}
+
+.meta-info .links {
+  color: #666;
+  font-size: 12px;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .edit-panel .ant-card {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+
+  .list-panel .ant-list-item {
+    padding: 8px;
+  }
+}

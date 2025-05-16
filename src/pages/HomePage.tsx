@@ -1,6 +1,6 @@
 // src/pages/HomePage.tsx
 import React, { useState } from 'react';
-import {Layout, Menu, Dropdown, Card, Row, Col, Typography, Breadcrumb} from 'antd';
+import {Layout, Menu, Dropdown, Card, Row, Col, Typography, Breadcrumb, Button} from 'antd';
 import {
   BookOutlined,
   QuestionCircleOutlined,
@@ -10,10 +10,13 @@ import {
   ClusterOutlined,
   SolutionOutlined,
   SearchOutlined,
-  BulbOutlined,
-  EditOutlined,
-  RocketOutlined, HomeOutlined
-
+  RocketOutlined,
+  HomeOutlined,
+  SaveOutlined,
+  KeyOutlined,
+  CommentOutlined,
+  CheckCircleOutlined,
+  ExperimentOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import '../styles/HomePage.css';
@@ -23,26 +26,39 @@ const { Title, Paragraph } = Typography;
 
 const ROUTES = {
   NOTES: {
-    MIND_MAP: '/notes/mind-map',
-    EXTRACT: '/notes/extract'
+    INDEX: { path: '/notes/index', tabKey: 'index' },
+    EXTRACT: { path: '/notes/extract', tabKey: 'extract' },
+    MIND_MAP: { path: '/notes/mind-map', tabKey: 'mindmap' },
+    KEYWORDS: { path: '/notes/keywords', tabKey: 'keywords' },
+    EXPLANATION: { path: '/notes/smart-lecture', tabKey: 'smart-lecture' },
+    SAVE_TO_DB: { path: '/notes/save', tabKey: 'storage' },
   },
   QUESTIONS: {
-    RECORD: '/questions/record',
-    EXPLAIN: '/questions/explain',
-    SEARCH: '/questions/search'
+    INDEX: { path: '/questions/index', tabKey: 'questionIndex' },
+    SAVE: { path: '/questions/save', tabKey: 'save' },
+    EXPLAIN: { path: '/questions/explain', tabKey: 'explanation' },
+    KEYWORDS: { path: '/questions/keywords', tabKey: 'keywords' },
+    FIND_NOTES: { path: '/questions/related-notes', tabKey: 'related-notes' },
+    AUTO_GRADE: { path: '/questions/auto-grade', tabKey: 'grading' }
   }
 };
 
 
 const featureCards = {
   notes: [
-    { title: '思维导图生成', icon: <ClusterOutlined />, path: ROUTES.NOTES.MIND_MAP },
-    { title: '智能提取笔记', icon: <FileTextOutlined />, path: ROUTES.NOTES.EXTRACT }
+    { title: '智能提取摘要', icon: <FileTextOutlined />, path: ROUTES.NOTES.EXTRACT },
+    { title: '生成思维导图', icon: <ClusterOutlined />, path: ROUTES.NOTES.MIND_MAP },
+    { title: '知识点关键词', icon: <KeyOutlined />, path: ROUTES.NOTES.KEYWORDS },
+    { title: '智能生成讲解', icon: <CommentOutlined />, path: ROUTES.NOTES.EXPLANATION },
+    { title: '保存笔记', icon: <SaveOutlined />, path: ROUTES.NOTES.SAVE_TO_DB },
   ],
   questions: [
-    { title: '题目记录', icon: <SolutionOutlined />, path: ROUTES.QUESTIONS.RECORD },
+    { title: '生成知识点关键词', icon: <KeyOutlined />, path: ROUTES.QUESTIONS.KEYWORDS },
     { title: '题目讲解', icon: <QuestionCircleOutlined />, path: ROUTES.QUESTIONS.EXPLAIN },
-    { title: '关联笔记查找', icon: <SearchOutlined />, path: ROUTES.QUESTIONS.SEARCH }
+    { title: '查找相关笔记', icon: <SearchOutlined />, path: ROUTES.QUESTIONS.FIND_NOTES },
+    { title: '自动批改功能', icon: <CheckCircleOutlined />, path: ROUTES.QUESTIONS.AUTO_GRADE },
+    { title: '题目保存', icon: <SolutionOutlined />, path: ROUTES.QUESTIONS.SAVE },
+
   ]
 };
 
@@ -50,6 +66,23 @@ const HomePage: React.FC = () => {
   const [selectedKey, setSelectedKey] = useState('notes');
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+
+  const handleCardClick = (path: string, tabKey: string) => {
+    navigate({
+      pathname: path,
+      search: `?tab=${tabKey}` // 使用查询参数传递标签页标识
+    });
+  };
+
+  const getMainRoute = () => {
+    const route = selectedKey === 'notes'
+        ? ROUTES.NOTES.INDEX
+        : ROUTES.QUESTIONS.INDEX;
+    return {
+      pathname: route.path,
+      search: `?tab=${route.tabKey}`
+    };
+  };
 
   const userMenu = (
       <Menu>
@@ -72,10 +105,10 @@ const HomePage: React.FC = () => {
             <span className="brand-name">LinkMind</span>
             <span className="brand-sub">智能学习云脑引擎</span>
             <Breadcrumb style={{ fontSize: '16px' , margin: '0 0 0 10px' }}>
-            <Breadcrumb.Item onClick={() => navigate('/')}>
-              <HomeOutlined /> 首页
-            </Breadcrumb.Item>
-          </Breadcrumb>
+              <Breadcrumb.Item onClick={() => navigate('/')}>
+                <HomeOutlined /> 首页
+              </Breadcrumb.Item>
+            </Breadcrumb>
           </div>
 
 
@@ -108,19 +141,32 @@ const HomePage: React.FC = () => {
           </Sider>
 
           <Content className="content">
-            <div className="hero-section">
-              <div className="hero-section">
-                <Title level={2} className="hero-title">
-                  <RocketOutlined/> 重新定义高效学习方式
-                </Title>
-                <Paragraph className="hero-description">
-                  作为新一代智能学习平台，我们深度融合<span className="highlight">多模态AI解析引擎</span>与<span
-                    className="highlight">自适应学习算法</span>，
-                  为每位学习者打造专属的知识管理体系。系统支持智能解析PDF、图片等各种文件格式，通过<span
-                    className="highlight">深度神经网络</span>
-                  自动构建跨学科知识图谱，实现知识点关联。
-                </Paragraph>
-              </div>
+            <div className="start-experience-container">
+              <Card
+                  hoverable
+                  className="experience-card"
+                  onClick={() => navigate(getMainRoute())}
+              >
+                <div className="card-content">
+                  <ExperimentOutlined className="main-icon"/>
+                  <Title level={3} className="start-text">
+                    {selectedKey === 'notes' ? '开始整理笔记' : '开始处理题目'}
+                  </Title>
+                  <Paragraph className="sub-text">
+                    {selectedKey === 'notes'
+                        ? '点击进入智能笔记处理工作台'
+                        : '立即开启题目智能分析流程'}
+                  </Paragraph>
+                  <Button
+                      type="primary"
+                      size="large"
+                      className="start-button"
+                      icon={<RocketOutlined/>}
+                  >
+                    {selectedKey === 'notes' ? '创建新笔记' : '上传题目'}
+                  </Button>
+                </div>
+              </Card>
             </div>
             <div className="feature-cards">
               <Title level={4} className="cards-title">功能入口</Title>
@@ -130,7 +176,7 @@ const HomePage: React.FC = () => {
                       <Card
                           hoverable
                           className="feature-card"
-                          onClick={() => navigate(card.path)}
+                          onClick={() => handleCardClick(card.path.path, card.path.tabKey)}
                       >
                         <div className="card-content">
                           <div className="card-icon">{card.icon}</div>
