@@ -73,7 +73,7 @@ const NotePage = () => {
         <div className="brand-section">
           <span className="app-name">LinkMind</span>
           <Breadcrumb className="breadcrumb">
-            <Breadcrumb.Item onClick={() => navigate('/')}>
+            <Breadcrumb.Item onClick={() => navigate('/home')}>
               <HomeOutlined /> 首页
             </Breadcrumb.Item>
             <Breadcrumb.Item>笔记工作台</Breadcrumb.Item>

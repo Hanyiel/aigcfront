@@ -1,9 +1,8 @@
-// src/context/ImageContext.tsx
+// src/context/QuestionImageContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-// 类型定义移除非必要属性
-interface UploadedImage {
+interface QuestionImage {
   id: string;
   url: string;         // 始终使用blob URL
   name: string;
@@ -12,26 +11,25 @@ interface UploadedImage {
   file: File;          // 保留原始文件引用
 }
 
-interface ImageContextType {
-  images: UploadedImage[];
+interface QuestionImageContextType {
+  images: QuestionImage[];
   addImage: (file: File) => void;  // 改为同步操作
   removeImage: (imageId: string) => void;
-  selectedImage: UploadedImage | null;
-  setSelectedImage: (image: UploadedImage | null) => void;
+  selectedImage: QuestionImage | null;
+  setSelectedImage: (image: QuestionImage | null) => void;
   getImageFile: (imageId: string) => File | null;  // 新增文件获取方法
   getExplanationId: (imageId: string) => string | null;
-
 }
 
-const ImageContext = createContext<ImageContextType>({} as ImageContextType);
+const QuestionImageContext = createContext<QuestionImageContextType>({} as QuestionImageContextType);
 
-export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [images, setImages] = useState<UploadedImage[]>(() => {
-    // 不再持久化blob URL（因为刷新后失效）
+
+export const QuestionImageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [images, setImages] = useState<QuestionImage[]>(() => {
     return [];
   });
 
-  const [selectedImage, setSelectedImage] = useState<UploadedImage | null>(null);
+  const [selectedImage, setSelectedImage] = useState<QuestionImage | null>(null);
 
   // 自动清理blob URL
   useEffect(() => {
@@ -40,9 +38,10 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
+
   const addImage = useCallback((file: File) => {
     const tempUrl = URL.createObjectURL(file);
-    const newImage: UploadedImage = {
+    const newImage: QuestionImage = {
       id: uuidv4(),
       url: tempUrl,
       name: file.name,
@@ -75,7 +74,7 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   return (
-      <ImageContext.Provider value={{
+      <QuestionImageContext.Provider value={{
         images,
         addImage,
         removeImage,
@@ -85,8 +84,7 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         getExplanationId
       }}>
         {children}
-      </ImageContext.Provider>
+      </QuestionImageContext.Provider>
   );
 };
-
-export const useImageContext = () => useContext(ImageContext);
+export const useQuestionImageContext = () => useContext(QuestionImageContext);

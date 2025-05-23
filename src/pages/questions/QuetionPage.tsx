@@ -12,7 +12,7 @@ import {
   SaveOutlined,
   UploadOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined, SolutionOutlined
 } from '@ant-design/icons';
 import '../../styles/questions/QuestionPage.css';
 
@@ -25,6 +25,12 @@ const QUESTION_TABS = [
     label: '题目首页',
     icon: <HomeOutlined />,
     path: '/questions/index'
+  },
+    {
+    key: 'extract', // 新增提取导航项
+    label: '题目提取',
+    icon: <SolutionOutlined />,
+    path: '/questions/extract'
   },
   {
     key: 'keywords',
@@ -73,7 +79,7 @@ const QuestionPage = () => {
         <div className="brand-section">
           <span className="app-name">LinkMind</span>
           <Breadcrumb className="breadcrumb">
-            <Breadcrumb.Item onClick={() => navigate('/')}>
+            <Breadcrumb.Item onClick={() => navigate('/home')}>
               <HomeOutlined /> 首页
             </Breadcrumb.Item>
             <Breadcrumb.Item>题目工作台</Breadcrumb.Item>

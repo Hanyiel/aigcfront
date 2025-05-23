@@ -1,27 +1,33 @@
-/* src/pages/styles/LoginPage.css */
+/* src/styles/RegisterPage.css */
 .main-container {
-  padding-top: 5rem;  /* 通过这个值控制整体距顶距离 */
-  min-height: 100vh;  /* 确保容器高度撑满视口 */
+  padding-top: 5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.login-container {
+.register-container {
   max-width: 400px;
+  width: 100%;
   margin: 2rem auto;
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  background: white;
 }
 
-.login-title {
+.register-title {
   text-align: center;
   color: #333;
   margin-bottom: 1.5rem;
+  font-size: 1.5rem;
 }
 
-.login-form {
+.register-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 .form-group {
@@ -33,6 +39,7 @@
 .form-label {
   font-weight: 500;
   color: #555;
+  font-size: 0.9rem;
 }
 
 .form-input {
@@ -40,28 +47,44 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  transition: border-color 0.3s;
 }
 
-.login-button {
-  background-color: #007bff;
+.form-input:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.register-button {
+  background-color: #2ecc71;
   color: white;
   padding: 0.8rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: 500;
   transition: background-color 0.3s;
 }
 
-.login-button:hover {
-  background-color: #0056b3;
+.register-button:hover {
+  background-color: #27ae60;
+}
+
+.register-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
 }
 
 .error-message {
-  color: #dc3545;
+  color: #e74c3c;
   text-align: center;
-  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: #fbeaea;
+  border-radius: 4px;
+  margin: 1rem 0;
 }
-/* 新增品牌样式 */
+
 .system-brand {
   text-align: center;
   margin-bottom: 2rem;
@@ -104,25 +127,11 @@
   border-radius: 2px;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-/* 调整原有容器间距 */
-.login-container {
-  padding-top: 3rem;
-}
-
-.login-title {
-  margin-top: 2rem;
-}
-
-/* 新增登录页跳转链接样式 */
 .auth-redirect {
   text-align: center;
   margin-top: 1.5rem;
   color: #666;
+  font-size: 0.9rem;
 }
 
 .link-button {
@@ -131,11 +140,15 @@
   color: #3498db;
   cursor: pointer;
   padding: 0 0.3rem;
-  font-size: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .link-button:hover {
   text-decoration: underline;
 }
 
-
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}

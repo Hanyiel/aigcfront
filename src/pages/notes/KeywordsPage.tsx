@@ -1,172 +1,204 @@
 // src/pages/notes/KeywordsPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Card, Row, Col, List, Tag, Upload, Spin, message } from 'antd';
 import {
-  UploadOutlined,
-  FileImageOutlined,
-  LinkOutlined
+    UploadOutlined,
+    FileImageOutlined,
+    LinkOutlined,
+    SearchOutlined
 } from '@ant-design/icons';
 import { useImageContext } from '../../contexts/ImageContext';
 import '../../styles/notes/KeywordsPage.css';
+import {useKeywords} from "../../contexts/NoteKeywordsContext";
 
 interface Keyword {
-  name: string;
-  confidence: number;
-  associations?: string[];
+    term: string;
+    tfidf_score: number;
+    related_notes?: string[];
+    related_questions?: string[];
 }
 
 const KeywordsPage = () => {
-  const { images, selectedImage, setSelectedImage } = useImageContext();
-  const [keywords, setKeywords] = useState<Keyword[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [associations, setAssociations] = useState<string[]>([]);
+    const {
+        images,
+        addImage,
+        removeImage,
+        selectedImage,
+        setSelectedImage,
+        getImageFile
+    } = useImageContext();
+    const { saveKeywords, getKeywordsByImage } = useKeywords();
+    const { currentKeywords } = useKeywords();
+    const [keywords, setKeywords] = useState<Keyword[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [associations, setAssociations] = useState<string[]>([]);
+    const [ocrTexts, setOcrTexts] = useState<Record<string, string>>({});
+    const [ocrLoading, setOcrLoading] = useState(false);
+    const uploadRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = (file: File) => {
-    const newImage = {
-      id: Date.now().toString(),
-      url: URL.createObjectURL(file),
-      name: file.name,
-      timestamp: Date.now(),
-    };
-    // 需要更新useImageContext中的setImages
-    return false;
-  };
-
-  const fetchKeywords = async (imageId: string) => {
-    try {
-      setLoading(true);
-      // 模拟API调用
-      const mockResponse: Keyword[] = [
-        {
-          name: "人工智能",
-          confidence: 0.92,
-          associations: ["机器学习", "深度学习", "神经网络"]
-        },
-        {
-          name: "计算机视觉",
-          confidence: 0.87,
-          associations: ["图像识别", "目标检测", "OpenCV"]
+    const handleUpload = (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            message.error('仅支持图片文件');
+            return false;
         }
-      ];
+        try {
+            addImage(file);
+            message.success(`${file.name} 已添加预览`);
+            if (uploadRef.current) uploadRef.current.value = '';
+        } catch (err) {
+            message.error('文件添加失败');
+        }
+        return false;
+    };
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setKeywords(mockResponse);
-      updateAssociations(mockResponse);
-    } catch (error) {
-      message.error('提取关键词失败');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleExtractKeywords = async () => {
+        if (!selectedImage) {
+            message.warning('请先选择图片');
+            return;
+        }
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const imageFile = getImageFile(selectedImage.id);
 
-  const updateAssociations = (keywords: Keyword[]) => {
-    const allAssociations = keywords
-      .flatMap(k => k.associations || [])
-      .filter((v, i, a) => a.indexOf(v) === i);
-    setAssociations(allAssociations);
-  };
-
-  useEffect(() => {
-    if (selectedImage) {
-      fetchKeywords(selectedImage.id);
-    }
-  }, [selectedImage]);
-
-  return (
-    <div className="keywords-container">
-      <Row gutter={24} className="keywords-row">
-        {/* 左侧关键词区域 */}
-        <Col flex="auto" className="keywords-col">
-          <Card
-            title="关键词提取结果"
-            className="keywords-card"
-            extra={
-              <Tag icon={<LinkOutlined />} color="processing">
-                共检测到 {keywords.length} 个关键词
-              </Tag>
+            if (!imageFile) {
+                message.error('图片文件不存在');
+                return;
             }
-          >
-            <Spin spinning={loading}>
-              <div className="keywords-section">
-                <h3>核心关键词</h3>
-                <div className="keywords-list">
-                  {keywords.map((keyword, index) => (
-                    <Tag
-                      key={index}
-                      className="keyword-tag"
-                      color={index % 2 === 0 ? 'geekblue' : 'cyan'}
-                    >
-                      {keyword.name}
-                      <span className="confidence">
-                        ({Math.round(keyword.confidence * 100)}%)
-                      </span>
-                    </Tag>
-                  ))}
-                </div>
-              </div>
-
-              <div className="associations-section">
-                <h3>关联概念图谱</h3>
-                <div className="associations-cloud">
-                  {associations.map((term, index) => (
-                    <Tag
-                      key={index}
-                      className="association-tag"
-                      color={index % 3 === 0 ? 'purple' : 'magenta'}
-                    >
-                      {term}
-                    </Tag>
-                  ))}
-                </div>
-              </div>
-            </Spin>
-          </Card>
-        </Col>
-
-        {/* 右侧图片列表 */}
-        <Col flex="400px" className="image-col">
-          <Card
-            title="图片列表"
-            className="image-list-card"
-            extra={
-              <Upload
-                beforeUpload={handleUpload}
-                showUploadList={false}
-                accept="image/*"
-              >
-                <Button icon={<UploadOutlined />}>上传图片</Button>
-              </Upload>
+            const formData = new FormData();
+            formData.append('image', imageFile);
+            formData.append('max_keywords', '5'); // 添加必填参数
+            const response = await fetch('http://localhost:8000/api/notes/keywords', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData
+            });
+            // 处理HTTP错误状态
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP错误 ${response.status}`);
             }
-          >
-            <List
-              dataSource={images}
-              renderItem={(item) => (
-                <List.Item
-                  className={`list-item ${selectedImage?.name === item.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedImage(item)}
-                >
-                  <div className="thumbnail-wrapper">
-                    <img
-                      src={item.url}
-                      alt={item.name}
-                      className="thumbnail"
-                    />
-                    <FileImageOutlined className="file-icon" />
-                  </div>
-                  <div className="image-info">
-                    <span className="image-name">{item.name}</span>
-                    <span className="image-date">
+            const result = await response.json();
+            console.log('完整响应:', result);
+            // 调试数据结构
+            if (!result.data?.content_md?.keywords) {
+                console.error('异常数据结构:', result);
+                throw new Error('返回数据格式异常');
+            }
+            // 转换数据结构
+            const keywords = result.data.content_md.keywords.map((k: any) => ({
+                term: k.term,
+                tfidfScore: Number(k.tfidf_score),
+                subject: result.data.content_md.subject
+            }));
+            // 双重存储机制
+            saveKeywords(selectedImage.id, keywords); // 上下文存储
+            setKeywords(keywords); // 本地状态更新
+            message.success(`提取到${keywords.length}个关键词`);
+        } catch (err) {
+            console.error('提取错误详情:', err);
+            message.error(err instanceof Error ? err.message : '未知错误');
+        } finally {
+            setLoading(false);
+        }
+    };
+    return (
+        <div className="keywords-container">
+            <Row gutter={24} className="keywords-row">
+                {/* 左侧关键词区域 */}
+                <Col flex="auto" className="keywords-col">
+                    <Card
+                        title="关键词分析"
+                        extra={
+                            <Button
+                                type="primary"
+                                onClick={handleExtractKeywords}
+                                loading={loading}
+                            >
+                                提取关键词
+                            </Button>
+                        }
+                    >
+                        <div className="keywords-list">
+                            {currentKeywords?.map((k, i) => (
+                                <Tag
+                                    key={i}
+                                    color={i % 2 ? 'geekblue' : 'cyan'}
+                                    className="keyword-tag"
+                                >
+                                    {k.term}
+                                    <span className="score">({(k.tfidfScore * 100).toFixed(1)}%)</span>
+                                </Tag>
+                            ))}
+                        </div>
+                    </Card>
+                </Col>
+                {/* 右侧图片列表 */}
+                <Col flex="400px" className="image-col">
+                    <Card
+                        title="图片列表"
+                        className="image-list-card"
+                        extra={
+                            <Upload
+                                beforeUpload={handleUpload}
+                                showUploadList={false}
+                                accept="image/*"
+                            >
+                                <Button icon={<UploadOutlined />}>上传图片</Button>
+                            </Upload>
+                        }
+                    >
+                        <List
+                            dataSource={images}
+                            renderItem={(item) => (
+                                <List.Item
+                                    className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedImage(item)}
+                                    extra={
+                                        <Button
+                                            type="link"
+                                            danger
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                removeImage(item.id);
+                                                setOcrTexts(prev => {
+                                                    const newTexts = { ...prev };
+                                                    delete newTexts[item.id];
+                                                    return newTexts;
+                                                });
+                                            }}
+                                        >
+                                            删除
+                                        </Button>
+                                    }
+                                >
+                                    <div className="thumbnail-wrapper">
+                                        <img
+                                            src={item.url}
+                                            alt={item.name}
+                                            className="thumbnail"
+                                        />
+                                        <FileImageOutlined className="file-icon" />
+                                    </div>
+                                    <div className="image-info">
+                                        <span className="image-name">{item.name}</span>
+                                        <span className="image-date">
                       {new Date(item.timestamp).toLocaleDateString()}
                     </span>
-                  </div>
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
-    </div>
-  );
+                                        {ocrTexts[item.id] && (
+                                            <span className="text-indicator">
+                        <LinkOutlined /> 已解析文本
+                      </span>
+                                        )}
+                                    </div>
+                                </List.Item>
+                            )}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+        </div>
+    );
 };
 
 export default KeywordsPage;

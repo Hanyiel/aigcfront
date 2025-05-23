@@ -11,191 +11,177 @@ const { Dragger } = Upload;
 
 interface UploadedImage {
   id: string;
-  url: string;
+  url: string;         // 始终使用blob URL
   name: string;
   timestamp: number;
+  status: 'uploaded';  // 简化状态（仅展示用）
+  file: File;          // 保留原始文件引用
 }
-
 const NoteIndexPage = () => {
   const {
     images,
-    setImages,
-    selectedImage,
-    setSelectedImage
+    addImage,
+    removeImage,
+    getImageFile
   } = useImageContext();
+  const [selectedImage, setSelectedImage] = useState<UploadedImage | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const navigate = useNavigate();
 
+  // 简化上传属性配置
   const uploadProps: UploadProps = {
     name: 'image',
     multiple: true,
     showUploadList: false,
+    accept: 'image/*',
     beforeUpload: (file) => {
-      const isImage = file.type.startsWith('image/');
-      if (!isImage) {
-        message.error('仅支持图片文件上传');
+      if (!file.type.startsWith('image/')) {
+        message.error('仅支持图片文件');
         return false;
       }
-      const url = URL.createObjectURL(file);
-    const newImage = {
-      id: Date.now().toString(),
-      url: url,
-      name: file.name,
-      timestamp: Date.now(),
-      _file: file // 保留文件引用
-    };
 
-    setImages(prev => [newImage, ...prev]);
-    message.success(`${file.name} 上传成功（本地模式）`);
-
-    return false; // 阻止默认上
+      try {
+        addImage(file);
+        message.success(`${file.name} 已添加预览`);
+      } catch (err) {
+        message.error('文件添加失败');
+      }
+      return false;
     },
-    // onChange: (info) => {
-    //   const { file } = info;
-    //   if (file.status === 'done') {
-    //     const fileObj = file.originFileObj as File;
-    //     const newImage = {
-    //       id: Date.now().toString(),
-    //       url: URL.createObjectURL(fileObj),
-    //       name: file.name,
-    //       timestamp: Date.now(),
-    //       // 添加原始文件引用（可选）
-    //       _file: fileObj
-    //     };
-    //     setImages(prev => [newImage, ...prev]);
-    //     message.success(`${file.name} 上传成功`);
-    //   }
-    // },
   };
 
   const handleAction = (action: string) => {
-    console.log('--- handleAction被触发 ---'); // 先确认函数是否被调用
-    // 使用绝对路径映射
+    if (!selectedImage) {
+      message.warning('请先选择图片');
+      return;
+    }
+
     const routeMap: Record<string, string> = {
-      extract: '/notes/extract',       // 完整路径
-      mindmap: '/notes/mind-map',      // 完整路径
+      extract: '/notes/extract',
+      mindmap: '/notes/mind-map',
       explanation: '/notes/explanation',
       save: '/notes/save-note'
     };
+
     if (!routeMap[action]) {
       message.error('功能暂未开放');
       return;
     }
-    console.log('尝试跳转到：', routeMap[action]);
 
+    // 传递完整图片数据
     navigate(routeMap[action], {
       state: { selectedImage },
-      replace: false // 改为false保留浏览器历史记录
+      replace: false
     });
   };
 
   const handleSelectImage = (item: UploadedImage) => {
-    setSelectedImage(prev =>
-      prev?.id === item.id ? null : item
-    );
+    setSelectedImage(prev => prev?.id === item.id ? null : item);
   }
 
-
   return (
-      <div className="notes-page-container">
-        {/* 保持原有布局结构不变 */}
-        <Row gutter={24} className="main-layout">
-          {/* 上传区域 */}
-          <Col xs={24} md={8} lg={6}>
-            <Card title="图片上传区" className="upload-card">
-              <Dragger {...uploadProps} className="custom-uploader">
-                <div className="upload-content">
-                  <InboxOutlined className="upload-icon" />
-                  <p className="upload-text">点击或拖拽文件到此处上传</p>
-                  <p className="upload-hint">支持 JPG/PNG 格式</p>
-                </div>
-              </Dragger>
-            </Card>
-          </Col>
+    <div className="notes-page-container">
+      <Row gutter={24} className="main-layout">
+        <Col xs={24} md={8} lg={6}>
+          <Card title="图片管理" className="upload-card">
+            <Dragger {...uploadProps} className="custom-uploader">
+              <div className="upload-content">
+                <InboxOutlined className="upload-icon" />
+                <p className="upload-text">点击或拖拽文件到此处添加</p>
+                <p className="upload-hint">支持常见图片格式</p>
+              </div>
+            </Dragger>
+          </Card>
+        </Col>
 
-          {/* 图片列表 */}
-          <Col xs={24} md={16} lg={18}>
-            <Card title="图片列表" className="image-list-card">
-              <List
-                  grid={{ gutter: 16, column: 4 }}
-                  dataSource={images}
-                  renderItem={item => (
-                      <List.Item>
-                        <div
-                            className={`image-card ${selectedImage?.id === item.id ? 'selected' : ''}`}
-                            onClick={() => setSelectedImage(item)}
-                        >
-                          <img
-                              src={item.url}
-                              alt={item.name}
-                              className="thumbnail-image"
-                              onDoubleClick={() => setPreviewVisible(true)}
-                          />
-                          <div className="image-info">
-                            <span className="image-name">{item.name}</span>
-                            <span className="upload-time">
+        <Col xs={24} md={16} lg={18}>
+          <Card title="图片库" className="image-list-card">
+            <List
+              grid={{ gutter: 16, column: 4 }}
+              dataSource={images}
+              renderItem={item => (
+                <List.Item>
+                  <div
+                    className={`image-card ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                    onClick={() => handleSelectImage(item)}
+                    onDoubleClick={() => setPreviewVisible(true)}
+                  >
+                    <img
+                      src={item.url}
+                      alt={item.name}
+                      className="thumbnail-image"
+                    />
+
+                    <div className="image-info">
+                      <span className="image-name">{item.name}</span>
+                      <span className="upload-time">
                         {new Date(item.timestamp).toLocaleDateString()}
                       </span>
-                          </div>
-                        </div>
-                      </List.Item>
-                  )}
-              />
-            </Card>
-          </Col>
-        </Row>
+                      <Button
+                        type="link"
+                        danger
+                        className="delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(item.id);
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  </div>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-        {/* 功能导航栏 */}
-        <div className="function-nav">
-          <Button
-              type="primary"
-              icon={<KeyOutlined />}
-              onClick={() => {
-                console.log('笔记提取按钮被点击'); // 直接测试点击事件
-                handleAction('extract');
-              }}
-          >
-            笔记提取
-          </Button>
-          <Button
-              type="primary"
-              icon={<RocketOutlined />}
-              onClick={() => handleAction('mindmap')}
-          >
-            思维导图
-          </Button>
-
-          <Button
-              type="primary"
-              icon={<BookOutlined />}
-              onClick={() => handleAction('explanation')}
-          >
-            智能讲解
-          </Button>
-          <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={() => handleAction('save')}
-          >
-            保存笔记
-          </Button>
-        </div>
-
-        {/* 图片预览模态框 */}
-        <Modal
-            open={previewVisible}
-            onCancel={() => setPreviewVisible(false)}
-            footer={null}
-            width="80vw"
-            centered
+      <div className="function-nav">
+        <Button
+          type="primary"
+          icon={<KeyOutlined />}
+          onClick={() => handleAction('extract')}
         >
-          <img
-              src={selectedImage?.url}
-              alt="预览"
-              className="preview-image"
-          />
-        </Modal>
+          笔记提取
+        </Button>
+        <Button
+          type="primary"
+          icon={<RocketOutlined />}
+          onClick={() => handleAction('mindmap')}
+        >
+          思维导图
+        </Button>
+        <Button
+          type="primary"
+          icon={<BookOutlined />}
+          onClick={() => handleAction('explanation')}
+        >
+          智能讲解
+        </Button>
+        <Button
+          type="primary"
+          icon={<SaveOutlined />}
+          onClick={() => handleAction('save')}
+        >
+          保存笔记
+        </Button>
       </div>
+
+      <Modal
+        open={previewVisible}
+        onCancel={() => setPreviewVisible(false)}
+        footer={null}
+        width="80vw"
+        centered
+      >
+        <img
+          src={selectedImage?.url}
+          alt="预览"
+          className="preview-image"
+        />
+      </Modal>
+    </div>
   );
 };
 

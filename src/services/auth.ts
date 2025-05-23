@@ -1,13 +1,7 @@
 // src/services/auth.ts
 const API_URL = 'http://localhost:8000/api';
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-}
-
-export const login = async (username: string, password: string): Promise<User> => {
+export const get_login_token = async (username: string, password: string) => {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: {
@@ -22,34 +16,32 @@ export const login = async (username: string, password: string): Promise<User> =
   }
 
   const data = await response.json();
-  localStorage.setItem('authToken', data.token);
+  console.log(data);
+  localStorage.setItem('authToken', data.data);
   console.log("yes");
-  return {
-    id: data.user_id,
-    username: data.username,
-    email: '' // 根据实际接口返回补充
-  };
+  return data.data; // 确保后端返回{ token: "jwt_token" }
 };
 
-export const register = async (username: string, email: string, password: string) => {
-  const response = await fetch(`${API_URL}/register`, {
+export const registerUser = async (
+  credentials: {
+    username: string;
+    password: string;
+    email: string
+  }
+): Promise<{ user_id: number }> => {
+  const response = await fetch(`${API_URL}/auth/register`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ username, email, password }),
+    body: JSON.stringify(credentials)
   });
+  const data = await response.json();
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Registration failed');
+    throw new Error(data.message || '注册失败');
   }
-};
-
-export const getCurrentUser = (): User | null => {
-  const token = localStorage.getItem('authToken');
-  // 这里可以添加解析 JWT 获取用户信息的逻辑
-  return token ? { id: 1, username: 'demo', email: 'demo@example.com' } : null;
+  return data.data;
 };
 
 export const logout = () => {
@@ -57,5 +49,8 @@ export const logout = () => {
 };
 
 export const isAuthenticated = () => {
-  return !!localStorage.getItem('access_token');
+  const token = localStorage.getItem('authToken');
+
+  // 简单验证token存在性（实际应验证过期时间）
+  return !!token;
 };

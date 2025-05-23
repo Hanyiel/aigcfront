@@ -34,9 +34,11 @@ const ROUTES = {
     SAVE_TO_DB: { path: '/notes/save', tabKey: 'storage' },
   },
   QUESTIONS: {
+
     INDEX: { path: '/questions/index', tabKey: 'questionIndex' },
+    EXTRACT: { path: '/questions/extract', tabKey: 'extract' },
     SAVE: { path: '/questions/save', tabKey: 'save' },
-    EXPLAIN: { path: '/questions/explain', tabKey: 'explanation' },
+    EXPLAIN: { path: '/questions/explanation', tabKey: 'explanation' },
     KEYWORDS: { path: '/questions/keywords', tabKey: 'keywords' },
     FIND_NOTES: { path: '/questions/related-notes', tabKey: 'related-notes' },
     AUTO_GRADE: { path: '/questions/auto-grade', tabKey: 'grading' }
@@ -53,8 +55,9 @@ const featureCards = {
     { title: '保存笔记', icon: <SaveOutlined />, path: ROUTES.NOTES.SAVE_TO_DB },
   ],
   questions: [
+    { title: '题目摘要提取', icon: <SolutionOutlined />, path: ROUTES.QUESTIONS.EXTRACT },
     { title: '生成知识点关键词', icon: <KeyOutlined />, path: ROUTES.QUESTIONS.KEYWORDS },
-    { title: '题目讲解', icon: <QuestionCircleOutlined />, path: ROUTES.QUESTIONS.EXPLAIN },
+    { title: '智能题目讲解', icon: <QuestionCircleOutlined />, path: ROUTES.QUESTIONS.EXPLAIN },
     { title: '查找相关笔记', icon: <SearchOutlined />, path: ROUTES.QUESTIONS.FIND_NOTES },
     { title: '自动批改功能', icon: <CheckCircleOutlined />, path: ROUTES.QUESTIONS.AUTO_GRADE },
     { title: '题目保存', icon: <SolutionOutlined />, path: ROUTES.QUESTIONS.SAVE },

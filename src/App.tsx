@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from "./components/ProtectRoute";
 import LoginPage from './pages/LoginPage';
+import RegisterPage from "./pages/RegisterPage";
 import HomePage from './pages/HomePage';
 import NotePage from "./pages/notes/NotePage";
 import NoteIndexPage from "./pages/notes/NoteIndexPage";
@@ -10,14 +12,18 @@ import SmartLectureLayout from "./pages/notes/SmartLecturePage";
 import NoteSavePage from "./pages/notes/NoteSavePage";
 import QuestionPage from "./pages/questions/QuetionPage";
 import QuestionIndexPage from "./pages/questions/QuestionIndexPage";
+import QuestionExtractPage from "./pages/questions/QuestionExtractPage";
 import QuestionKeywordsPage from "./pages/questions/QuestionKeywordsPage";
 import QuestionExplanationPage from "./pages/questions/QuestionExplanationPage";
 import RelatedNotesPage from "./pages/questions/RelatedNotePage";
 import AutoGradePage from "./pages/questions/AutoGradePage";
 import SaveQuestionPage from "./pages/questions/SaveQuestionPage";
-import RecordPage from "./pages/questions/RecordPage";
 import { ImageProvider } from './contexts/ImageContext';
-
+import { ExplanationProvider } from './contexts/ExplanationContext';
+import { ExtractProvider} from "./contexts/ExtractContext";
+import { QuestionImageProvider } from './contexts/QuestionImageContext';
+import { QuestionExtractProvider} from "./contexts/QuestionExtractContext";
+import { QuestionExplanationProvider } from './contexts/QuestionExplanationContext';
 // import { useAuth } from './contexts/AuthContext';
 // import {JSX} from "react";
 
@@ -30,112 +36,125 @@ import { ImageProvider } from './contexts/ImageContext';
 function App() {
     return (
         <ImageProvider>
-
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                    path="/home"
-                    element={
-                        <HomePage />
-                    }
-                />
-                <Route
-                    path="/notes"
-                    element={
-                        <NotePage />
-                    }
-                >
-                    <Route index element={<Navigate to="index" replace />} />
-                    <Route
-                        path="index"
-                        element={
-                            <NoteIndexPage />
-                        }
-                    />
-                    <Route
-                        path="extract"
-                        element={
-                            <ExtractPage />
-                        }
-                    />
-                    <Route
-                        path="mind-map"
-                        element={
-                            <MindMapPage />
-                        }
-                    />
-                    <Route
-                        path="keywords"
-                        element={
-                            <KeywordsPage />
-                        }
-                    />
-                    <Route
-                        path="smart-lecture"
-                        element={
-                            <SmartLectureLayout />
-                        }
-                    />
-                    <Route
-                        path="save"
-                        element={
-                            <NoteSavePage />
-                        }
-                    />
-                </Route>
-                <Route
-                    path="/questions"
-                    element={
-                        <QuestionPage />
-                    }
-                >
-                    <Route index element={<Navigate to="index" replace />} />
-                    <Route
-                        path="index"
-                        element={
-                            <QuestionIndexPage />
-                        }
-                    />
-                    <Route
-                        path="keywords"
-                        element={
-                            <QuestionKeywordsPage />
-                        }
-                    />
-                    <Route
-                        path="explanation"
-                        element={
-                            <QuestionExplanationPage />
-                        }
-                    />
-                    <Route
-                        path="related-notes"
-                        element={
-                            <RelatedNotesPage />
-                        }
-                    />
-                    <Route
-                        path="auto-grade"
-                        element={
-                            <AutoGradePage />
-                        }
-                    />
-                    <Route
-                        path="save"
-                        element={
-                            <SaveQuestionPage />
-                        }
-                    />
-                </Route>
-                <Route
-                    path="/questions/record"
-                    element={
-                        <RecordPage />
-                    }
-                />
-
-                <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes>
+            <ExplanationProvider>
+                <ExtractProvider>
+                    <QuestionImageProvider>
+                        <QuestionExtractProvider>
+                            <QuestionExplanationProvider>
+                                <Routes>
+                                    <Route path="/login" element={<LoginPage />} />
+                                    <Route path="/register" element={<RegisterPage />} />
+                                    <Route element={<ProtectedRoute />}>
+                                        <Route
+                                            path="/home"
+                                            element={
+                                                <HomePage />
+                                            }
+                                        />
+                                    </Route>
+                                    <Route element={<ProtectedRoute />}>
+                                        <Route
+                                            path="/notes"
+                                            element={
+                                                <NotePage />
+                                            }
+                                        >
+                                            <Route index element={<Navigate to="index" replace />} />
+                                            <Route
+                                                path="index"
+                                                element={
+                                                    <NoteIndexPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="extract"
+                                                element={
+                                                    <ExtractPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="mind-map"
+                                                element={
+                                                    <MindMapPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="keywords"
+                                                element={
+                                                    <KeywordsPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="smart-lecture"
+                                                element={
+                                                    <SmartLectureLayout />
+                                                }
+                                            />
+                                            <Route
+                                                path="save"
+                                                element={
+                                                    <NoteSavePage />
+                                                }
+                                            />
+                                        </Route>
+                                        <Route
+                                            path="/questions"
+                                            element={
+                                                <QuestionPage />
+                                            }
+                                        >
+                                            <Route index element={<Navigate to="index" replace />} />
+                                            <Route
+                                                path="index"
+                                                element={
+                                                    <QuestionIndexPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="extract"
+                                                element={
+                                                    <QuestionExtractPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="keywords"
+                                                element={
+                                                    <QuestionKeywordsPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="explanation"
+                                                element={
+                                                    <QuestionExplanationPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="related-notes"
+                                                element={
+                                                    <RelatedNotesPage />
+                                                }
+                                            />
+                                            <Route
+                                                path="auto-grade"
+                                                element={
+                                                    <AutoGradePage />
+                                                }
+                                            />
+                                            <Route
+                                                path="save"
+                                                element={
+                                                    <SaveQuestionPage />
+                                                }
+                                            />
+                                        </Route>
+                                    </Route>
+                                    <Route path="*" element={<Navigate to="/login" replace />} />
+                                </Routes>
+                            </QuestionExplanationProvider>
+                        </QuestionExtractProvider>
+                    </QuestionImageProvider>
+                </ExtractProvider>
+            </ExplanationProvider>
         </ImageProvider>
     );
 }
