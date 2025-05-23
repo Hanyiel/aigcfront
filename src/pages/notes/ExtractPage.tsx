@@ -23,6 +23,10 @@ import { useImageContext } from '../../contexts/ImageContext';
 import { ExtractData, useExtract} from '../../contexts/ExtractContext';
 import '../../styles/notes/extract.css';
 import { useAuth } from "../../contexts/AuthContext";
+import LatexRenderer from "../../components/LatexRenderer";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import ReactMarkdown from "react-markdown";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -48,7 +52,7 @@ const ExtractPage = () => {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
-// 新增：当选择图片时加载历史记录
+//当选择图片时加载历史记录
   useEffect(() => {
     if (selectedImage) {
       const historyExtract = getExtractByImage(selectedImage.id);
@@ -84,7 +88,7 @@ const ExtractPage = () => {
       setExtracting(true);
       const token = localStorage.getItem('authToken');
       const file = getImageFile(selectedImage.id);
-
+      console.log('token', token)
       if (!file) {
         message.error('图片数据获取失败');
         return;
@@ -163,7 +167,14 @@ const ExtractPage = () => {
                         <div className="result-content">
                           <div className="section">
                             <Text strong>内容摘要：</Text>
-                            <Text className="summary">{result?.text_content}</Text>
+                            <Text className="summary">
+                              <ReactMarkdown
+                                  remarkPlugins={[remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                              >
+                                {result?.text_content}
+                              </ReactMarkdown>
+                            </Text>
                           </div>
                           {/*<div className="section">*/}
                           {/*  <Text strong>关键信息：</Text>*/}

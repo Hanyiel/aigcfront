@@ -1,155 +1,227 @@
 // src/pages/questions/QuestionKeywordsPage.tsx
-import { useState, useEffect } from 'react';
-import { Row, Col, Card, List, Tag, Spin, Empty, Alert } from 'antd';
-import { PieChartOutlined, RocketOutlined, LinkOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button, Card, Row, Col, List, Tag, Upload, Spin, message } from 'antd';
+import {
+  UploadOutlined,
+  FileImageOutlined,
+  LinkOutlined,
+  SearchOutlined
+} from '@ant-design/icons';
+import { useQuestionImageContext } from '../../contexts/QuestionImageContext';
 import '../../styles/questions/QuestionKeywordsPage.css';
+import { useQuestionKeywords } from "../../contexts/QuestionKeywordsContext";
+import { useAuth } from "../../contexts/AuthContext";
 
-interface Keyword {
-  name: string;
-  weight: number;
-  relation: string;
+interface QuestionKeyword {
+  term: string;
+  tfidf_score: number;
+  related_notes?: string[];
+  related_questions?: string[];
 }
 
-// 模拟知识点数据
-const mockKeywords = {
-  math: [
-    { name: '二次函数', weight: 9, relation: '核心概念' },
-    { name: '抛物线', weight: 7, relation: '图像特征' },
-    { name: '顶点坐标', weight: 8, relation: '关键参数' },
-    { name: '对称轴', weight: 6, relation: '图像特征' }
-  ],
-  physics: [
-    { name: '电磁感应', weight: 9, relation: '核心定律' },
-    { name: '法拉第定律', weight: 8, relation: '计算公式' },
-    { name: '楞次定律', weight: 7, relation: '判断方法' }
-  ]
-};
-
 const QuestionKeywordsPage = () => {
-  const [selectedQuestion, setSelectedQuestion] = useState(1);
-  const [keywords, setKeywords] = useState<Keyword[]>([]);
+  const navigate = useNavigate();
+
+  // Context 替换
+  const {
+    images: questionImages,
+    addImage: addQuestionImage,
+    removeImage: removeQuestionImage,
+    selectedImage: selectedQuestionImage,
+    setSelectedImage: setSelectedQuestionImage,
+    getImageFile: getQuestionImageFile
+  } = useQuestionImageContext();
+
+  const {
+    saveQuestionKeywords,
+    getKeywordsByQuestionImage,
+  } = useQuestionKeywords();
+
+  const [keywords, setKeywords] = useState<QuestionKeyword[]>([]);
   const [loading, setLoading] = useState(false);
+  const [associations, setAssociations] = useState<string[]>([]);
+  const [ocrTexts, setOcrTexts] = useState<Record<string, string>>({});
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const { isAuthenticated, logout } = useAuth();
 
-  // 模拟题目列表数据
-  const questions = [
-    {
-      id: 1,
-      title: '二次函数综合题',
-      subject: 'math',
-      status: '已解析',
-      date: '2024-03-15'
-    },
-    {
-      id: 2,
-      title: '电磁感应定律应用',
-      subject: 'physics',
-      status: '已解析',
-      date: '2024-03-14'
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
     }
-  ];
+  }, [isAuthenticated, navigate]);
 
-  // 获取关键词数据
-  const fetchKeywords = (questionId: string) => {
+  const handleUpload = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      message.error('仅支持图片文件');
+      return false;
+    }
+    try {
+      addQuestionImage(file); // 方法替换
+      message.success(`${file.name} 已添加预览`);
+      if (uploadRef.current) uploadRef.current.value = '';
+    } catch (err) {
+      message.error('文件添加失败');
+    }
     return false;
-    // setLoading(true);
-    // setTimeout(() => {
-    //   const subject = questions.find(q => q.id === questionId).subject;
-    //   setKeywords(mockKeywords[subject]);
-    //   setLoading(false);
-    // }, 800);
   };
-  //
-  // useEffect(() => {
-  //   fetchKeywords(selectedQuestion);
-  // }, [selectedQuestion]);
+
+  const handleExtractKeywords = async () => {
+    const token = localStorage.getItem('authToken');
+
+    if (!selectedQuestionImage) { // 变量替换
+      message.warning('请先选择图片');
+      return;
+    }
+    try {
+      setLoading(true);
+      const imageFile = getQuestionImageFile(selectedQuestionImage.id); // 方法替换
+      console.log('token:', token)
+      if (!imageFile) {
+        message.error('图片文件不存在');
+        return;
+      }
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      formData.append('max_keywords', '5');
+      // 接口路径修改
+      const response = await fetch('http://localhost:8000/api/questions/keywords', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP错误 ${response.status}`);
+      }
+      const result = await response.json();
+      console.log('完整响应:', result);
+      const data = result.data;
+      console.log(data)
+
+      if (!result.data?.keywords) {
+        console.error('异常数据结构:', result);
+        throw new Error('返回数据格式异常');
+      }
+
+      const keywords = data.keywords.map((k: any) => ({
+        term: k.term,
+        tfidfScore: Number(k.tfidf_score),
+        subject: data.subject
+      }));
+
+      saveQuestionKeywords(selectedQuestionImage.id, keywords); // 方法替换
+      setKeywords(keywords);
+      message.success(`提取到${keywords.length}个关键词`);
+    } catch (err) {
+      console.error('提取错误详情:', err);
+      message.error(err instanceof Error ? err.message : '未知错误');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-      <Row gutter={24} className="keywords-container">
-        {/* 左侧关键词展示区 */}
-        <Col xs={24} md={16} className="keywords-panel">
+    <div className="keywords-container">
+      <Row gutter={24} className="keywords-row">
+        {/* 左侧关键词区域 */}
+        <Col flex="auto" className="keywords-col">
           <Card
-              title={<><RocketOutlined /> 知识点图谱分析</>}
-              extra={<Tag icon={<LinkOutlined />}>知识点关联系统 v2.1</Tag>}
+            title="关键词分析"
+            extra={
+              <Button
+                type="primary"
+                onClick={handleExtractKeywords}
+                loading={loading}
+              >
+                提取关键词
+              </Button>
+            }
           >
-            <Spin spinning={loading} tip="正在生成知识图谱...">
-              {keywords.length > 0 ? (
-                  <div className="keywords-visualization">
-                    <div className="main-concept">
-                      <Tag icon={<PieChartOutlined />} className="core-tag">
-                        {keywords[0].name}
-                      </Tag>
-                      <div className="relation-lines" />
-                    </div>
-
-                    <div className="related-concepts">
-                      {keywords.slice(1).map((kw, index) => (
-                          <div
-                              key={kw.name}
-                              className={`concept-node depth-${index % 3}`}
-                              data-relation={kw.relation}
-                          >
-                            <Tag
-                                className="kw-tag"
-                                color={index % 2 ? 'processing' : 'success'}
-                            >
-                              {kw.name}
-                              <span className="weight-badge">{kw.weight}</span>
-                            </Tag>
-                          </div>
-                      ))}
-                    </div>
-
-                    <Alert
-                        message="知识图谱说明"
-                        description={
-                          <ul className="legend-list">
-                            <li><Tag color="processing">蓝色标签</Tag>代表计算方法类知识点</li>
-                            <li><Tag color="success">绿色标签</Tag>代表概念定义类知识点</li>
-                            <li>数字表示知识点重要程度 (1-10分)</li>
-                          </ul>
-                        }
-                        type="info"
-                        showIcon
-                    />
-                  </div>
-              ) : (
-                  <Empty description="暂无知识点数据" />
-              )}
-            </Spin>
+            <div className="keywords-list">
+              {selectedQuestionImage && getKeywordsByQuestionImage(selectedQuestionImage.id)?.map((k, i) => ( // 方法替换
+                <Tag
+                  key={i}
+                  color={i % 2 ? 'geekblue' : 'cyan'}
+                  className="keyword-tag"
+                >
+                  {k.term}
+                  <span className="score">({(k.tfidfScore * 100).toFixed(1)}%)</span>
+                </Tag>
+              ))}
+            </div>
           </Card>
         </Col>
 
-        {/* 右侧题目列表 */}
-        <Col xs={24} md={8} className="question-list-panel">
-          <Card title="题目列表" bordered={false}>
+        {/* 右侧图片列表 */}
+        <Col flex="400px" className="image-col">
+          <Card
+            title="题目图片列表"  // 标题修改
+            className="image-list-card"
+            extra={
+              <Upload
+                beforeUpload={handleUpload}
+                showUploadList={false}
+                accept="image/*"
+              >
+                <Button icon={<UploadOutlined />}>上传题目图片</Button> {/* 文案微调 */}
+              </Upload>
+            }
+          >
             <List
-                itemLayout="horizontal"
-                dataSource={questions}
-                renderItem={(item) => (
-                    <List.Item
-                        onClick={() => setSelectedQuestion(item.id)}
-                        className={`list-item ${selectedQuestion === item.id ? 'selected' : ''}`}
+              dataSource={questionImages} // 数据源替换
+              renderItem={(item) => (
+                <List.Item
+                  className={`list-item ${selectedQuestionImage?.id === item.id ? 'selected' : ''}`} // 变量替换
+                  onClick={() => setSelectedQuestionImage(item)} // 方法替换
+                  extra={
+                    <Button
+                      type="link"
+                      danger
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeQuestionImage(item.id); // 方法替换
+                        setOcrTexts(prev => {
+                          const newTexts = { ...prev };
+                          delete newTexts[item.id];
+                          return newTexts;
+                        });
+                      }}
                     >
-                      <List.Item.Meta
-                          title={<span className="question-title">{item.title}</span>}
-                          description={
-                            <>
-                              <Tag color={item.subject === 'math' ? 'blue' : 'purple'}>
-                                {item.subject === 'math' ? '数学' : '物理'}
-                              </Tag>
-                              <span className="date">{item.date}</span>
-                            </>
-                          }
-                      />
-                      <Tag color={item.status === '已解析' ? 'green' : 'orange'}>
-                        {item.status}
-                      </Tag>
-                    </List.Item>
-                )}
+                      删除
+                    </Button>
+                  }
+                >
+                  <div className="thumbnail-wrapper">
+                    <img
+                      src={item.url}
+                      alt={item.name}
+                      className="thumbnail"
+                    />
+                    <FileImageOutlined className="file-icon" />
+                  </div>
+                  <div className="image-info">
+                    <span className="image-name">{item.name}</span>
+                    <span className="image-date">
+                      {new Date(item.timestamp).toLocaleDateString()}
+                    </span>
+                    {ocrTexts[item.id] && (
+                      <span className="text-indicator">
+                        <LinkOutlined /> 已解析文本
+                      </span>
+                    )}
+                  </div>
+                </List.Item>
+              )}
             />
           </Card>
         </Col>
       </Row>
+    </div>
   );
 };
 

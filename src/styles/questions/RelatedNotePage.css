@@ -1,70 +1,111 @@
-/* src/pages/notes/NotePage.css */
-/* 基础布局 */
-.note-container {
-  margin-top: 24px;
-  min-height: calc(100vh - 100px);
+/* src/styles/questions/RelatedNotesPage.css */
+.related-container {
+  padding: 24px;
+  min-height: 100vh;
 }
 
-.note-panel .ant-card {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border-radius: 8px;
-  margin-right: 12px;
+/* 关联内容区域 */
+.related-content {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding-right: 12px;
 }
 
-/* 笔记项样式 */
-.note-item {
+.knowledge-graph {
+  margin-bottom: 24px;
   padding: 16px;
-  margin: 12px 0;
-  border-radius: 8px;
-  transition: all 0.3s;
-  background: #fff;
+  background: #fafafa;
+  border-radius: 4px;
+}
+
+.note-item, .question-item {
+  padding: 16px;
+  margin: 8px 0;
   border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  transition: all 0.3s;
 }
 
-.note-item:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
+.note-item:hover, .question-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* 元信息 */
-.meta-info {
-  margin-top: 8px;
+.note-header, .question-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 8px;
 }
 
-/* 高亮标签 */
-.highlight-tag {
-  margin-right: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.highlight-tag:hover {
-  opacity: 0.8;
-  transform: scale(1.05);
-}
-
-/* 内容预览 */
 .note-content {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed #f0f0f0;
+  color: rgba(0, 0, 0, 0.85);
+  margin: 8px 0;
 }
 
-/* 响应式优化 */
-@media (max-width: 768px) {
-  .note-panel .ant-card {
-    margin-right: 0;
-    margin-bottom: 12px;
-  }
+.note-points {
+  margin-top: 8px;
+}
 
-  .note-item {
-    padding: 12px;
-  }
+.question-answer {
+  padding: 8px;
+  background: #fffbe6;
+  border-radius: 2px;
+  margin-top: 8px;
+}
 
-  .meta-info {
-    flex-wrap: wrap;
-  }
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #1890ff;
+  border-radius: 4px;
+}
+
+/* 图片列表区域 */
+.image-list-card {
+  height: calc(100vh - 180px);
+}
+
+.image-list-card .ant-card-body {
+  padding: 0;
+}
+
+.list-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.list-item.selected {
+  background: #e6f7ff;
+  border-right: 3px solid #1890ff;
+}
+
+.list-item:hover {
+  background: #fafafa;
+}
+
+.thumbnail {
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.image-info {
+  flex: 1;
+  margin-left: 16px;
+  overflow: hidden;
+}
+
+.image-name {
+  display: block;
+  max-width: 100%;
+}
+
+.image-date {
+  font-size: 12px;
 }

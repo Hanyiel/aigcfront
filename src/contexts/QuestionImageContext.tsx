@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-interface QuestionImage {
+export interface QuestionImage {
   id: string;
   url: string;         // 始终使用blob URL
   name: string;

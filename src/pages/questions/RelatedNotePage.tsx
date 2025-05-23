@@ -1,162 +1,232 @@
-// src/pages/notes/RelatedNotesPage.tsx
-import { useState, useEffect } from 'react';
-import { Row, Col, Card, List, Input, Tag, Empty, Spin, Typography } from 'antd';
-import { SearchOutlined, FileTextOutlined, TagsOutlined } from '@ant-design/icons';
+// src/pages/questions/RelatedNotePage.tsx
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Row,
+  Col,
+  Card,
+  List,
+  Tag,
+  Upload,
+  Button,
+  Image,
+  Spin,
+  Typography,
+  Collapse,
+  Empty, message
+} from 'antd';
+import {
+  UploadOutlined,
+  FileTextOutlined,
+  QuestionCircleOutlined,
+  LinkOutlined
+} from '@ant-design/icons';
+import { useQuestionImageContext } from '../../contexts/QuestionImageContext';
+import { useRelatedNote } from '../../contexts/RelatedNoteContext';
+import { useAuth } from '../../contexts/AuthContext';
 import '../../styles/questions/RelatedNotePage.css';
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import ReactMarkdown from "react-markdown";
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
+const { Panel } = Collapse;
 
-// 笔记数据结构
-interface StudyNote {
-  id: number;
-  questionId: number;
-  title: string;
-  content: string;
-  tags: string[];
-  author: string;
-  createdAt: string;
-  highlights: string[];
-}
+const RelatedNotePage = () => {
+  const navigate = useNavigate();
+  const {
+    images,
+    addImage,
+    removeImage,
+    selectedImage,
+    setSelectedImage,
+    getImageFile
+  } = useQuestionImageContext();
+  const {
+    relatedData,
+    loading,
+    fetchRelatedData
+  } = useRelatedNote();
+  const { isAuthenticated } = useAuth();
+  const uploadRef = useRef<HTMLInputElement>(null);
 
-// 模拟数据
-const mockNotes: StudyNote[] = [
-  {
-    id: 1,
-    questionId: 1,
-    title: '二次函数解题技巧',
-    content: `在解二次函数问题时，需要注意顶点坐标公式的应用：$x = -\\frac{b}{2a}$...`,
-    tags: ['公式推导', '易错点'],
-    author: '王老师',
-    createdAt: '2023-03-15',
-    highlights: ['顶点坐标', '方程组']
-  },
-  {
-    id: 2,
-    questionId: 1,
-    title: '我的错题总结',
-    content: '容易忽略题目中隐藏的顶点信息，需要特别注意题目中的极值条件...',
-    tags: ['错题分析'],
-    author: '学生A',
-    createdAt: '2023-04-01',
-    highlights: ['极值条件']
-  },
-  {
-    id: 3,
-    questionId: 2,
-    title: '电磁感应公式速记',
-    content: '切割磁感线时的三要素：B、L、v方向需互相垂直...',
-    tags: ['公式记忆'],
-    author: '李老师',
-    createdAt: '2023-03-20',
-    highlights: ['B-L-v']
-  }
-];
+  const handleUpload = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      message.error('仅支持图片文件');
+      return false;
+    }
+    addImage(file);
+    return false;
+  };
 
-const RelatedNotesPage = () => {
-  const [selectedQuestion, setSelectedQuestion] = useState(1);
-  const [searchText, setSearchText] = useState('');
-  const [filteredNotes, setFilteredNotes] = useState<StudyNote[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // 过滤笔记
-  useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      const filtered = mockNotes.filter(note =>
-        note.questionId === selectedQuestion &&
-        (note.title.toLowerCase().includes(searchText.toLowerCase()) ||
-         note.content.includes(searchText) ||
-         note.tags.some(tag => tag.includes(searchText)))
-      );
-      setFilteredNotes(filtered);
-      setLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchText, selectedQuestion]);
+  const handleSearchRelated = async () => {
+    if (!selectedImage) {
+      message.warning('请先选择图片');
+      return;
+    }
+    const file = getImageFile(selectedImage.id);
+    if (file) {
+      await fetchRelatedData(file);
+    }
+  };
 
   return (
-    <Row gutter={24} className="note-container">
-      {/* 左侧笔记区 */}
-      <Col xs={24} md={16} className="note-panel">
-        <Card
-          title={<><FileTextOutlined /> 关联学习笔记</>}
-          extra={
-            <Input
-              placeholder="搜索笔记内容..."
-              prefix={<SearchOutlined />}
-              allowClear
-              onChange={e => setSearchText(e.target.value)}
-              style={{ width: 280 }}
-            />
-          }
-        >
-          <Spin spinning={loading} tip="正在搜索笔记...">
-            {filteredNotes.length > 0 ? (
-              <List
-                itemLayout="vertical"
-                dataSource={filteredNotes}
-                renderItem={note => (
-                  <List.Item className="note-item">
-                    {/* 笔记标题区 */}
-                    <div className="note-header">
-                      <Text strong style={{ fontSize: 16 }}>{note.title}</Text>
-                      <div className="meta-info">
-                        <Tag icon={<TagsOutlined />} color="processing">
-                          {note.tags.join(' / ')}
-                        </Tag>
-                        <Text type="secondary">{note.author} · {note.createdAt}</Text>
+      <Row gutter={24} className="related-container">
+        {/* 左侧关联内容区域 */}
+        <Col xs={24} md={14} lg={16}>
+          <Card
+              title="关联学习资源"
+              extra={
+                <Button
+                    type="primary"
+                    onClick={handleSearchRelated}
+                    loading={loading}
+                    disabled={!selectedImage}
+                >
+                  查询关联内容
+                </Button>
+              }
+          >
+            <Spin spinning={loading} tip="正在查找关联内容...">
+              {relatedData ? (
+                  <div className="related-content">
+                    {/* 知识点图谱 */}
+                    <div className="knowledge-graph">
+                      <Title level={4}><LinkOutlined /> 知识图谱关联</Title>
+                      <div className="tags">
+                        {relatedData.knowledge_graph.map((kg, index) => (
+                            <Tag key={index} color="geekblue">{kg}</Tag>
+                        ))}
                       </div>
                     </div>
 
-                    {/* 内容预览 */}
-                    <div className="note-content">
-                      {note.highlights.map((hl, index) => (
-                        <Tag key={index} color="gold" className="highlight-tag">
-                          {hl}
-                        </Tag>
-                      ))}
-                      <Text line-clamp={{ rows: 2 }} style={{ color: '#666' }}>
-                        {note.content}
-                      </Text>
-                    </div>
-                  </List.Item>
+                    {/* 相关笔记 */}
+                    <Collapse defaultActiveKey={['notes']} ghost>
+                      <Panel header={<><FileTextOutlined /> 关联笔记（{relatedData.related_notes.length}）</>} key="notes">
+                        <List
+                            itemLayout="vertical"
+                            dataSource={relatedData.related_notes}
+                            renderItem={note => (
+                                <List.Item className="note-item">
+                                  <div className="note-header">
+                                    <Tag color="blue">{note.subject}</Tag>
+                                    <Title level={5}>{note.title}</Title>
+                                    <Text type="secondary">相似度：{(note.similarity * 100).toFixed(1)}%</Text>
+                                  </div>
+                                  <Text className="note-content">
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkMath]}
+                                        rehypePlugins={[rehypeKatex]}
+                                    >
+                                      {note.content}
+                                    </ReactMarkdown>
+                                  </Text>
+                                  <div className="note-points">
+                                    {note.point.map((p, i) => (
+                                        <Tag key={i} color="cyan">{p}</Tag>
+                                    ))}
+                                  </div>
+                                </List.Item>
+                            )}
+                        />
+                      </Panel>
+                    </Collapse>
+
+                    {/* 相关问题 */}
+                    <Collapse defaultActiveKey={['questions']} ghost>
+                      <Panel header={<><QuestionCircleOutlined /> 关联问题（{relatedData.related_questions.length}）</>} key="questions">
+                        <List
+                            dataSource={relatedData.related_questions}
+                            renderItem={question => (
+                                <List.Item className="question-item">
+                                  <div className="question-header">
+                                    <Tag color="orange">{question.subject_id}</Tag>
+                                    <Text strong>{question.content}</Text>
+                                    <Text type="secondary">相似度：{(question.similarity * 100).toFixed(1)}%</Text>
+                                  </div>
+                                  <div className="question-answer">
+                                    <Text type="secondary">参考答案：</Text>
+                                    <Text>
+                                      <ReactMarkdown
+                                          remarkPlugins={[remarkMath]}
+                                          rehypePlugins={[rehypeKatex]}
+                                      >
+                                        {question.answer}
+                                      </ReactMarkdown>
+                                    </Text>
+                                  </div>
+                                </List.Item>
+                            )}
+                        />
+                      </Panel>
+                    </Collapse>
+                  </div>
+              ) : (
+                  <Empty description="选择图片后查询关联内容" />
+              )}
+            </Spin>
+          </Card>
+        </Col>
+
+        {/* 右侧图片列表（直接使用提供的代码） */}
+        <Col xs={24} md={10} lg={8}>
+          <Card
+              title="图片列表"
+              className="image-list-card"
+              extra={
+                <Upload
+                    beforeUpload={handleUpload}
+                    showUploadList={false}
+                    accept="image/*"
+                >
+                  <Button icon={<UploadOutlined />}>添加图片</Button>
+                </Upload>
+              }
+          >
+            <List
+                dataSource={images}
+                renderItem={(item) => (
+                    <List.Item
+                        className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedImage(item)}
+                        extra={
+                          <Button
+                              type="link"
+                              danger
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeImage(item.id);
+                              }}
+                          >
+                            删除
+                          </Button>
+                        }
+                    >
+                      <div className="image-content">
+                        <Image
+                            src={item.url}
+                            alt={item.name}
+                            preview={false}
+                            width={80}
+                            height={60}
+                            className="thumbnail"
+                        />
+                        <div className="image-info">
+                          <Text ellipsis className="image-name">
+                            {item.name}
+                          </Text>
+                          <Text type="secondary" className="image-date">
+                            {new Date(item.timestamp).toLocaleDateString()}
+                          </Text>
+                        </div>
+                      </div>
+                    </List.Item>
                 )}
-              />
-            ) : (
-              <Empty description="未找到相关笔记" />
-            )}
-          </Spin>
-        </Card>
-      </Col>
-
-      {/* 右侧题目列表（复用原有结构） */}
-      <Col xs={24} md={8} className="question-list-panel">
-        <Card title="题目列表" bordered={false}>
-          <List
-            itemLayout="horizontal"
-            dataSource={mockNotes}
-            renderItem={(item) => (
-              <List.Item
-                onClick={() => setSelectedQuestion(item.id)}
-                className={`list-item ${selectedQuestion === item.id ? 'selected' : ''}`}
-              >
-                <List.Item.Meta
-                  title={<span className="question-title">{item.title}</span>}
-                  description={
-                    <>
-
-                      <Tag color="gold">tag {item.tags[0]}</Tag>
-                    </>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        </Card>
-      </Col>
-    </Row>
+            />
+          </Card>
+        </Col>
+      </Row>
   );
 };
 
-export default RelatedNotesPage;
+export default RelatedNotePage;

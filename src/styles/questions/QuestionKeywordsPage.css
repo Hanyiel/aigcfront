@@ -1,118 +1,109 @@
-/* 在QuestionPage.css中添加以下样式 */
-/* 知识点页面布局 */
+/* KeywordsPage.css */
 .keywords-container {
-  margin-top: 24px;
+  height: calc(100vh - 64px);
+  padding: 24px;
+  background: #f0f2f5;
 }
 
-.keywords-panel .ant-card {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  min-height: 600px;
+.keywords-row {
+  height: 100%;
 }
 
-/* 知识图谱可视化 */
-.keywords-visualization {
-  position: relative;
-  padding: 20px;
-  min-height: 500px;
+.keywords-col {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 600px;
 }
 
-.main-concept {
-  text-align: center;
-  margin: 40px 0;
+.image-col {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.core-tag {
-  font-size: 18px;
-  padding: 12px 24px;
-  border-radius: 24px;
-  transform: scale(1.2);
-}
-
-.related-concepts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 16px;
-  margin: 40px 0;
-}
-
-.concept-node {
-  position: relative;
-  text-align: center;
-  transition: transform 0.3s;
-}
-
-.concept-node:hover {
-  transform: translateY(-5px);
-}
-
-.kw-tag {
-  cursor: pointer;
-  position: relative;
-  padding-right: 28px;
-  transition: all 0.3s;
-}
-
-.weight-badge {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0,0,0,0.1);
-  padding: 2px 6px;
+/* 关键词卡片 */
+.keywords-card {
+  flex: 1;
+  height: calc(100% - 56px);
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.keywords-card .ant-card-head {
+  border-bottom: 2px solid #1890ff;
+}
+
+.keywords-section, .associations-section {
+  height: 100vh;
+  margin-bottom: 32px;
+}
+
+h3 {
+  height: 100%;
+  color: rgba(0, 0, 0, 0.85);
+  border-left: 4px solid #1890ff;
+  padding-left: 12px;
+  margin: 16px 0;
+}
+
+.keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.keyword-tag {
+  padding: 8px 15px;
+  font-size: 14px;
+  border-radius: 20px;
+  transition: transform 0.2s;
+}
+
+.keyword-tag:hover {
+  transform: translateY(-2px);
+}
+
+.confidence {
+  margin-left: 8px;
   font-size: 0.8em;
+  opacity: 0.8;
 }
 
-/* 层级连线效果 */
-.concept-node::before {
-  content: '';
-  position: absolute;
-  background: #1890ff;
-  opacity: 0.2;
+.associations-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 15px;
+  border-radius: 8px;
+  background: #f8f9fa;
 }
 
-.depth-0::before {
-  width: 80px;
-  height: 2px;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.depth-1::before {
-  width: 2px;
-  height: 40px;
-  top: -30px;
-  left: 50%;
-}
-
-.depth-2::before {
-  width: 100px;
-  height: 2px;
-  top: -10px;
-  left: calc(50% - 20px);
-  transform: rotate(30deg);
-}
-
-/* 图例说明 */
-.legend-list {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.legend-list li {
-  margin: 8px 0;
-}
-
-/* 题目列表交互 */
-.list-item {
+.association-tag {
+  padding: 6px 12px;
+  border-radius: 15px;
   cursor: pointer;
-  padding: 12px;
   transition: all 0.3s;
 }
 
-.list-item:hover {
-  background: #fafafa;
+.association-tag:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* 图片列表样式 */
+.image-list-card {
+  height: 100%;
+  margin-left: 24px;
+  border-radius: 8px;
+}
+
+.list-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
 }
 
 .list-item.selected {
@@ -120,15 +111,94 @@
   border-right: 3px solid #1890ff;
 }
 
-/* 响应式布局 */
-@media (max-width: 992px) {
-  .keywords-panel,
-  .question-list-panel {
-    width: 100% !important;
-    max-width: 100% !important;
+.thumbnail-wrapper {
+  position: relative;
+  width: 100px;
+  height: 75px;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.file-icon {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  color: rgba(255,255,255,0.8);
+  background: rgba(0,0,0,0.4);
+  padding: 2px;
+  border-radius: 2px;
+}
+
+.image-info {
+  flex: 1;
+  margin-left: 16px;
+  min-width: 0;
+}
+
+.image-name {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-date {
+  font-size: 12px;
+  color: rgba(0,0,0,0.45);
+}
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ocr-loading {
+  color: #1890ff;
+  font-size: 0.9em;
+  margin-left: 8px;
+}
+.text-indicator {
+  color: #52c41a;
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+/* 禁用状态的按钮样式 */
+.ant-btn[disabled] {
+  background-color: #f5f5f5 !important;
+  border-color: #d9d9d9 !important;
+  color: rgba(0, 0, 0, 0.25) !important;
+}
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .keywords-col {
+    min-width: 400px;
   }
 
-  .related-concepts {
-    grid-template-columns: repeat(3, 1fr);
+  .image-col {
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 992px) {
+  .keywords-row {
+    flex-direction: column;
+  }
+
+  .keywords-col,
+  .image-col {
+    width: 100% !important;
+    min-width: 100% !important;
+    margin-bottom: 24px;
+  }
+
+  .image-list-card {
+    margin-left: 0;
   }
 }

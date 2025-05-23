@@ -51,21 +51,21 @@ export const KeywordsProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   const getKeywordsByImage = (imageId: string) => {
+    if (!imageId) return [];
     return keywordsData.find(k => k.imageId === imageId)?.keywords || [];
   };
 
   return (
-    <KeywordsContext.Provider
-      value={{
-        keywordsData,
-        saveKeywords,
-        deleteKeywords,
-        getKeywordsByImage,
-        currentKeywords: keywordsData[0]?.keywords // 根据实际需求调整
-      }}>
-      {children}
-    </KeywordsContext.Provider>
-  );
+  <KeywordsContext.Provider
+    value={{
+      keywordsData,
+      saveKeywords,
+      deleteKeywords,
+      getKeywordsByImage,
+    }}>
+    {children}
+  </KeywordsContext.Provider>
+);
 };
 
 export const useKeywords = () => {

@@ -11,6 +11,31 @@
   margin-right: 12px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+/* 调整得分展示位置 */
+.score-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* 批改按钮响应式优化 */
+@media (max-width: 768px) {
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .score-summary {
+    justify-content: space-between;
+    width: 100%;
+  }
+}
+
 /* 状态标识 */
 .status-header {
   display: flex;
@@ -99,5 +124,68 @@
   .grading-panel .ant-card {
     margin-right: 0;
     margin-bottom: 12px;
+  }
+}
+
+.image-list-card {
+  height: calc(100vh - 180px);
+  overflow: hidden;
+}
+.image-list-card .ant-card-body {
+  padding: 0;
+  height: calc(100% - 56px);
+  overflow-y: auto;
+}
+.list-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+}
+.list-item.selected {
+  background: #e6f7ff;
+  border-right: 3px solid #1890ff;
+}
+.list-item:hover {
+  background: #fafafa;
+}
+.image-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.thumbnail {
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.image-info {
+  flex: 1;
+  margin-left: 16px;
+  overflow: hidden;
+}
+.image-name {
+  display: block;
+  max-width: 100%;
+  font-size: 14px;
+}
+.image-date {
+  font-size: 12px;
+}
+/* 调整布局比例 */
+.grading-panel {
+  padding-right: 12px !important;
+}
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .grading-panel {
+    padding-right: 0 !important;
+    margin-bottom: 16px;
+  }
+
+  .image-list-card {
+    height: auto;
   }
 }

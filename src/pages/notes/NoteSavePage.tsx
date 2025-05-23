@@ -1,164 +1,283 @@
-import { useState } from 'react';
-import { Layout, Card, List, Checkbox, Button, Upload, Row, Col } from 'antd';
+import React, { useState, useContext } from 'react';
+import { Tag, Card, List, Checkbox, Button, Image, Row, Col, Typography, message } from 'antd';
 import {
-  UploadOutlined,
-  SaveOutlined,
-  FileImageOutlined,
-  FileTextOutlined,
-  ApartmentOutlined,
-  TagsOutlined,
-  SoundOutlined
+    SaveOutlined,
+    FileTextOutlined,
+    ApartmentOutlined,
+    TagsOutlined,
+    SoundOutlined
 } from '@ant-design/icons';
+import {
+    ImageContextType, useImageContext,
+} from '../../contexts/ImageContext';
 import '../../styles/notes/NoteSavePage.css';
-const mockImages = [
-  { id: '1', name: 'architecture.jpg', url: 'placeholder-1.jpg', timestamp: Date.now() },
-  { id: '2', name: 'technology.jpg', url: 'placeholder-2.jpg', timestamp: Date.now() - 86400000 },
-];
+import {useExtract} from "../../contexts/ExtractContext";
+import {useMindMapContext} from "../../contexts/MindMapContext";
+import {useKeywords} from "../../contexts/NoteKeywordsContext";
+import {useExplanation} from "../../contexts/ExplanationContext";
+import LatexRenderer from "../../components/LatexRenderer";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import ReactMarkdown from "react-markdown";
 
-const NewStoragePage = () => {
-  const [selectedImage, setSelectedImage] = useState<any>(null);
-  const [saveOptions, setSaveOptions] = useState<string[]>([]);
+const { Text } = Typography;
 
-  const handleUpload = (file: File) => {
-    console.log('Upload file:', file);
-    return false;
-  };
+interface NoteSaveResponse {
+    code: number;
+    message: string;
+    data: {
+        note_id: string;
+        storage_status: string;
+    };
+    timestamp: number;
+}
+interface NoteData {
+    note_id: string;
+    storage_status: string;
+}
+const NoteSavePage = () => {
+    // Context hooks
+    const {
+        images,
+        addImage,
+        removeImage,
+        selectedImage,
+        setSelectedImage,
+        getImageFile
+    } = useImageContext();
+    const { getExtractByImage } = useExtract();
+    const { currentMindMap } = useMindMapContext();
+    const { getKeywordsByImage } = useKeywords();
+    const { getExplanationByImage } = useExplanation();
+    const [loading, setloading] = useState(false)
+    // Local state
+    const [saveOptions, setSaveOptions] = useState<Record<string, boolean>>({
+        summary: true,
+        mindmap: false,
+        knowledge: false,
+        lecture: false
+    });
 
-  const renderPreviewContent = (option: string) => {
-    const contentMap: Record<string, { icon: React.ReactNode; text: string; placeholder: string }> = {
-      summary: {
-        icon: <FileTextOutlined />,
-        text: '保存摘要',
-        placeholder: '摘要内容将在勾选后显示'
-      },
-      mindmap: {
-        icon: <ApartmentOutlined />,
-        text: '保存思维导图',
-        placeholder: '思维导图将在勾选后生成'
-      },
-      keywords: {
-        icon: <TagsOutlined />,
-        text: '保存关键词',
-        placeholder: '关键词将在分析后显示'
-      },
-      lecture: {
-        icon: <SoundOutlined />,
-        text: '保存智能讲解',
-        placeholder: '讲解内容将在生成后显示'
-      }
+    // 获取当前内容数据
+    const currentExtract = selectedImage ? getExtractByImage(selectedImage.id) : undefined;
+    const currentKeywords = selectedImage ? getKeywordsByImage(selectedImage.id) : [];
+    const currentExplanation = selectedImage ? getExplanationByImage(selectedImage.id) : undefined;
+
+    // 处理保存操作
+    const handleSave = async () => {
+        if (!selectedImage) {
+            message.warning('请选择需要保存的图片');
+            return;
+        }
+        try {
+            setloading(true)
+            const formData = new FormData();
+            const image = getImageFile(selectedImage.id);
+            if (!image) {
+                message.error('图片数据获取失败');
+                return;
+            }
+            formData.append('image', image);
+            if(!image)
+                formData.append('options', JSON.stringify(saveOptions));
+
+            const { data } = await saveNoteToAPI(formData);
+
+            message.success(`笔记保存成功！ID: ${data.note_id}`);
+            setloading(false)
+        } catch (err) {
+            setloading(false);
+            const errorMessage = err instanceof Error ? err.message : '未知错误';
+            message.error(`保存失败: ${errorMessage}`);
+        }
+    };
+    const saveNoteToAPI = async (formData: FormData): Promise<NoteSaveResponse> => {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('http://localhost:8000/api/notes/record', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+            body: formData
+        });
+        // 处理网络层错误
+        if (!response.ok) {
+            throw new Error(`HTTP错误 ${response.status}`);
+        }
+        // 解析响应数据
+        const result = await response.json();
+        console.log('完整响应:', result);
+        const data = result.data;
+        console.log('笔记数据:', data);
+        // 处理业务逻辑错误（code非200情况）
+        if (result.code !== 200) {
+            throw new Error(result.message || '服务器返回未知错误');
+        }
+        return result;
+    };
+// 渲染预览内容
+    const renderPreviewContent = (type: string) => {
+        if (!saveOptions[type]) return null;
+
+        switch (type) {
+            case 'summary':
+                return currentExtract ? (
+                    <div className="preview-section">
+                        <Text className="preview-title">摘要内容</Text>
+                        <div className="preview-content"><LatexRenderer content={currentExtract.text_content} /></div>
+                    </div>
+                ) : <Text type="secondary">未找到相关摘要内容</Text>;
+
+            case 'mindmap':
+                return currentMindMap?.svgUrl ? (
+                    <div className="preview-section">
+                        <Text className="preview-title">思维导图预览</Text>
+                        <img src={currentMindMap.svgUrl} alt="思维导图" className="mindmap-preview" />
+                    </div>
+                ) : <Text type="secondary">未生成思维导图</Text>;
+
+            case 'knowledge':
+                return currentKeywords.length > 0 ? (
+                    <div className="preview-section">
+                        <Text className="preview-title">关联知识点</Text>
+                        <div className="keywords-list">
+                            {currentKeywords.map((k, i) => (
+                                <Tag key={i} color="processing">{k.term}</Tag>
+                            ))}
+                        </div>
+                    </div>
+                ) : <Text type="secondary">未检测到关键词</Text>;
+
+            case 'lecture':
+                return currentExplanation ? (
+                    <div className="preview-section">
+                        <Text className="preview-title">智能讲解</Text>
+                        <div className="preview-content"><LatexRenderer content={currentExplanation.content_md} /></div>
+                    </div>
+                ) : <Text type="secondary">未生成讲解内容</Text>;
+
+            default:
+                return null;
+        }
     };
 
     return (
-      <div className="option-block">
-        <Checkbox value={option} style={{ width: '100%' }}>
-          {contentMap[option].icon} {contentMap[option].text}
-        </Checkbox>
-        <div className="preview-content">
-          {saveOptions.includes(option) ? (
-            <div className="preview-active">
-              {option === 'summary' && '这里是自动生成的摘要文本预览...'}
-              {option === 'mindmap' && '[思维导图占位区域]'}
-              {option === 'keywords' && '关键词1, 关键词2, 关键词3'}
-              {option === 'lecture' && '这里是智能讲解文本的预览内容...'}
-            </div>
-          ) : (
-            <div className="preview-placeholder">
-              {contentMap[option].icon} {contentMap[option].placeholder}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <Layout className="storage-layout">
-      <Row gutter={24} className="full-height-row">
-        {/* 左侧设置面板 */}
-        <Col flex="auto" className="preview-col">
-          <Card
-            title="内容设置"
-            className="settings-card"
-            extra={
-              <Button
-                type="primary"
-                icon={<SaveOutlined />}
-                onClick={() => console.log('保存逻辑')}
-              >
-                保存配置
-              </Button>
-            }
-          >
-            {/* 大图预览 */}
-            {selectedImage && (
-              <div className="main-preview">
-                <img
-                  src={selectedImage.url}
-                  alt="主预览"
-                  className="preview-image"
-                />
-              </div>
-            )}
-
-            {/* 保存选项 */}
-            <div className="options-section">
-              <Checkbox.Group
-                value={saveOptions}
-                onChange={values => setSaveOptions(values as string[])}
-                className="save-options"
-              >
-                {['summary', 'mindmap', 'keywords', 'lecture'].map(option =>
-                  renderPreviewContent(option)
-                )}
-              </Checkbox.Group>
-            </div>
-          </Card>
-        </Col>
-
-        {/* 右侧图片列表 */}
-        <Col flex="500px" className="image-col">
-          <Card
-            title="图片列表"
-            className="image-list-card"
-            extra={
-              <Upload
-                beforeUpload={handleUpload}
-                showUploadList={false}
-                accept="image/*"
-              >
-                <Button icon={<UploadOutlined />}>上传图片</Button>
-              </Upload>
-            }
-          >
-            <List
-              dataSource={mockImages}
-              renderItem={(item) => (
-                <List.Item
-                  className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedImage(item)}
+        <Row gutter={24} className="note-save-container">
+            {/* 左侧保存面板 */}
+            <Col span={16} className="save-panel">
+                <Card
+                    title={selectedImage?.name || "请选择图片"}
+                    extra={
+                        <Button
+                            type="primary"
+                            icon={<SaveOutlined />}
+                            onClick={handleSave}
+                            disabled={!selectedImage}
+                            loading={loading}
+                        >
+                            保存笔记
+                        </Button>
+                    }
                 >
-                  <div className="thumbnail-wrapper">
-                    <img
-                      src={item.url}
-                      alt={item.name}
-                      className="thumbnail"
+                    {selectedImage && (
+                        <>
+                            {/* 主图预览 */}
+                            <div className="main-preview">
+                                <Image
+                                    src={selectedImage.url}
+                                    alt="主预览"
+                                    className="preview-image"
+                                />
+                            </div>
+
+                            {/* 保存选项 */}
+                            <div className="save-options">
+                                <Checkbox.Group
+                                    value={Object.keys(saveOptions).filter(k => saveOptions[k])}
+                                    onChange={values => {
+                                        const newOptions = { ...saveOptions };
+                                        Object.keys(newOptions).forEach(k => {
+                                            newOptions[k] = values.includes(k);
+                                        });
+                                        setSaveOptions(newOptions);
+                                    }}
+                                >
+                                    <Row gutter={16}>
+                                        <Col span={6}>
+                                            <Checkbox value="summary">
+                                                <FileTextOutlined /> 保存摘要
+                                            </Checkbox>
+                                        </Col>
+                                        <Col span={6}>
+                                            <Checkbox value="mindmap">
+                                                <ApartmentOutlined /> 思维导图
+                                            </Checkbox>
+                                        </Col>
+                                        <Col span={6}>
+                                            <Checkbox value="knowledge">
+                                                <TagsOutlined /> 知识点
+                                            </Checkbox>
+                                        </Col>
+                                        <Col span={6}>
+                                            <Checkbox value="lecture">
+                                                <SoundOutlined /> 智能讲解
+                                            </Checkbox>
+                                        </Col>
+                                    </Row>
+                                </Checkbox.Group>
+                            </div>
+
+                            {/* 内容预览区 */}
+                            <div className="content-previews">
+                                <Text type="secondary">预览内容：</Text>
+                                <Text type="secondary">
+
+                                    {Object.keys(saveOptions).map(type =>
+                                    saveOptions[type] && renderPreviewContent(type)
+                                )}
+                                </Text>
+
+                            </div>
+                        </>
+                    )}
+                </Card>
+            </Col>
+
+            {/* 右侧图片列表 */}
+            <Col span={8} className="image-list-col">
+                <Card className="image-list-card" bodyStyle={{ padding: 0 }}>
+                    <List
+                        dataSource={images}
+                        renderItem={item => (
+                            <List.Item
+                                className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                onClick={() => setSelectedImage(item)}
+                            >
+                                <div className="image-content">
+                                    <Image
+                                        src={item.url}
+                                        alt={item.name}
+                                        preview={false}
+                                        width={80}
+                                        height={60}
+                                        className="thumbnail"
+                                    />
+                                    <div className="image-info">
+                                        <Text ellipsis className="image-name">
+                                            {item.name}
+                                        </Text>
+                                        <Text type="secondary" className="image-date">
+                                            {new Date(item.timestamp).toLocaleDateString()}
+                                        </Text>
+                                    </div>
+                                </div>
+                            </List.Item>
+                        )}
                     />
-                    <FileImageOutlined className="file-icon" />
-                  </div>
-                  <div className="image-info">
-                    <span className="image-name">{item.name}</span>
-                    <span className="image-date">
-                      {new Date(item.timestamp).toLocaleDateString()}
-                    </span>
-                  </div>
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
-    </Layout>
-  );
+                </Card>
+            </Col>
+        </Row>
+    );
 };
 
-export default NewStoragePage;
+export default NoteSavePage;

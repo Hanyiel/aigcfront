@@ -12,7 +12,7 @@ interface UploadedImage {
   file: File;          // 保留原始文件引用
 }
 
-interface ImageContextType {
+export interface ImageContextType {
   images: UploadedImage[];
   addImage: (file: File) => void;  // 改为同步操作
   removeImage: (imageId: string) => void;
@@ -20,7 +20,6 @@ interface ImageContextType {
   setSelectedImage: (image: UploadedImage | null) => void;
   getImageFile: (imageId: string) => File | null;  // 新增文件获取方法
   getExplanationId: (imageId: string) => string | null;
-
 }
 
 const ImageContext = createContext<ImageContextType>({} as ImageContextType);

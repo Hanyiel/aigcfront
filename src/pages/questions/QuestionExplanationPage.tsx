@@ -1,12 +1,15 @@
 // src/pages/questions/QuestionExplanationPage.tsx
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import { Row, Col, Card, List, Tag, Collapse, Alert, Typography, Spin, Empty, Upload, Button, Image, message } from 'antd';
 import { CodeOutlined, SolutionOutlined, BulbOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useQuestionExplanationContext } from '../../contexts/QuestionExplanationContext';
 import { useQuestionImageContext } from '../../contexts/QuestionImageContext';
+import LatexRenderer from '../../components/LatexRenderer';
 import '../../styles/questions/QuestionExplanationPage.css';
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 const { Panel } = Collapse;
 const { Title, Paragraph, Text } = Typography;
@@ -57,11 +60,14 @@ const QuestionExplanationPage = () => {
         }
         if (currentExplanation?.contentMd) {
             return (
-                <ReactMarkdown
-                    rehypePlugins={[rehypeHighlight]}
-                >
-                    {currentExplanation.contentMd}
-                </ReactMarkdown>
+                <div className="explanation-markdown">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                    >
+                        {currentExplanation.contentMd}
+                    </ReactMarkdown>
+                </div>
             );
         }
         return (
@@ -77,31 +83,31 @@ const QuestionExplanationPage = () => {
 
     return (
         <Row gutter={24} className="question-container">
-      {/* 左侧讲解区 */}
-      <Col xs={24} md={16} className="explanation-panel">
-        <Card
-          title={<><SolutionOutlined /> 题目深度解析</>}
-          extra={
-            <div className="action-buttons">
-              <Tag icon={<CodeOutlined />}>解题引擎 v1.2</Tag>
-              <Button
-                type="primary"
-                icon={<PlayCircleOutlined />}
-                loading={generating}
-                onClick={() => selectedImage && generateExplanation(selectedImage.id, selectedImage.file)}
-              >
-                生成讲解
-              </Button>
-            </div>
-          }
-        >
-          <Spin spinning={generating} tip="正在生成解析...">
-            <div className="explanation-content">
-              {renderExplanationContent()}
-            </div>
-          </Spin>
-        </Card>
-      </Col>
+            {/* 左侧讲解区 */}
+            <Col xs={24} md={16} className="explanation-panel">
+                <Card
+                    title={<><SolutionOutlined /> 题目深度解析</>}
+                    extra={
+                        <div className="action-buttons">
+                            <Tag icon={<CodeOutlined />}>解题引擎 v1.2</Tag>
+                            <Button
+                                type="primary"
+                                icon={<PlayCircleOutlined />}
+                                loading={generating}
+                                onClick={() => selectedImage && generateExplanation(selectedImage.id, selectedImage.file)}
+                            >
+                                生成讲解
+                            </Button>
+                        </div>
+                    }
+                >
+                    <Spin spinning={generating} tip="正在生成解析...">
+                        <div className="explanation-content">
+                            {renderExplanationContent()}
+                        </div>
+                    </Spin>
+                </Card>
+            </Col>
 
             {/* 右侧图片列表 */}
             <Col xs={24} md={8} className="image-list-panel">

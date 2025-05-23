@@ -1,246 +1,404 @@
-// src/pages/questions/SaveQuestionPage.tsx
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Tag, Card, List, Checkbox, Button, Image, Row, Col, Typography, message } from 'antd';
 import {
-  Row,
-  Col,
-  Card,
-  Form,
-  Input,
-  Button,
-  Select,
-  Tag,
-  List,
-  Switch,
-  Popconfirm,
-  message
-} from 'antd';
-import {
-  SaveOutlined,
-  LinkOutlined,
-  TagsOutlined,
-  DeleteOutlined
+    SaveOutlined,
+    FileTextOutlined,
+    ApartmentOutlined,
+    TagsOutlined,
+    SoundOutlined,
+    BookOutlined,
+    CheckCircleOutlined
 } from '@ant-design/icons';
-import '../../styles/questions/SaveQuestionPage.css';
+import {
+    useQuestionImageContext,
+} from '../../contexts/QuestionImageContext';
+import '../../styles/questions/SaveQuestionPage.css'; // Note: You might need to create this CSS file
+import { useQuestionExtract } from "../../contexts/QuestionExtractContext";
+import { useQuestionKeywords } from "../../contexts/QuestionKeywordsContext";
+import { useQuestionExplanationContext } from "../../contexts/QuestionExplanationContext";
+import { useRelatedNote } from "../../contexts/RelatedNoteContext";
+import { useAutoGrade } from "../../contexts/AutoGradeContext";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import ReactMarkdown from "react-markdown";
 
-const { TextArea } = Input;
-const { Option } = Select;
+const { Text } = Typography;
 
-interface Question {
-  id: string;
-  title: string;
-  content: string;
-  keywords: string[];
-  linkedNotes: string[];
-  subject: string;
-  difficulty: number;
-  isPublic: boolean;
+interface QuestionSaveResponse {
+    code: number;
+    message: string;
+    data: {
+        question_id: string;
+        storage_status: string;
+    };
+    timestamp: number;
 }
 
-interface Note {
-  id: string;
-  title: string;
+interface QuestionData {
+    question_id: string;
+    storage_status: string;
 }
-
-const mockNotes: Note[] = [
-  { id: '1', title: '二次函数解题技巧' },
-  { id: '2', title: '电磁感应公式总结' }
-];
 
 const SaveQuestionPage = () => {
-  const [form] = Form.useForm();
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
-  const [keywords, setKeywords] = useState<string[]>([]);
-  const [linkedNotes, setLinkedNotes] = useState<string[]>([]);
+    // Context hooks
+    const {
+        images,
+        addImage,
+        removeImage,
+        selectedImage,
+        setSelectedImage,
+        getImageFile
+    } = useQuestionImageContext();
+    const { getQuestionExtractByImage } = useQuestionExtract();
+    const { getKeywordsByQuestionImage } = useQuestionKeywords();
+    const { getExplanationByImage } = useQuestionExplanationContext();
+    const { relatedData } = useRelatedNote();
+    const { gradingResults, currentGrading } = useAutoGrade();
+    const [loading, setLoading] = useState(false);
 
-  const handleSave = (values: any) => {
-    const newQuestion: Question = {
-      id: Date.now().toString(),
-      ...values,
-      keywords,
-      linkedNotes
+    // Local state
+    const [saveOptions, setSaveOptions] = useState<Record<string, boolean>>({
+        extract: true,
+        explanation: false,
+        keywords: false,
+        // autograde: false,
+        related: false
+    });
+
+    // Get current content data
+    const currentExtract = selectedImage ? getQuestionExtractByImage(selectedImage.id) : undefined;
+    const currentKeywords = selectedImage ? getKeywordsByQuestionImage(selectedImage.id) : [];
+    const currentExplanation = selectedImage ? getExplanationByImage(selectedImage.id) : null;
+    const currentGradingResult = selectedImage ? gradingResults.find(result => result.imageId === selectedImage.id) : null;
+
+    // Handle save operation
+    const handleSave = async () => {
+        if (!selectedImage) {
+            message.warning('请选择需要保存的题目图片');
+            return;
+        }
+        try {
+            setLoading(true);
+            const formData = new FormData();
+            const image = getImageFile(selectedImage.id);
+            if (!image) {
+                message.error('图片数据获取失败');
+                return;
+            }
+            formData.append('image', image);
+            formData.append('options', JSON.stringify(saveOptions));
+
+            const { data } = await saveQuestionToAPI(formData);
+
+            message.success(`题目保存成功！ID: ${data.question_id}`);
+            setLoading(false);
+        } catch (err) {
+            setLoading(false);
+            const errorMessage = err instanceof Error ? err.message : '未知错误';
+            message.error(`保存失败: ${errorMessage}`);
+        }
     };
 
-    setQuestions([...questions, newQuestion]);
-    form.resetFields();
-    setKeywords([]);
-    setLinkedNotes([]);
-    message.success('题目保存成功');
-  };
+    const saveQuestionToAPI = async (formData: FormData): Promise<QuestionSaveResponse> => {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('http://localhost:8000/api/questions/record', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+            body: formData
+        });
+        // Handle network errors
+        if (!response.ok) {
+            throw new Error(`HTTP错误 ${response.status}`);
+        }
+        // Parse response data
+        const result = await response.json();
+        console.log('完整响应:', result);
+        const data = result.data;
+        console.log('题目数据:', data);
+        // Handle business logic errors
+        if (result.code !== 200) {
+            throw new Error(result.message || '服务器返回未知错误');
+        }
+        return result;
+    };
 
-  const handleDelete = (id: string) => {
-    setQuestions(questions.filter(q => q.id !== id));
-    message.success('题目已删除');
-  };
+    // Render preview content
+    const renderPreviewContent = (type: string) => {
+        if (!saveOptions[type]) return null;
 
-  return (
-    <Row gutter={24} className="question-container">
-      {/* 左侧编辑区 */}
-      <Col xs={24} md={16} className="edit-panel">
-        <Card
-          title={selectedQuestion ? "编辑题目" : "新建题目"}
-          extra={
-            <Button
-              type="link"
-              onClick={() => {
-                form.resetFields();
-                setSelectedQuestion(null);
-              }}
-            >
-              新建
-            </Button>
-          }
-        >
-          <Form form={form} onFinish={handleSave} layout="vertical">
-            <Form.Item
-              name="title"
-              label="题目名称"
-              rules={[{ required: true }]}
-            >
-              <Input placeholder="请输入题目名称" />
-            </Form.Item>
+        switch (type) {
+            case 'extract':
+                return (
+                    <Card
+                        title={<><FileTextOutlined /> 题目提取</>}
+                        key="extract"
+                        className="preview-card"
+                    >
+                        {currentExtract ? (
+                            <div className="extract-content">
+                                <ReactMarkdown
+                                          remarkPlugins={[remarkMath]}
+                                          rehypePlugins={[rehypeKatex]}
+                                      >
+                                {currentExtract.text_content}
+                                      </ReactMarkdown>
+                            </div>
+                        ) : (
+                            <div className="no-content">
+                                暂无题目提取内容
+                            </div>
+                        )}
+                    </Card>
+                );
+            case 'explanation':
+                return (
+                    <Card
+                        title={<><SoundOutlined /> 题目讲解</>}
+                        key="explanation"
+                        className="preview-card"
+                    >
+                        {currentExplanation ? (
+                            <div className="explanation-content">
+                                <ReactMarkdown
+                                          remarkPlugins={[remarkMath]}
+                                          rehypePlugins={[rehypeKatex]}
+                                      >
+                                {currentExplanation.contentMd}
+                                      </ReactMarkdown>
+                            </div>
+                        ) : (
+                            <div className="no-content">
+                                暂无题目讲解内容
+                            </div>
+                        )}
+                    </Card>
+                );
+            case 'keywords':
+                return (
+                    <Card
+                        title={<><TagsOutlined /> 知识点</>}
+                        key="keywords"
+                        className="preview-card"
+                    >
+                        {currentKeywords && currentKeywords.length > 0 ? (
+                            <div className="keywords-content">
+                                {currentKeywords.map((keyword, index) => (
+                                    <Tag key={index} color="blue">{keyword.term}</Tag>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="no-content">
+                                暂无知识点
+                            </div>
+                        )}
+                    </Card>
+                );
+            // case 'autograde':
+            //     return (
+            //         <Card
+            //             title={<><CheckCircleOutlined /> 自动批改</>}
+            //             key="autograde"
+            //             className="preview-card"
+            //         >
+            //             {currentGradingResult ? (
+            //                 <div className="autograde-content">
+            //                     <p>得分: {currentGradingResult.score}</p>
+            //                     <p>标准答案:
+            //                         <ReactMarkdown
+            //                               remarkPlugins={[remarkMath]}
+            //                               rehypePlugins={[rehypeKatex]}
+            //                           >
+            //                         {currentGradingResult.correct_answer.join(', ')}
+            //                           </ReactMarkdown>
+            //                     </p>
+            //                     <p>您的答案:
+            //                         <ReactMarkdown
+            //                               remarkPlugins={[remarkMath]}
+            //                               rehypePlugins={[rehypeKatex]}
+            //                           >
+            //                         {currentGradingResult.your_answer.join(', ')}
+            //                           </ReactMarkdown>
+            //                     </p>
+            //                     {currentGradingResult.error_analysis.length > 0 && (
+            //                         <div>
+            //                             <p>错误分析:</p>
+            //                             <ul>
+            //                                 {currentGradingResult.error_analysis.map((analysis, index) => (
+            //                                     <li key={index}>{analysis}</li>
+            //                                 ))}
+            //                             </ul>
+            //                         </div>
+            //                     )}
+            //                 </div>
+            //             ) : (
+            //                 <div className="no-content">
+            //                     暂无自动批改数据
+            //                 </div>
+            //             )}
+            //         </Card>
+            //     );
+            case 'related':
+                return (
+                    <Card
+                        title={<><BookOutlined /> 相关笔记</>}
+                        key="related"
+                        className="preview-card"
+                    >
+                        {relatedData && relatedData.related_notes.length > 0 ? (
+                            <div className="related-content">
+                                <List
+                                    dataSource={relatedData.related_notes}
+                                    renderItem={note => (
+                                        <List.Item>
+                                            <div>
+                                                <p><strong>{note.title}</strong> - 相似度: {(note.similarity * 100).toFixed(1)}%</p>
+                                                <p>{note.content.length > 100 ? `${note.content.substring(0, 100)}...` : note.content}</p>
+                                                <div>
+                                                    {note.point.map((p, i) => (
+                                                        <Tag key={i} color="green">{p}</Tag>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </List.Item>
+                                    )}
+                                />
+                            </div>
+                        ) : (
+                            <div className="no-content">
+                                暂无相关笔记
+                            </div>
+                        )}
+                    </Card>
+                );
+            default:
+                return null;
+        }
+    };
 
-            <Form.Item
-              name="content"
-              label="题目内容"
-              rules={[{ required: true }]}
-            >
-              <TextArea
-                rows={6}
-                placeholder="输入题目内容（支持Markdown语法）"
-              />
-            </Form.Item>
-
-            <Form.Item label="关键词管理">
-              <Select
-                mode="tags"
-                placeholder="添加/选择关键词"
-                value={keywords}
-                onChange={setKeywords}
-                dropdownRender={menu => (
-                  <>
-                    {menu}
-                    <div className="keyword-actions">
-                      <Button type="link">从内容提取</Button>
-                      <Button type="link">历史关键词</Button>
+    return (
+        <Row gutter={16} className="question-save-container">
+            {/* Left side content area */}
+            <Col span={16} className="content-col">
+                <Card className="content-card">
+                    <div className="card-header">
+                        <h2>题目保存</h2>
+                        <Button
+                            type="primary"
+                            icon={<SaveOutlined />}
+                            onClick={handleSave}
+                            loading={loading}
+                        >
+                            保存题目
+                        </Button>
                     </div>
-                  </>
-                )}
-              />
-            </Form.Item>
 
-            <Form.Item label="关联笔记">
-              {/*<NoteSelector*/}
-              {/*  notes={mockNotes}*/}
-              {/*  value={linkedNotes}*/}
-              {/*  onChange={setLinkedNotes}*/}
-              {/*/>*/}
-            </Form.Item>
+                    {/* Main content */}
+                    {!selectedImage ? (
+                        <div className="no-image-selected">
+                            请从右侧选择一张题目图片
+                        </div>
+                    ) : (
+                        <>
+                            {/* Preview of the current image */}
+                            <div className="selected-image-preview">
+                                <Image
+                                    src={selectedImage.url}
+                                    alt={selectedImage.name}
+                                    style={{ maxWidth: '100%', maxHeight: '300px' }}
+                                />
+                            </div>
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="subject"
-                  label="学科分类"
-                  rules={[{ required: true }]}
-                >
-                  <Select placeholder="选择学科">
-                    <Option value="math">数学</Option>
-                    <Option value="physics">物理</Option>
-                    <Option value="chemistry">化学</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="difficulty"
-                  label="难度等级"
-                  rules={[{ required: true }]}
-                >
-                  <Select placeholder="选择难度">
-                    <Option value={1}>⭐ 简单</Option>
-                    <Option value={2}>⭐⭐ 中等</Option>
-                    <Option value={3}>⭐⭐⭐ 困难</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
+                            {/* Save options */}
+                            <div className="save-options">
+                                <h3>保存选项</h3>
+                                <Checkbox.Group
+                                    value={Object.keys(saveOptions).filter(k => saveOptions[k])}
+                                    onChange={(values) => {
+                                        const newOptions = { ...saveOptions };
+                                        Object.keys(newOptions).forEach(k => {
+                                            newOptions[k] = values.includes(k);
+                                        });
+                                        setSaveOptions(newOptions);
+                                    }}
+                                >
+                                    <Row gutter={16}>
+                                        <Col span={8}>
+                                            <Checkbox value="extract">
+                                                <FileTextOutlined /> 题目提取
+                                            </Checkbox>
+                                        </Col>
+                                        <Col span={8}>
+                                            <Checkbox value="explanation">
+                                                <SoundOutlined /> 题目讲解
+                                            </Checkbox>
+                                        </Col>
+                                        <Col span={8}>
+                                            <Checkbox value="keywords">
+                                                <TagsOutlined /> 知识点
+                                            </Checkbox>
+                                        </Col>
+                                        {/*<Col span={6}>*/}
+                                        {/*    <Checkbox value="autograde">*/}
+                                        {/*        <CheckCircleOutlined /> 自动批改*/}
+                                        {/*    </Checkbox>*/}
+                                        {/*</Col>*/}
+                                        <Col span={8}>
+                                            <Checkbox value="related">
+                                                <BookOutlined /> 相关笔记
+                                            </Checkbox>
+                                        </Col>
+                                    </Row>
+                                </Checkbox.Group>
+                            </div>
 
-            <Form.Item
-              name="isPublic"
-              label="公开状态"
-              valuePropName="checked"
-            >
-              <Switch
-                checkedChildren="公开"
-                unCheckedChildren="私有"
-              />
-            </Form.Item>
+                            {/* Content previews */}
+                            <div className="content-previews">
+                                {Object.keys(saveOptions).map(type =>
+                                    saveOptions[type] && renderPreviewContent(type)
+                                )}
+                            </div>
+                        </>
+                    )}
+                </Card>
+            </Col>
 
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              block
-            >
-              保存题目
-            </Button>
-          </Form>
-        </Card>
-      </Col>
-
-      {/* 右侧列表区 */}
-      <Col xs={24} md={8} className="list-panel">
-        <Card title="已存题目列表">
-          <List
-            dataSource={questions}
-            renderItem={item => (
-              <List.Item
-                className={selectedQuestion === item.id ? 'selected' : ''}
-                actions={[
-                  <Popconfirm
-                    title="确认删除？"
-                    onConfirm={() => handleDelete(item.id)}
-                  >
-                    <DeleteOutlined />
-                  </Popconfirm>
-                ]}
-              >
-                <List.Item.Meta
-                  title={
-                    <div onClick={() => {
-                      form.setFieldsValue(item);
-                      setKeywords(item.keywords);
-                      setLinkedNotes(item.linkedNotes);
-                      setSelectedQuestion(item.id);
-                    }}>
-                      {item.title}
-                      <Tag color="blue" style={{ marginLeft: 8 }}>
-                        {item.subject}
-                      </Tag>
-                    </div>
-                  }
-                  description={
-                    <div className="meta-info">
-                      <div className="tags">
-                        {item.keywords.slice(0, 3).map(kw => (
-                          <Tag key={kw} icon={<TagsOutlined />}>{kw}</Tag>
-                        ))}
-                      </div>
-                      <div className="links">
-                        <LinkOutlined />
-                        {item.linkedNotes.length} 个关联笔记
-                      </div>
-                    </div>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        </Card>
-      </Col>
-    </Row>
-  );
+            {/* Right side image list */}
+            <Col span={8} className="image-list-col">
+                <Card className="image-list-card" bodyStyle={{ padding: 0 }}>
+                    <List
+                        dataSource={images}
+                        renderItem={item => (
+                            <List.Item
+                                className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                onClick={() => setSelectedImage(item)}
+                            >
+                                <div className="image-content">
+                                    <Image
+                                        src={item.url}
+                                        alt={item.name}
+                                        preview={false}
+                                        width={80}
+                                        height={60}
+                                        className="thumbnail"
+                                    />
+                                    <div className="image-info">
+                                        <Text ellipsis className="image-name">
+                                            {item.name}
+                                        </Text>
+                                        <Text type="secondary" className="image-date">
+                                            {new Date(item.timestamp).toLocaleDateString()}
+                                        </Text>
+                                    </div>
+                                </div>
+                            </List.Item>
+                        )}
+                    />
+                </Card>
+            </Col>
+        </Row>
+    );
 };
 
 export default SaveQuestionPage;

@@ -1,199 +1,83 @@
-.storage-layout {
+/* 容器布局 */
+.note-save-container {
+  height: calc(100vh - 64px);
+  padding: 24px;
+}
+
+.save-panel {
   height: 100%;
+  padding-right: 12px;
+}
+
+.image-list-col {
+  height: 100%;
+  padding-left: 12px;
+}
+
+/* 主预览区 */
+.main-preview {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  margin-bottom: 24px;
+}
+
+.preview-image {
   width: 100%;
-  background: #f0f2f5;
-  display: flex; /* 添加弹性容器 */
-  flex-direction: row;
-
-  .full-height-row {
-    flex: 1; /* 改为弹性填充 */
-    height: 100%;
-  }
-
-  .preview-col {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    border-right: 1px solid #e8e8e8;
-
-    .settings-card {
-      flex: 1;
-      margin: 16px;
-      display: flex;
-      flex-direction: column;
-
-      .ant-card-body {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        padding: 24px;
-      }
-
-      .main-preview {
-        height: 300px;
-        margin-bottom: 24px;
-        border: 1px solid #e8e8e8;
-        border-radius: 4px;
-        overflow: hidden;
-
-        .preview-image {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          background: #fafafa;
-        }
-      }
-
-      .options-section {
-        .save-options {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-
-          .option-block {
-            width: 100%;
-            margin-bottom: 0;
-
-            .ant-checkbox-wrapper {
-              display: flex !important;
-              align-items: center;
-              width: 100%;
-              padding: 8px 0;
-
-              .anticon {
-                margin-right: 12px;
-              }
-            }
-
-            .preview-content {
-              margin-top: 8px;
-              min-height: 40px;
-
-              .preview-active {
-                padding: 12px;
-                background: #fafafa;
-                border-radius: 4px;
-                border: 1px solid #e8e8e8;
-              }
-
-              .preview-placeholder {
-                padding: 12px;
-                color: #bfbfbf;
-                border: 1px dashed #e8e8e8;
-                border-radius: 4px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-
-                .anticon {
-                  font-size: 14px;
-                  color: #bfbfbf;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  .image-col {
-    height: 100%;
-
-    .image-list-card {
-      height: calc(100% - 32px);
-      margin: 16px;
-
-      .ant-card-body {
-        padding: 0;
-        height: calc(100% - 56px);
-      }
-
-      .list-item {
-        padding: 12px 24px;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-
-        &.selected {
-          background: #e6f7ff;
-          border-left: 3px solid #1890ff;
-        }
-
-        &:hover {
-          background: #fafafa;
-        }
-
-        .thumbnail-wrapper {
-          position: relative;
-          width: 80px;
-          height: 60px;
-          margin-right: 16px;
-
-          .thumbnail {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 2px;
-          }
-
-          .file-icon {
-            position: absolute;
-            left: 4px;
-            bottom: 4px;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 16px;
-          }
-        }
-
-        .image-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-
-          .image-name {
-            font-weight: 500;
-            margin-bottom: 4px;
-          }
-
-          .image-date {
-            font-size: 12px;
-            color: #999;
-          }
-        }
-      }
-    }
-  }
+  max-height: 400px;
+  object-fit: contain;
 }
 
-@media (max-width: 992px) {
-  .storage-layout {
-    .preview-col {
-      order: 2;
-      flex: none !important;
-      height: 50vh;
-    }
-
-    .image-col {
-      order: 1;
-      flex: none !important;
-      height: 50vh;
-    }
-  }
+/* 保存选项 */
+.save-options {
+  margin-bottom: 24px;
 }
 
-@media (max-width: 576px) {
-  .preview-placeholder {
-    font-size: 12px !important;
-    padding: 8px !important;
+.save-options .ant-checkbox-wrapper {
+  margin: 0 8px;
+}
 
-    .anticon {
-      display: none;
-    }
-  }
+/* 内容预览区 */
+.content-previews {
+  margin-top: 24px;
+}
 
-  .preview-active {
-    padding: 8px !important;
-  }
+.preview-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+.preview-title {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mindmap-preview {
+  width: 100%;
+  height: 300px;
+  object-fit: contain;
+}
+
+/* 图片列表样式（保持原有） */
+.image-list-card {
+  height: 100%;
+}
+
+.list-item {
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.list-item.selected {
+  background: #e6f7ff;
 }

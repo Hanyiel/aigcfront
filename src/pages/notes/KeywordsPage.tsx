@@ -1,5 +1,7 @@
 // src/pages/notes/KeywordsPage.tsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { Button, Card, Row, Col, List, Tag, Upload, Spin, message } from 'antd';
 import {
     UploadOutlined,
@@ -10,6 +12,7 @@ import {
 import { useImageContext } from '../../contexts/ImageContext';
 import '../../styles/notes/KeywordsPage.css';
 import {useKeywords} from "../../contexts/NoteKeywordsContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface Keyword {
     term: string;
@@ -19,6 +22,8 @@ interface Keyword {
 }
 
 const KeywordsPage = () => {
+    const navigate = useNavigate();
+
     const {
         images,
         addImage,
@@ -27,15 +32,22 @@ const KeywordsPage = () => {
         setSelectedImage,
         getImageFile
     } = useImageContext();
-    const { saveKeywords, getKeywordsByImage } = useKeywords();
-    const { currentKeywords } = useKeywords();
+    const { saveKeywords,
+        getKeywordsByImage,
+        currentKeywords
+    } = useKeywords();
     const [keywords, setKeywords] = useState<Keyword[]>([]);
     const [loading, setLoading] = useState(false);
     const [associations, setAssociations] = useState<string[]>([]);
     const [ocrTexts, setOcrTexts] = useState<Record<string, string>>({});
     const [ocrLoading, setOcrLoading] = useState(false);
     const uploadRef = useRef<HTMLInputElement>(null);
-
+    const { isAuthenticated, logout } = useAuth(); // 确保 useAuth 暴露 token
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/login');
+        }
+    }, [isAuthenticated, navigate]);
     const handleUpload = (file: File) => {
         if (!file.type.startsWith('image/')) {
             message.error('仅支持图片文件');
@@ -52,15 +64,16 @@ const KeywordsPage = () => {
     };
 
     const handleExtractKeywords = async () => {
+        const token = localStorage.getItem('authToken');
+
         if (!selectedImage) {
             message.warning('请先选择图片');
             return;
         }
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
             const imageFile = getImageFile(selectedImage.id);
-
+            console.log('token:', token)
             if (!imageFile) {
                 message.error('图片文件不存在');
                 return;
@@ -70,7 +83,9 @@ const KeywordsPage = () => {
             formData.append('max_keywords', '5'); // 添加必填参数
             const response = await fetch('http://localhost:8000/api/notes/keywords', {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
                 body: formData
             });
             // 处理HTTP错误状态
@@ -80,16 +95,18 @@ const KeywordsPage = () => {
             }
             const result = await response.json();
             console.log('完整响应:', result);
+            const data = result.data;
+            console.log(data)
             // 调试数据结构
-            if (!result.data?.content_md?.keywords) {
+            if (!result.data?.keywords) {
                 console.error('异常数据结构:', result);
                 throw new Error('返回数据格式异常');
             }
             // 转换数据结构
-            const keywords = result.data.content_md.keywords.map((k: any) => ({
+            const keywords = data.keywords.map((k: any) => ({
                 term: k.term,
                 tfidfScore: Number(k.tfidf_score),
-                subject: result.data.content_md.subject
+                subject: data.subject
             }));
             // 双重存储机制
             saveKeywords(selectedImage.id, keywords); // 上下文存储
@@ -120,7 +137,7 @@ const KeywordsPage = () => {
                         }
                     >
                         <div className="keywords-list">
-                            {currentKeywords?.map((k, i) => (
+                            {selectedImage && getKeywordsByImage(selectedImage.id)?.map((k, i) => (
                                 <Tag
                                     key={i}
                                     color={i % 2 ? 'geekblue' : 'cyan'}

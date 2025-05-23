@@ -23,7 +23,10 @@ import { useQuestionImageContext} from "../../contexts/QuestionImageContext";
 import {QuestionExtractData, useQuestionExtract} from '../../contexts/QuestionExtractContext';
 import '../../styles/questions/extract.css';
 import { useAuth } from "../../contexts/AuthContext";
-import {ExtractData, useExtract} from "../../contexts/ExtractContext";
+import { ExtractData, useExtract } from "../../contexts/ExtractContext";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import ReactMarkdown from "react-markdown";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -163,7 +166,14 @@ const QuestionExtractPage = () => {
                       <div className="result-content">
                         <div className="section">
                           <Text strong>内容摘要：</Text>
-                          <Text className="summary">{result?.text_content}</Text>
+                          <Text className="summary">
+                            <ReactMarkdown
+                                  remarkPlugins={[remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                              >
+                                {result?.text_content}
+                              </ReactMarkdown>
+                          </Text>
                         </div>
                       </div>
                   ) : (

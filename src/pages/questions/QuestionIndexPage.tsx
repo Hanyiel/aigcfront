@@ -1,126 +1,179 @@
-// 更新后的IndexPage组件（在QuestionPage.tsx中）
+// QuestionIndexPage.tsx
 import { useState } from 'react';
-import {Row, Col, Card, List, Upload, Tag, Progress, message, Button} from 'antd';
-import {
-  UploadOutlined,
-} from '@ant-design/icons';
-import QuestionPage from "./QuetionPage";
-export const QuestionIndexPage = () => {
-  const [previewImage, setPreviewImage] = useState<string>();
-  const [questions, setQuestions] = useState([
-    {
-      id: 1,
-      title: '二次函数综合题',
-      subject: '数学',
-      difficulty: 3,
-      status: '已解析',
-      date: '2024-03-15'
-    },
-    {
-      id: 2,
-      title: '电磁感应定律应用',
-      subject: '物理',
-      difficulty: 4,
-      status: '待批改',
-      date: '2024-03-14'
-    }
-  ]);
+import { useNavigate } from 'react-router-dom';
+import { Upload, Button, Card, List, Modal, message, Row, Col } from 'antd';
+import { InboxOutlined, RocketOutlined, KeyOutlined, BookOutlined, SaveOutlined } from '@ant-design/icons';
+import type { UploadProps } from 'antd';
+import { useImageContext } from '../../contexts/ImageContext';
+import '../../styles/questions/QuestionIndexPage.css';
+import {useQuestionImageContext} from "../../contexts/QuestionImageContext";
+import { QuestionImage } from '../../contexts/QuestionImageContext'
 
-  // 处理图片上传
-  const beforeUpload = (file: File) => {
-    const isImage = file.type.startsWith('image/');
-    if (!isImage) {
-      message.error('只能上传图片文件');
+const { Dragger } = Upload;
+const QuestionIndexPage = () => {
+  const {
+    images,
+    addImage,
+    removeImage,
+    getImageFile,
+    selectedImage,
+    setSelectedImage
+  } = useQuestionImageContext();
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const navigate = useNavigate();
+
+  const uploadProps: UploadProps = {
+    name: 'image',
+    multiple: true,
+    showUploadList: false,
+    accept: 'image/*',
+    beforeUpload: (file) => {
+      if (!file.type.startsWith('image/')) {
+        message.error('仅支持图片文件');
+        return false;
+      }
+
+      try {
+        addImage(file);
+        message.success(`${file.name} 已添加预览`);
+      } catch (err) {
+        message.error('文件添加失败');
+      }
       return false;
-    }
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      setPreviewImage(reader.result as string);
-      // TODO: 调用题目识别接口
-      message.success('图片上传成功，开始识别题目...');
-    };
-    return false;
+    },
   };
 
+  const handleAction = (action: string) => {
+    if (!selectedImage) {
+      message.warning('请先选择图片');
+      return;
+    }
+
+    const routeMap: Record<string, string> = {
+      extract: '/questions/extract',      // 路由路径变更
+      analysis: '/questions/analysis',    // 新增题目分析功能
+      solution: '/questions/solution',    // 解题思路功能
+      save: '/questions/save'             // 保存路径变更
+    };
+
+    if (!routeMap[action]) {
+      message.error('功能暂未开放');
+      return;
+    }
+
+    navigate(routeMap[action], {
+      state: { selectedImage },
+      replace: false
+    });
+  };
+
+  const handleSelectImage = (item: QuestionImage) => {
+    setSelectedImage(item);
+  }
+
   return (
-    <Row gutter={24} className="index-container">
-      {/* 左侧图片处理区 */}
-      <Col xs={24} md={12} className="upload-panel">
-        <Card title="题目识别" bordered={false}>
-          <Upload.Dragger
-            accept="image/*"
-            showUploadList={false}
-            beforeUpload={beforeUpload}
-            className="image-uploader"
-          >
-            {previewImage ? (
-              <div className="preview-wrapper">
-                <img src={previewImage} alt="题目预览" className="preview-image" />
-                <div className="preview-mask">
-                  <p>点击更换图片</p>
-                </div>
+    <div className="questions-page-container"> {/* 类名变更 */}
+      <Row gutter={24} className="main-layout">
+        <Col xs={24} md={8} lg={6}>
+          <Card title="题目素材管理" className="upload-card"> {/* 标题变更 */}
+            <Dragger {...uploadProps} className="custom-uploader">
+              <div className="upload-content">
+                <InboxOutlined className="upload-icon" />
+                <p className="upload-text">点击或拖拽文件到此处添加</p>
+                <p className="upload-hint">支持常见题目图片格式</p> {/* 文案变更 */}
               </div>
-            ) : (
-              <>
-                <p className="upload-icon">
-                  <UploadOutlined style={{ fontSize: 48 }} />
-                </p>
-                <p className="upload-text">拖拽或点击上传题目图片</p>
-                <p className="upload-hint">支持格式：JPG/PNG，最大5MB</p>
-              </>
-            )}
-          </Upload.Dragger>
+            </Dragger>
+          </Card>
+        </Col>
 
-          <div className="analysis-progress">
-            <Progress
-              percent={previewImage ? 40 : 0}
-              status="active"
-              strokeColor={{ from: '#108ee9', to: '#87d068' }}
-            />
-            <p className="progress-text">
-              {previewImage ? '正在解析题目内容...' : '等待上传题目图片'}
-            </p>
-          </div>
-        </Card>
-      </Col>
+        <Col xs={24} md={16} lg={18}>
+          <Card title="题目素材库" className="image-list-card"> {/* 标题变更 */}
+            <List
+              grid={{ gutter: 16, column: 4 }}
+              dataSource={images}
+              renderItem={item => (
+                <List.Item>
+                  <div
+                    className={`image-card ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                    onClick={() => handleSelectImage(item)}
+                    onDoubleClick={() => setPreviewVisible(true)}
+                  >
+                    <img
+                      src={item.url}
+                      alt={item.name}
+                      className="thumbnail-image"
+                    />
 
-      {/* 右侧题目列表区 */}
-      <Col xs={24} md={12} className="question-list-panel">
-        <Card title="历史题目" bordered={false}>
-          <List
-            itemLayout="horizontal"
-            dataSource={questions}
-            renderItem={(item) => (
-              <List.Item
-                actions={[
-                  <Button key="detail">查看详情</Button>,
-                  <Button key="delete" style={{ color: '#ff4d4f' }}>删除</Button>
-                ]}
-              >
-                <List.Item.Meta
-                  title={<span className="question-title">{item.title}</span>}
-                  description={
-                    <>
-                      <Tag color="blue">{item.subject}</Tag>
-                      <span className="difficulty">
-                        难度：{Array(item.difficulty).fill('★').join('')}
+                    <div className="image-info">
+                      <span className="image-name">{item.name}</span>
+                      <span className="upload-time">
+                        {new Date(item.timestamp).toLocaleDateString()}
                       </span>
-                    </>
-                  }
-                />
-                <div className="question-status">
-                  <Tag color={item.status === '已解析' ? 'green' : 'orange'}>
-                    {item.status}
-                  </Tag>
-                  <span className="date">{item.date}</span>
-                </div>
-              </List.Item>
-            )}
-          />
-        </Card>
-      </Col>
-    </Row>
+                      <Button
+                        type="link"
+                        danger
+                        className="delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(item.id);
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  </div>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <div className="function-nav">
+        <Button
+          type="primary"
+          icon={<KeyOutlined />}
+          onClick={() => handleAction('extract')}
+        >
+          题目提取
+        </Button>
+        <Button
+          type="primary"
+          icon={<RocketOutlined />}
+          onClick={() => handleAction('analysis')} // 功能变更
+        >
+          题目分析
+        </Button>
+        <Button
+          type="primary"
+          icon={<BookOutlined />}
+          onClick={() => handleAction('solution')} // 功能变更
+        >
+          解题思路
+        </Button>
+        <Button
+          type="primary"
+          icon={<SaveOutlined />}
+          onClick={() => handleAction('save')}
+        >
+          保存题目
+        </Button>
+      </div>
+
+      <Modal
+        open={previewVisible}
+        onCancel={() => setPreviewVisible(false)}
+        footer={null}
+        width="80vw"
+        centered
+      >
+        <img
+          src={selectedImage?.url}
+          alt="题目预览"
+          className="preview-image"
+        />
+      </Modal>
+    </div>
   );
 };
 

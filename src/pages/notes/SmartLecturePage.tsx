@@ -23,6 +23,9 @@ import ReactMarkdown  from 'react-markdown';
 import { useImageContext } from '../../contexts/ImageContext';
 import { ExplanationData, useExplanation} from '../../contexts/ExplanationContext';
 import '../../styles/notes/SmartLecturePage.css';
+import LatexRenderer from "../../components/LatexRenderer";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -93,17 +96,17 @@ const SmartLectureLayout = () => {
         },
         body: formData
       });
-      console.log("response:", response)
 
       if (!response.ok) throw new Error('讲解生成失败');
       const result = await response.json();
+      console.log('result:', result);
       const data = result.data;
       if (data.explanation_id === "-1") throw new Error(data.content_md);
       console.log("data:", data)
       const expData: ExplanationData = {
-      ...data,
-      image_id: selectedImage.id
-    };
+        ...data,
+        image_id: selectedImage.id
+      };
       saveExplanation(expData);
 
       console.log('explanations:', explanations)
@@ -148,7 +151,11 @@ const SmartLectureLayout = () => {
                   {explanation ? (
                       <div className="explanation-content">
                         <div className="markdown-body">
-                          <ReactMarkdown>
+                          {/* eslint-disable-next-line react/jsx-no-undef */}
+                          <ReactMarkdown
+                              remarkPlugins={[remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                          >
                             {explanation.content_md}
                           </ReactMarkdown>
                         </div>
