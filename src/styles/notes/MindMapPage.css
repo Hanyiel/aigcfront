@@ -3,16 +3,17 @@
 /* 基础容器 */
 .mindmap-container {
   height: 100%;
-  padding: 24px;
   background: #f8fafc;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 主内容区域布局 */
 .mindmap-row {
-  height: 100%;
-  gap: 24px;
+  flex: 1;
   margin: 0 !important;
+  gap: 24px;
+  padding: 24px;
 }
 
 .mindmap-col {
@@ -21,152 +22,124 @@
   flex-direction: column;
   background: #ffffff;
   border-radius: 16px;
-  padding: 24px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
 }
 
 /* 画布区域 */
 .mindmap-card {
-  height: 100vh;
   flex: 1;
-  margin-top: 16px;
-  border: none;
-  background: transparent;
   border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
   overflow: hidden;
+  position: relative;
 }
 
 .mindmap-canvas {
-  position: relative;
-  min-height: 600px;
+  width: 100%;
+  height: 60vh;
   overflow: auto;
   background:
-    linear-gradient(to right, #f1f5f9 1px, transparent 1px),
-    linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+    linear-gradient(90deg, #f1f5f9 1px, transparent 1px),
+    linear-gradient(180deg, #f1f5f9 1px, transparent 1px);
   background-size: 40px 40px;
-  z-index: 1; /* 网格在节点下层 */
-
 }
 
-.canvas-grid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1; /* 网格在节点下层 */
+.canvas-svg {
+  min-width: 100%;
+  min-height: 100%;
+  transform-origin: 0 0;
 }
 
-.mindmap-canvas:active {
-  cursor: grabbing;
-}
-
-/* 思维导图节点 */
+/* 节点样式 */
 .mindmap-node {
-  position: absolute;
-  z-index: 3; /* 确保节点在上层 */
-  transition: transform 0.2s;
-  min-width: 160px;
-  padding: 16px 24px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+  transition: filter 0.2s;
 }
 
-.mindmap-node:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(77, 144, 254, 0.15);
-  z-index: 2;
+.mindmap-node rect {
+  transition: all 0.2s;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-.mindmap-node.selected {
-  border-color: #4d90fe;
-  box-shadow: 0 0 16px rgba(77, 144, 254, 0.2);
-  z-index: 3;
-  cursor: move;
+.mindmap-node:hover rect {
+  stroke: #69c0ff !important;
+  filter: drop-shadow(0 4px 12px rgba(77, 144, 254, 0.2));
+}
+
+.mindmap-node.selected rect {
+  stroke-width: 2.5px !important;
+  stroke: #69c0ff !important;
 }
 
 /* 节点内容 */
 .node-content {
-  position: relative;
-  font-size: 14px;
-  color: #2d3748;
-  font-weight: 500;
-  line-height: 1.4;
+  pointer-events: none; /* 防止点击穿透 */
 }
 
-.node-link {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: inherit;
+.node-label {
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #1e293b;
+  word-break: break-word;
+}
+
+.node-label a {
+  color: #2563eb;
   text-decoration: none;
   transition: color 0.2s;
 }
 
-.node-link:hover {
-  color: #4d90fe;
+.node-label a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
 }
 
-.link-indicator {
-  color: #4d90fe;
-  margin-left: 8px;
-  opacity: 0.8;
-  font-size: 0.9em;
-}
-
-/* 子节点指示器 */
-.node-children-indicator {
+.children-count {
   position: absolute;
-  right: -8px;
-  top: -8px;
-  background: #4d90fe;
-  color: white;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  bottom: 8px;
+  right: 8px;
   font-size: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  font-weight: 600;
+  color: #64748b;
+  background: rgba(255,255,255,0.9);
+  padding: 2px 8px;
+  border-radius: 8px;
 }
 
 /* 连接线样式 */
-.connection-line {
-  position: absolute;
-  z-index: 1; /* 连接线在节点下层 */
-}
-
 .connection-line path {
-  stroke-dasharray: 5;
-  animation: dash-flow 20s linear infinite;
+  stroke: #cbd5e1;
+  stroke-width: 1.5;
   transition: stroke 0.3s;
 }
 
-@keyframes dash-flow {
-  from {
-    stroke-dashoffset: 1000;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
+.mindmap-node:hover + .connection-line path {
+  stroke: #93c5fd;
 }
 
 /* 工具栏 */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px 0;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #e2e8f0;
+  gap: 12px;
 }
 
 .generate-btn {
   background: #4d90fe;
   border-color: #4d90fe;
   transition: all 0.2s;
+  height: 36px;
+  padding: 0 20px;
+  border-radius: 8px;
 }
 
 .generate-btn:hover {
@@ -174,15 +147,50 @@
   transform: translateY(-1px);
 }
 
+/* 缩放控制 */
+.zoom-controls {
+  position: fixed;
+  right: 40px;
+  bottom: 40px;
+  z-index: 10;
+  background: white;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zoom-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.zoom-button:hover {
+  background: #f1f5f9;
+  transform: scale(1.05);
+}
+
 /* 图片列表样式 */
 .image-list-card {
   height: 100%;
   border-radius: 16px;
   overflow: hidden;
+  background: white;
 }
 
 .image-list-card .ant-card-head {
   border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .image-list-card .ant-card-body {
@@ -209,7 +217,7 @@
 
 .thumbnail {
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
 
@@ -223,6 +231,7 @@
   display: block;
   max-width: 100%;
   font-weight: 500;
+  color: #1e293b;
 }
 
 .image-date {
@@ -230,64 +239,45 @@
   color: #64748b;
 }
 
-/* 上下文菜单 */
-.context-menu {
-  position: absolute;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  z-index: 1000;
-  padding: 8px 0;
-  min-width: 160px;
-}
-
-.context-item {
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.context-item:hover {
-  background: #f8fafc;
-}
-
 /* 响应式布局 */
 @media (max-width: 768px) {
-  .mindmap-container {
+  .mindmap-row {
     padding: 12px;
+    flex-direction: column;
   }
 
   .mindmap-col {
-    padding: 16px;
     border-radius: 12px;
+    padding: 16px;
   }
 
-  .mindmap-node {
-    min-width: 120px;
-    padding: 12px 16px;
-    font-size: 13px;
+  .mindmap-card {
+    height: 50vh;
   }
 
-  .node-children-indicator {
-    width: 18px;
-    height: 18px;
-    font-size: 11px;
+  .zoom-controls {
+    right: 16px;
+    bottom: 16px;
   }
 
   .toolbar {
     flex-wrap: wrap;
-    gap: 8px;
   }
 }
 
 @media (max-width: 480px) {
-  .mindmap-canvas {
-    min-height: 400px;
-    background-size: 30px 30px;
+  .node-label {
+    font-size: 13px;
+    padding: 8px;
   }
 
-  .node-content {
-    font-size: 12px;
+  .children-count {
+    font-size: 11px;
+  }
+
+  .generate-btn {
+    padding: 0 12px;
+    font-size: 14px;
   }
 }
 
@@ -313,4 +303,19 @@
 @keyframes rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* 网格线优化 */
+.canvas-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(90deg, #e2e8f0 1px, transparent 1px),
+    linear-gradient(180deg, #e2e8f0 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0;
+  opacity: 0.4;
 }

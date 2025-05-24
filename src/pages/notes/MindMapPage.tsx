@@ -73,17 +73,6 @@ const convertApiNode = (apiNode?: ApiMindNode): MindNode | null => {
   };
 };
 
-const calculateConnectionPath = (
-    start: { x: number; y: number },
-    end: { x: number; y: number }
-) => {
-  const deltaY = end.y - start.y;
-  const controlY = start.y + deltaY * 0.2;
-  return `M ${start.x} ${start.y}
-          Q ${start.x} ${controlY}, ${(start.x + end.x)/2} ${end.y}
-          T ${end.x} ${end.y}`;
-};
-
 const MindMapPage = () => {
   const {
     images,
@@ -104,6 +93,9 @@ const MindMapPage = () => {
   const uploadRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasRect, setCanvasRect] = useState({ left: 0, top: 0, width: 0, height: 0 });
+  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
+  const [dragging, setDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
   // 同步画布位置和导图数据
   useEffect(() => {
@@ -127,27 +119,67 @@ const MindMapPage = () => {
     };
   }, []);
 
+  interface NodeBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+const checkCollision = (a: NodeBounds, b: NodeBounds): boolean => {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+};
   const calculateLayout = (
-      node: MindNode,
-      startX: number,
-      startY: number,
-      level: number = 0
-  ) => {
-    const NODE_WIDTH = 300;
-    const LEVEL_HEIGHT = 200;
-    const SIBLING_SPACING = 100;
-    // 确保节点位置在可视区域内
-    node.position = {
-      x: Math.max(50, Math.min(canvasRect.width - 250, startX)),
-      y: Math.max(50, startY + level * LEVEL_HEIGHT)
-    };
-    let childX = startX - (node.children.length * NODE_WIDTH) / 2;
-    node.children.forEach(child => {
-      childX = Math.max(50, childX); // 防止子节点溢出左侧
-      calculateLayout(child, childX, startY, level + 1);
-      childX += NODE_WIDTH + SIBLING_SPACING;
-    });
+  node: MindNode,
+  startX: number,
+  startY: number,
+  level: number = 0,
+  occupiedAreas: NodeBounds[] = []
+) => {
+  const NODE_WIDTH = 200;
+  const NODE_HEIGHT = 60;
+  const LEVEL_VERTICAL_SPACING = 120;
+
+  const nodeArea = {
+    x: startX - NODE_WIDTH/2,
+    y: startY,
+    width: NODE_WIDTH,
+    height: NODE_HEIGHT
   };
+  // 垂直避让逻辑
+  let adjustedY = startY;
+  while (occupiedAreas.some(area => checkCollision(nodeArea, area))) {
+    adjustedY += LEVEL_VERTICAL_SPACING/2;
+    nodeArea.y = adjustedY;
+  }
+  node.position = {
+    x: startX,
+    y: adjustedY
+  };
+  occupiedAreas.push({...nodeArea});
+  if (node.children.length > 0) {
+    const SIBLING_HORIZONTAL_SPACING = 80;
+    const childrenWidth = node.children.reduce((total, child) => {
+      return total + NODE_WIDTH + SIBLING_HORIZONTAL_SPACING;
+    }, -SIBLING_HORIZONTAL_SPACING);
+    let childX = startX - childrenWidth/2;
+
+    node.children.forEach(child => {
+      calculateLayout(
+        child,
+        childX + NODE_WIDTH/2,
+        adjustedY + LEVEL_VERTICAL_SPACING,
+        level + 1,
+        occupiedAreas
+      );
+      childX += NODE_WIDTH + SIBLING_HORIZONTAL_SPACING;
+    });
+  }
+};
 
   const handleUpload = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -199,15 +231,18 @@ const MindMapPage = () => {
       console.log('Raw root node:', data.root_node);
       console.log('Converted root node:', rootNode);
 
-      // 动态计算起始位置
-      const startX = (canvasRect.width || 800) / 2;
-      const startY = 100;
-
       if (rootNode) {
+        const startX = 0;  // 使用相对坐标系
+        const startY = 0;
         calculateLayout(rootNode, startX, startY);
         const newNodes = flattenNodes(rootNode);
 
         console.log('Calculated nodes:', newNodes);
+        setTransform({
+          x: canvasRect.width/2 - rootNode.position.x,
+          y: 60,  // 顶部留白
+          scale: 1
+        });
         saveMindMap(selectedImage.id, {
           nodes: newNodes,
           svgUrl: data.svg_url || '',
@@ -232,6 +267,50 @@ const MindMapPage = () => {
       setGenerating(false);
     }
   };
+  const calculateConnectionPath = (
+      start: { x: number; y: number },
+      end: { x: number; y: number }
+  ) => {
+    // 计算贝塞尔曲线控制点
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const cp1 = { x: start.x + dx * 0.25, y: start.y + dy * 0.1 };
+    const cp2 = { x: start.x + dx * 0.75, y: start.y + dy * 0.9 };
+    return `M ${start.x},${start.y} 
+          C ${cp1.x},${cp1.y} 
+            ${cp2.x},${cp2.y} 
+            ${end.x},${end.y}`;
+  };
+  const handleCanvasDragStart = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // 仅处理左键
+    setDragging(true);
+    setStartPos({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+  };
+  const handleCanvasDrag = (e: React.MouseEvent) => {
+    if (dragging) {
+      const newX = e.clientX - startPos.x;
+      const newY = e.clientY - startPos.y;
+      setTransform(prev => ({
+        ...prev,
+        x: newX,
+        y: newY
+      }));
+    }
+  };
+  const handleCanvasDragEnd = () => {
+    setDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    const scaleFactor = 0.1;
+    const newScale = e.deltaY < 0
+        ? transform.scale * (1 + scaleFactor)
+        : transform.scale * (1 - scaleFactor);
+    setTransform(prev => ({
+      ...prev,
+      scale: Math.min(Math.max(0.5, newScale), 3)
+    }));
+  };
 
   const handleNodeDrag = (id: string, e: React.MouseEvent) => {
     const updatedNodes = nodes.map(node =>
@@ -250,15 +329,15 @@ const MindMapPage = () => {
 
   const renderToolbar = () => (
       <div className="toolbar">
-        <Select
-            value={layoutStyle}
-            onChange={setLayoutStyle}
-            style={{ width: 120, marginRight: 12 }}
-        >
-          <Option value="tree">树状布局</Option>
-          <Option value="radial">放射布局</Option>
-          <Option value="organic">自由布局</Option>
-        </Select>
+        {/*<Select*/}
+        {/*    value={layoutStyle}*/}
+        {/*    onChange={setLayoutStyle}*/}
+        {/*    style={{ width: 120, marginRight: 12 }}*/}
+        {/*>*/}
+        {/*  <Option value="tree">树状布局</Option>*/}
+        {/*  <Option value="radial">放射布局</Option>*/}
+        {/*  <Option value="organic">自由布局</Option>*/}
+        {/*</Select>*/}
 
         <Button
             type="primary"
@@ -271,7 +350,60 @@ const MindMapPage = () => {
         </Button>
       </div>
   );
+  const renderNodes = () => (
+      <g transform={`translate(${transform.x},${transform.y}) scale(${transform.scale})`}>
+        {/* 先渲染连接线 */}
+        {nodes.flatMap(node =>
+            node.children.map(child => {
+              const start = node.position;
+              const end = child.position;
+              return (
+                  <path
+                      key={`${node.id}-${child.id}`}
+                      d={calculateConnectionPath(start, end)}
+                      stroke="#4d90fe"
+                      fill="none"
+                      strokeWidth={2 / transform.scale} // 随缩放调整线宽
+                      markerEnd={transform.scale > 0.7 ? "url(#arrow)" : undefined}
+                  />
+              );
+            })
+        )}
 
+        {/* 后渲染节点确保盖在线上方 */}
+        {nodes.map(node => (
+            <g
+                key={node.id}
+                transform={`translate(${node.position.x},${node.position.y})`}
+                className="mindmap-node"
+            >
+              <rect
+                  width="200"
+                  height="60"
+                  rx="12"
+                  fill="#ffffff"
+                  stroke="#4d90fe"
+                  strokeWidth="1.5"
+              />
+              <foreignObject width="200" height="60" className="node-content">
+                <div className="node-label">
+                  {node.link ? (
+                      <a href={node.link} target="_blank" rel="noopener noreferrer">
+                        {node.label}
+                      </a>
+                  ) : (
+                      node.label
+                  )}
+                </div>
+                {node.children.length > 0 && (
+                    <div className="children-count">
+                      {node.children.length}个子节点
+                    </div>
+                )}
+              </foreignObject>      </g>
+        ))}
+      </g>
+  );
   return (
       <div className="mindmap-container">
         <Row gutter={24} className="mindmap-row">
@@ -283,63 +415,40 @@ const MindMapPage = () => {
               {renderToolbar()}
             </div>
             <Card className="mindmap-card">
-              <div className="mindmap-canvas" ref={canvasRef}>
-                <div className="canvas-grid"/>
-                {nodes.map(node => (
-                    <div
-                        key={node.id}
-                        className={`mindmap-node ${selectedNode === node.id ? 'selected' : ''}`}
-                        style={{
-                          transform: `translate(${node.position.x}px, ${node.position.y}px)`,
-                          background: node.color || (node.id === 'root' ? '#f0faff' : '#fff'),
-                          borderColor: node.color ? `${node.color}33` : '#4d90fe'
-                        }}
-                        onMouseDown={(e) => handleNodeDrag(node.id, e)}
+              <div
+                  className="mindmap-canvas"
+                  ref={canvasRef}
+                  onMouseDown={handleCanvasDragStart}
+                  onMouseMove={handleCanvasDrag}
+                  onMouseUp={handleCanvasDragEnd}
+                  onMouseLeave={handleCanvasDragEnd}
+                  onWheel={handleWheel}
+              >
+                <svg className="canvas-svg">
+                  <defs>
+                    <linearGradient id="gradient-default" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#4d90fe" />
+                      <stop offset="100%" stopColor="#69c0ff" />
+                    </linearGradient>
+                    <marker
+                        id="arrow"
+                        markerWidth="10"
+                        markerHeight="10"
+                        refX="9"
+                        refY="3"
+                        orient="auto"
                     >
-                      <div className="node-content">
-                        {node.link ? (
-                            <a href={node.link} className="node-link">
-                              <span className="node-label">{node.label}</span>
-                              <span className="link-indicator">↗</span>
-                            </a>
-                        ) : (
-                            <span className="node-label">{node.label}</span>
-                        )}
-                      </div>
-                      {node.children.length > 0 && (
-                          <div className="node-children-indicator">
-                            <span className="children-count">{node.children.length}</span>
-                          </div>
-                      )}
-                    </div>
-                ))}
-                {nodes.map(node =>
-                    node.children.map(child => (
-                        <svg
-                            key={`${node.id}-${child.id}`}
-                            className="connection-line"
-                            style={{
-                              position: 'absolute',
-                              width: '100%',
-                              height: '100%',
-                              pointerEvents: 'none'
-                            }}
-                        >
-                          <path
-                              d={calculateConnectionPath(node.position, child.position)}
-                              stroke={node.color || '#4d90fe'}
-                              fill="none"
-                              strokeWidth="1.5"
-                          />
-                        </svg>
-                    )) ?? null
-                )}
+                      <path d="M0,0 L0,6 L9,3 z" fill="#4d90fe" />
+                    </marker>
+                  </defs>
+                  {renderNodes()}
+                </svg>
               </div>
             </Card>
           </Col>
 
           <Col xs={24} md={10} lg={8}>
-          <Card
+            <Card
                 title="图片列表"
                 className="image-list-card"
                 extra={

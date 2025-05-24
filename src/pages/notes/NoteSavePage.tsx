@@ -202,23 +202,23 @@ const NoteSavePage = () => {
                                         setSaveOptions(newOptions);
                                     }}
                                 >
-                                    <Row gutter={16}>
-                                        <Col span={6}>
+                                    <Row gutter={24}>
+                                        <Col span={10}>
                                             <Checkbox value="summary">
                                                 <FileTextOutlined /> 保存摘要
                                             </Checkbox>
                                         </Col>
-                                        <Col span={6}>
-                                            <Checkbox value="mindmap">
-                                                <ApartmentOutlined /> 思维导图
-                                            </Checkbox>
-                                        </Col>
-                                        <Col span={6}>
+                                        {/*<Col span={6}>*/}
+                                        {/*    <Checkbox value="mindmap">*/}
+                                        {/*        <ApartmentOutlined /> 思维导图*/}
+                                        {/*    </Checkbox>*/}
+                                        {/*</Col>*/}
+                                        <Col span={10}>
                                             <Checkbox value="knowledge">
                                                 <TagsOutlined /> 知识点
                                             </Checkbox>
                                         </Col>
-                                        <Col span={6}>
+                                        <Col span={10}>
                                             <Checkbox value="lecture">
                                                 <SoundOutlined /> 智能讲解
                                             </Checkbox>

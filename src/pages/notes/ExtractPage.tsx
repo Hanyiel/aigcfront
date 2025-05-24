@@ -17,7 +17,7 @@ import {
 import {
   ArrowLeftOutlined,
   UploadOutlined,
-  FileImageOutlined
+  FileImageOutlined, ApartmentOutlined
 } from '@ant-design/icons';
 import { useImageContext } from '../../contexts/ImageContext';
 import { ExtractData, useExtract} from '../../contexts/ExtractContext';
@@ -136,12 +136,7 @@ const ExtractPage = () => {
         <Content className="extract-content">
           <div className="content-wrapper">
             <Title level={3} className="main-title">
-              <Button
-                  type="link"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={() => navigate(-1)}
-                  className="back-btn"
-              />
+              <ApartmentOutlined/>
               笔记提取
             </Title>
 
