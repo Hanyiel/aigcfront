@@ -82,11 +82,13 @@ export const QuestionExplanationProvider: React.FC<{ children: React.ReactNode }
       });
 
       const result = await response.json();
-      console.log('生成讲解结果:', result);
 
       if (result.code !== 200) {
         throw new Error(result.message || '生成讲解失败');
       }
+
+      const data = result.data;
+      console.log('生成讲解结果:', data);
 
       addExplanation({
         explanationId: result.data.explanation_id,

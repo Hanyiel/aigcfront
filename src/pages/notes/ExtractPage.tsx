@@ -115,11 +115,12 @@ const ExtractPage = () => {
         throw new Error(`请求失败: ${apiResponse.statusText}`);
       }
 
-      const data = await apiResponse.json();
+      const result = await apiResponse.json();
+
       const extractData = {
         extract_id: `ext_${Date.now()}`,
         image_id: selectedImage.id,
-        ...data.data
+        ...result.data
       };
 
       saveExtract(extractData);

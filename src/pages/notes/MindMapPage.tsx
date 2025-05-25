@@ -22,6 +22,9 @@ import {
 import { useImageContext } from '../../contexts/ImageContext';
 import { useMindMapContext, MindNode } from '../../contexts/MindMapContext';
 import '../../styles/notes/MindMapPage.css';
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import ReactMarkdown from "react-markdown";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -120,66 +123,66 @@ const MindMapPage = () => {
   }, []);
 
   interface NodeBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-const checkCollision = (a: NodeBounds, b: NodeBounds): boolean => {
-  return (
-    a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.height > b.y
-  );
-};
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+  const checkCollision = (a: NodeBounds, b: NodeBounds): boolean => {
+    return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+    );
+  };
   const calculateLayout = (
-  node: MindNode,
-  startX: number,
-  startY: number,
-  level: number = 0,
-  occupiedAreas: NodeBounds[] = []
-) => {
-  const NODE_WIDTH = 200;
-  const NODE_HEIGHT = 60;
-  const LEVEL_VERTICAL_SPACING = 120;
+      node: MindNode,
+      startX: number,
+      startY: number,
+      level: number = 0,
+      occupiedAreas: NodeBounds[] = []
+  ) => {
+    const NODE_WIDTH = 200;
+    const NODE_HEIGHT = 60;
+    const LEVEL_VERTICAL_SPACING = 120;
 
-  const nodeArea = {
-    x: startX - NODE_WIDTH/2,
-    y: startY,
-    width: NODE_WIDTH,
-    height: NODE_HEIGHT
-  };
-  // 垂直避让逻辑
-  let adjustedY = startY;
-  while (occupiedAreas.some(area => checkCollision(nodeArea, area))) {
-    adjustedY += LEVEL_VERTICAL_SPACING/2;
-    nodeArea.y = adjustedY;
-  }
-  node.position = {
-    x: startX,
-    y: adjustedY
-  };
-  occupiedAreas.push({...nodeArea});
-  if (node.children.length > 0) {
-    const SIBLING_HORIZONTAL_SPACING = 80;
-    const childrenWidth = node.children.reduce((total, child) => {
-      return total + NODE_WIDTH + SIBLING_HORIZONTAL_SPACING;
-    }, -SIBLING_HORIZONTAL_SPACING);
-    let childX = startX - childrenWidth/2;
+    const nodeArea = {
+      x: startX - NODE_WIDTH/2,
+      y: startY,
+      width: NODE_WIDTH,
+      height: NODE_HEIGHT
+    };
+    // 垂直避让逻辑
+    let adjustedY = startY;
+    while (occupiedAreas.some(area => checkCollision(nodeArea, area))) {
+      adjustedY += LEVEL_VERTICAL_SPACING/2;
+      nodeArea.y = adjustedY;
+    }
+    node.position = {
+      x: startX,
+      y: adjustedY
+    };
+    occupiedAreas.push({...nodeArea});
+    if (node.children.length > 0) {
+      const SIBLING_HORIZONTAL_SPACING = 80;
+      const childrenWidth = node.children.reduce((total, child) => {
+        return total + NODE_WIDTH + SIBLING_HORIZONTAL_SPACING;
+      }, -SIBLING_HORIZONTAL_SPACING);
+      let childX = startX - childrenWidth/2;
 
-    node.children.forEach(child => {
-      calculateLayout(
-        child,
-        childX + NODE_WIDTH/2,
-        adjustedY + LEVEL_VERTICAL_SPACING,
-        level + 1,
-        occupiedAreas
-      );
-      childX += NODE_WIDTH + SIBLING_HORIZONTAL_SPACING;
-    });
-  }
-};
+      node.children.forEach(child => {
+        calculateLayout(
+            child,
+            childX + NODE_WIDTH/2,
+            adjustedY + LEVEL_VERTICAL_SPACING,
+            level + 1,
+            occupiedAreas
+        );
+        childX += NODE_WIDTH + SIBLING_HORIZONTAL_SPACING;
+      });
+    }
+  };
 
   const handleUpload = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -389,10 +392,15 @@ const checkCollision = (a: NodeBounds, b: NodeBounds): boolean => {
                 <div className="node-label">
                   {node.link ? (
                       <a href={node.link} target="_blank" rel="noopener noreferrer">
-                        {node.label}
+                        <ReactMarkdown
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                        >
+                          {node.label}
+                        </ReactMarkdown>
                       </a>
                   ) : (
-                      node.label
+                        node.label
                   )}
                 </div>
                 {node.children.length > 0 && (
@@ -400,7 +408,8 @@ const checkCollision = (a: NodeBounds, b: NodeBounds): boolean => {
                       {node.children.length}个子节点
                     </div>
                 )}
-              </foreignObject>      </g>
+              </foreignObject>
+            </g>
         ))}
       </g>
   );

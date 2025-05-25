@@ -111,7 +111,7 @@ const RelatedNotePage = () => {
                                   <div className="note-header">
                                     <Tag color="blue">{note.subject}</Tag>
                                     <Title level={5}>{note.title}</Title>
-                                    <Text type="secondary">相似度：{(note.similarity * 100).toFixed(1)}%</Text>
+                                    {/*<Text type="secondary">相似度：{(note.similarity * 100).toFixed(1)}%</Text>*/}
                                   </div>
                                   <Text className="note-content">
                                     <ReactMarkdown
@@ -142,7 +142,7 @@ const RelatedNotePage = () => {
                                   <div className="question-header">
                                     <Tag color="orange">{question.subject_id}</Tag>
                                     <Text strong>{question.content}</Text>
-                                    <Text type="secondary">相似度：{(question.similarity * 100).toFixed(1)}%</Text>
+                                    {/*<Text type="secondary">相似度：{(question.similarity * 100).toFixed(1)}%</Text>*/}
                                   </div>
                                   <div className="question-answer">
                                     <Text type="secondary">参考答案：</Text>
@@ -168,7 +168,7 @@ const RelatedNotePage = () => {
           </Card>
         </Col>
 
-        {/* 右侧图片列表（直接使用提供的代码） */}
+        {/* 右侧图片列表 */}
         <Col xs={24} md={10} lg={8}>
           <Card
               title="图片列表"

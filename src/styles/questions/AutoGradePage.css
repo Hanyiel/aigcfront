@@ -76,6 +76,33 @@
   margin: 16px 0;
 }
 
+
+.answer-section {
+  max-width: 100%;
+  margin-bottom: 20px;
+}
+.answer-title {
+  margin-bottom: 12px;
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.85);
+}
+.answer-content {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+  max-width: 600px; /* 限制最大宽度 */
+  word-wrap: break-word; /* 自动换行 */
+}
+.answer-tag {
+  max-width: 100%;
+  white-space: pre-wrap !important; /* 保留换行但允许自动换行 */
+  word-break: break-word !important;
+  margin: 4px 0 !important;
+  border: none !important;
+  background: #fff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
 .answer-block {
   padding: 16px;
   border-radius: 8px;
