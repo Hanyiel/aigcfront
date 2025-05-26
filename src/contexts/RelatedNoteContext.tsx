@@ -59,9 +59,12 @@ export const RelatedNoteProvider: React.FC<{children: React.ReactNode}> = ({ chi
         const errorData = await response.json();
         throw new Error(errorData.message || '获取关联数据失败');
       }
-
       const responseData = await response.json();
-      setRelatedData(responseData.data);
+      const result = responseData.data;
+      console.log('result',result);
+      console.log('data',result.data);
+
+      setRelatedData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : '未知错误');
       message.error('获取关联数据失败');
