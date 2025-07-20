@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectRoute";
 import LoginPage from './pages/LoginPage';
 import RegisterPage from "./pages/RegisterPage";
 import HomePage from './pages/HomePage';
+import UserCenter from "./pages/userCenter/UserCenter";
 import NotePage from "./pages/notes/NotePage";
 import NoteIndexPage from "./pages/notes/NoteIndexPage";
 import ExtractPage from "./pages/notes/ExtractPage";
@@ -60,6 +61,12 @@ function App() {
                                                                 path="/home"
                                                                 element={
                                                                     <HomePage />
+                                                                }
+                                                            />
+                                                            <Route
+                                                                path={"/userCenter"}
+                                                                element={
+                                                                    <UserCenter />
                                                                 }
                                                             />
                                                         </Route>

@@ -1,0 +1,124 @@
+/* src/styles/UserCenter.css */
+
+/* 用户中心内容区域 */
+.user-center-content {
+  padding: 24px;
+}
+
+/* 用户信息卡片 */
+.user-profile-card {
+  text-align: center;
+  padding: 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-profile-card .avatar-container {
+  margin-bottom: 16px;
+}
+
+.user-profile-card .username {
+  margin-bottom: 4px !important;
+}
+
+.user-profile-card .user-email,
+.user-profile-card .join-date {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+/* 统计卡片 */
+.stat-card {
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .ant-statistic-title {
+  font-size: 16px;
+  color: #666;
+}
+
+.stat-card .ant-statistic-content {
+  font-size: 24px;
+  color: #1890ff;
+}
+
+/* 用户信息区域 */
+.user-info-section {
+  padding: 16px;
+}
+
+.info-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* 安全设置项 */
+.security-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.security-item:last-child {
+  border-bottom: none;
+}
+
+/* 成就卡片 */
+.achievement-card {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s;
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.achievement-card.earned {
+  border-color: #1890ff;
+  background-color: #f0f8ff;
+}
+
+.achievement-card .achievement-icon {
+  font-size: 32px;
+  color: #1890ff;
+  margin-bottom: 12px;
+}
+
+.achievement-card.earned .achievement-icon {
+  color: #52c41a;
+}
+
+.achievement-card .achievement-name {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.achievement-card .achievement-status .earned-badge {
+  color: #52c41a;
+  background: #f6ffed;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.achievement-card .achievement-status .not-earned {
+  color: #bfbfbf;
+  font-size: 12px;
+}

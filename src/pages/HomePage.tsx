@@ -115,12 +115,12 @@ const HomePage: React.FC = () => {
           </div>
 
 
-          {/*<Dropdown overlay={userMenu} trigger={['click']}>*/}
-          {/*  <div className="user-center">*/}
-          {/*    <UserOutlined className="user-icon" />*/}
-          {/*    <span>用户中心</span>*/}
-          {/*  </div>*/}
-          {/*</Dropdown>*/}
+          <Dropdown overlay={userMenu} trigger={['click']}>
+            <div className="user-center" onClick={() => navigate('/userCenter')}>
+              <UserOutlined className="user-icon" />
+              <span>用户中心</span>
+            </div>
+          </Dropdown>
         </Header>
 
         <Layout>
