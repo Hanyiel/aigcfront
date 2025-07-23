@@ -47,6 +47,7 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  width: 93%;
   transition: border-color 0.3s;
 }
 
@@ -151,4 +152,118 @@
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
+}
+
+/* 错误样式 */
+.form-input.error {
+  border-color: #ff4d4f;
+}
+.field-error {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 4px;
+}
+/* 密码输入容器 */
+.password-input-container {
+  position: relative;
+}
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+}
+/* 密码强度指示器 */
+.password-strength {
+  margin-top: 10px;
+}
+.strength-text {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 5px;
+}
+.strength-text span {
+  font-weight: bold;
+}
+.strength-1 { color: #ff4d4f; }
+.strength-2 { color: #ff4d4f; }
+.strength-3 { color: #faad14; }
+.strength-4 { color: #52c41a; }
+.strength-5 { color: #52c41a; }
+.strength-indicators {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.indicator {
+  flex: 1;
+  height: 4px;
+  background: #f0f0f0;
+  border-radius: 2px;
+}
+.indicator.active {
+  background: currentColor;
+}
+.password-rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 12px;
+  color: #666;
+}
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.rule .fa-check-circle {
+  color: #52c41a;
+}
+.rule .fa-times-circle {
+  color: #ff4d4f;
+}
+.rule.valid {
+  color: #52c41a;
+}
+/* 服务条款样式 */
+.terms-container {
+  display: flex;
+  align-items: flex-start;
+  margin: 15px 0;
+  font-size: 14px;
+}
+.terms-container input {
+  margin-top: 3px;
+  margin-right: 8px;
+}
+.terms-container a {
+  color: #1890ff;
+  text-decoration: none;
+}
+.terms-container a:hover {
+  text-decoration: underline;
+}
+/* 加载动画 */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .password-rules {
+    grid-template-columns: 1fr;
+  }
 }
