@@ -12,23 +12,25 @@ import {
   message,
   List,
   Image as AntImage,
-  Typography, Image
+  Typography,
+  Input
 } from 'antd';
 import {
   UploadOutlined,
   PlayCircleOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  EditOutlined,
+  SaveOutlined, ApartmentOutlined, LoadingOutlined
 } from '@ant-design/icons';
 import ReactMarkdown  from 'react-markdown';
 import { useImageContext } from '../../contexts/ImageContext';
 import { ExplanationData, useExplanation} from '../../contexts/ExplanationContext';
 import '../../styles/notes/SmartLecturePage.css';
-import LatexRenderer from "../../components/LatexRenderer";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-
+const { Title, Text } = Typography;
 const { Content } = Layout;
-const { Text } = Typography;
+const { TextArea } = Input;
 
 const SmartLectureLayout = () => {
   const {
@@ -44,19 +46,31 @@ const SmartLectureLayout = () => {
     saveExplanation,
     deleteExplanation,
     getExplanation,
-    getExplanationByImage
+    getExplanationByImage,
+    updateExplanation // 添加更新方法
   } = useExplanation();
 
   const [explanation, setExplanation] = useState<ExplanationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  // 添加编辑状态
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingContent, setEditingContent] = useState('');
+
   useEffect(() => {
     if (selectedImage) {
       const exp = getExplanationByImage(selectedImage.id);
-      setExplanation(exp || null);
+      if (exp) {
+        setExplanation(exp);
+        setEditingContent(exp.content_md || '');
+      } else {
+        setExplanation(null);
+        setEditingContent('');
+      }
     }
   }, [selectedImage, explanations, getExplanationByImage]);
+
   // 处理图片上传
   const handleUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -112,6 +126,8 @@ const SmartLectureLayout = () => {
       console.log('explanations:', explanations)
       console.log("explanation:", expData)
       setExplanation(expData);
+      setEditingContent(expData.content_md || ''); // 设置编辑内容
+      setIsEditing(false); // 退出编辑模式
 
       message.success('讲解生成成功');
 
@@ -123,116 +139,166 @@ const SmartLectureLayout = () => {
     }
   };
 
-  return (
-      <Layout className="lecture-layout">
-        <Content className="lecture-content">
-          <Row gutter={24}>
-            {/* 主讲解区域 */}
-            <Col xs={24} md={14} lg={16}>
-              <Card
-                  title="AI智能讲解"
-                  className="main-card"
-                  extra={
-                    <div className="action-bar">
-                      <Button
-                          type="primary"
-                          icon={<PlayCircleOutlined />}
-                          loading={loading}
-                          onClick={generateExplanation}
-                          disabled={!selectedImage}
-                      >
-                        {explanation ? '重新生成' : '开始讲解'}
-                      </Button>
-                    </div>
-                  }
-              >
-                <Spin spinning={loading}>
-                  {/* 讲解内容展示 */}
-                  {explanation ? (
-                      <div className="explanation-content">
-                        <div className="markdown-body">
-                          {/* eslint-disable-next-line react/jsx-no-undef */}
-                          <ReactMarkdown
-                              remarkPlugins={[remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                          >
-                            {explanation.content_md}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                  ) : (
-                      <div className="upload-guide">
-                        <Text type="secondary">
-                          请从右侧图片列表选择或上传题目图片
-                        </Text>
-                      </div>
-                  )}
-                </Spin>
-              </Card>
-            </Col>
+  // 切换编辑模式
+  const toggleEditMode = () => {
+    if (isEditing) {
+      // 保存编辑内容
+      if (explanation) {
+        const updatedExplanation = {
+          ...explanation,
+          content_md: editingContent
+        };
+        setExplanation(updatedExplanation);
+        updateExplanation(updatedExplanation); // 更新上下文
+        message.success('讲解内容已保存');
+      }
+    } else {
+      // 进入编辑模式
+      if (explanation) {
+        setEditingContent(explanation.content_md || '');
+      }
+    }
+    setIsEditing(!isEditing);
+  };
 
-            {/* 右侧图片列表 */}
-            <Col xs={24} md={10} lg={8}>
-              <Card
-                  title="图片列表"
-                  className="image-list-card"
-                  extra={
-                    <Upload
-                        beforeUpload={handleUpload}
-                        showUploadList={false}
-                        accept="image/*"
-                    >
-                      <Button icon={<UploadOutlined />}>添加图片</Button>
-                    </Upload>
-                  }
-              >
-                <List
-                    dataSource={images}
-                    renderItem={(item) => (
-                        <List.Item
-                            className={`list-item ${
-                                selectedImage?.id === item.id ? 'selected' : ''
-                            }`}
-                            onClick={() => setSelectedImage(item)}
-                            extra={
-                              <Button
-                                  type="link"
-                                  danger
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeImage(item.id);
-                                  }}
-                              >
-                                删除
-                              </Button>
-                            }
-                        >
-                          <div className="image-content">
-                            <Image
-                                src={item.url}
-                                alt={item.name}
-                                preview={false}
-                                width={80}
-                                height={60}
-                                className="thumbnail"
+  // 处理内容变更
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditingContent(e.target.value);
+  };
+
+  const renderToolbar = () => {
+    return (
+        <div className="toolbar">
+          {/* 添加编辑按钮 */}
+          <Button
+              type={isEditing ? 'default' : 'primary'}
+              icon={isEditing ? <SaveOutlined/> : <EditOutlined/>}
+              onClick={toggleEditMode}
+              // disabled={!explanation}
+          >
+            {isEditing ? '保存编辑' : '编辑模式'}
+          </Button>
+          <Button
+              type="primary"
+              icon={loading ? <LoadingOutlined/> : <PlayCircleOutlined/>}
+              loading={loading}
+              onClick={generateExplanation}
+              disabled={!selectedImage}
+          >
+            {explanation ? '重新生成' : '开始讲解'}
+          </Button>
+        </div>
+    )
+  }
+
+  return (
+      <div className="sub-container">
+        <Row gutter={24} className="sub-row">
+          <Col flex="auto" className="sub-col">
+            <div className="tool-section">
+              <Title level={3} className="tool-title">
+                <ApartmentOutlined/> 智能讲解
+              </Title>
+              { renderToolbar() }
+            </div>
+            <div
+                className="content-card"
+            >
+              <Spin spinning={loading}>
+                {/* 讲解内容展示 */}
+                {explanation ? (
+                    <div className="explanation-content">
+                      <div className="markdown-body">
+                        {isEditing ? (
+                            <TextArea
+                                value={editingContent}
+                                onChange={handleContentChange}
+                                autoSize={{minRows: 15, maxRows: 30}}
+                                style={{width: '100%'}}
+                                placeholder="输入Markdown格式的讲解内容..."
                             />
-                            <div className="image-info">
-                              <Text ellipsis className="image-name">
-                                {item.name}
-                              </Text>
-                              <Text type="secondary" className="image-date">
-                                {new Date(item.timestamp).toLocaleDateString()}
-                              </Text>
-                            </div>
+                        ) : (
+                            <ReactMarkdown
+                                remarkPlugins={[remarkMath]}
+                                rehypePlugins={[rehypeKatex]}
+                            >
+                              {explanation.content_md}
+                            </ReactMarkdown>
+                        )}
+                      </div>
+                    </div>
+                ) : (
+                    <div className="upload-guide">
+                      <Text type="secondary">
+                        请从右侧图片列表选择或上传题目图片
+                      </Text>
+                    </div>
+                )}
+              </Spin>
+            </div>
+          </Col>
+
+          {/* 右侧图片列表 */}
+          <Col xs={24} md={10} lg={8}>
+            <Card
+                title="图片列表"
+                className="image-list-card"
+                extra={
+                  <Upload
+                      beforeUpload={handleUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                  >
+                    <Button icon={<UploadOutlined />}>添加图片</Button>
+                  </Upload>
+                }
+            >
+              <List
+                  dataSource={images}
+                  renderItem={(item) => (
+                      <List.Item
+                          className={`list-item ${
+                              selectedImage?.id === item.id ? 'selected' : ''
+                          }`}
+                          onClick={() => setSelectedImage(item)}
+                          extra={
+                            <Button
+                                type="link"
+                                danger
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(item.id);
+                                }}
+                            >
+                              删除
+                            </Button>
+                          }
+                      >
+                        <div className="image-content">
+                          <AntImage
+                              src={item.url}
+                              alt={item.name}
+                              preview={false}
+                              width={80}
+                              height={60}
+                              className="thumbnail"
+                          />
+                          <div className="image-info">
+                            <Text ellipsis className="image-name">
+                              {item.name}
+                            </Text>
+                            <Text type="secondary" className="image-date">
+                              {new Date(item.timestamp).toLocaleDateString()}
+                            </Text>
                           </div>
-                        </List.Item>
-                    )}
-                />
-              </Card>
-            </Col>
-          </Row>
-        </Content>
-      </Layout>
+                        </div>
+                      </List.Item>
+                  )}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
   );
 };
 

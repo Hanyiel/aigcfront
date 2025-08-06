@@ -11,6 +11,7 @@ export interface ExtractData {
 interface ExtractContextType {
   extracts: ExtractData[];
   saveExtract: (data: ExtractData) => void;
+  updateExtract: (data: ExtractData) => void;
   deleteExtract: (extractId: string) => void;
   getExtractByImage: (imageId: string) => ExtractData | undefined;
 }
@@ -36,6 +37,12 @@ export const ExtractProvider = ({ children }: { children: React.ReactNode }) => 
     localStorage.setItem(`img_ext_${data.image_id}`, data.extract_id);
   };
 
+  const updateExtract = (data: ExtractData) => {
+    setExtracts(prev =>
+      prev.map(e => e.image_id === data.image_id ? data : e)
+    );
+  };
+
   const deleteExtract = (extractId: string) => {
     setExtracts(prev => prev.filter(e => e.extract_id !== extractId));
   };
@@ -50,6 +57,7 @@ export const ExtractProvider = ({ children }: { children: React.ReactNode }) => 
       value={{
         extracts,
         saveExtract,
+        updateExtract,
         deleteExtract,
         getExtractByImage
       }}>

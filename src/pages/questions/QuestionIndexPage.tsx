@@ -87,7 +87,7 @@ const QuestionIndexPage = () => {
         </Col>
 
         <Col xs={24} md={16} lg={18}>
-          <Card title="题目素材库" className="image-list-card"> {/* 标题变更 */}
+          <Card title="题目素材库" className="question-image-list-card"> {/* 标题变更 */}
             <List
               grid={{ gutter: 16, column: 4 }}
               dataSource={images}

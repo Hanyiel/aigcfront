@@ -1,4 +1,3 @@
-// src/contexts/QuestionKeywordsContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export interface QuestionKeywordData {
@@ -10,50 +9,61 @@ export interface QuestionKeywordData {
 }
 
 interface QuestionImageKeywords {
-  questionImageId: string;  // Changed from imageId
-  keywords: QuestionKeywordData[];  // Changed interface type
+  questionImageId: string;
+  keywords: QuestionKeywordData[];
   createdAt: number;
 }
 
-interface QuestionKeywordsContextType {  // Changed interface name
-  questionKeywordsData: QuestionImageKeywords[];  // Changed property name
-  saveQuestionKeywords: (questionImageId: string, keywords: QuestionKeywordData[]) => void;  // Changed method name
-  deleteQuestionKeywords: (questionImageId: string) => void;  // Changed method name
-  getKeywordsByQuestionImage: (questionImageId: string) => QuestionKeywordData[];  // Changed method name
-  currentQuestionKeywords?: QuestionKeywordData[];  // Changed property name
+interface QuestionKeywordsContextType {
+  questionKeywordsData: QuestionImageKeywords[];
+  saveQuestionKeywords: (questionImageId: string, keywords: QuestionKeywordData[]) => void;
+  deleteQuestionKeywords: (questionImageId: string) => void;
+  getKeywordsByQuestionImage: (questionImageId: string) => QuestionKeywordData[];
+  updateQuestionKeywords: (questionImageId: string, newKeywords: QuestionKeywordData[]) => void; // 新增更新方法
 }
 
 const QuestionKeywordsContext = createContext<QuestionKeywordsContextType>({} as QuestionKeywordsContextType);
 
 export const QuestionKeywordsProvider = ({ children }: { children: React.ReactNode }) => {
   const [questionKeywordsData, setQuestionKeywordsData] = useState<QuestionImageKeywords[]>(() => {
-    const saved = localStorage.getItem('questionKeywordsData');  // Changed storage key
+    const saved = localStorage.getItem('questionKeywordsData');
     return saved ? JSON.parse(saved) : [];
   });
 
   // 持久化存储
   useEffect(() => {
-    localStorage.setItem('questionKeywordsData', JSON.stringify(questionKeywordsData));  // Changed storage key
+    localStorage.setItem('questionKeywordsData', JSON.stringify(questionKeywordsData));
   }, [questionKeywordsData]);
 
   const saveQuestionKeywords = (questionImageId: string, keywords: QuestionKeywordData[]) => {
     setQuestionKeywordsData(prev => [
-      ...prev.filter(k => k.questionImageId !== questionImageId),  // Changed filter key
+      ...prev.filter(k => k.questionImageId !== questionImageId),
       {
-        questionImageId,  // Changed property name
+        questionImageId,
         keywords,
         createdAt: Date.now()
       }
     ]);
   };
 
+  // 新增：更新关键词
+  const updateQuestionKeywords = (questionImageId: string, newKeywords: QuestionKeywordData[]) => {
+    setQuestionKeywordsData(prev =>
+      prev.map(item =>
+        item.questionImageId === questionImageId
+          ? { ...item, keywords: newKeywords }
+          : item
+      )
+    );
+  };
+
   const deleteQuestionKeywords = (questionImageId: string) => {
-    setQuestionKeywordsData(prev => prev.filter(k => k.questionImageId !== questionImageId));  // Changed filter key
+    setQuestionKeywordsData(prev => prev.filter(k => k.questionImageId !== questionImageId));
   };
 
   const getKeywordsByQuestionImage = (questionImageId: string) => {
     if (!questionImageId) return [];
-    return questionKeywordsData.find(k => k.questionImageId === questionImageId)?.keywords || [];  // Changed find key
+    return questionKeywordsData.find(k => k.questionImageId === questionImageId)?.keywords || [];
   };
 
   return (
@@ -63,6 +73,7 @@ export const QuestionKeywordsProvider = ({ children }: { children: React.ReactNo
         saveQuestionKeywords,
         deleteQuestionKeywords,
         getKeywordsByQuestionImage,
+        updateQuestionKeywords // 暴露更新方法
       }}>
       {children}
     </QuestionKeywordsContext.Provider>

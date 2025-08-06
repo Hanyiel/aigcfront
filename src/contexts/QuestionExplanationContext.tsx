@@ -1,4 +1,3 @@
-// src/context/QuestionExplanationContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 // Markdown解析后的结构
@@ -30,6 +29,7 @@ interface QuestionExplanationContextType {
     imageId: string;
     contentMd: string;
   }) => void;
+  updateExplanation: (explanationId: string, newContent: string) => void; // 新增更新函数
   generateExplanation: (imageId: string, file: File) => Promise<void>;
   getExplanationByImage: (imageId: string) => QuestionExplanation | null;
 }
@@ -60,6 +60,24 @@ export const QuestionExplanationProvider: React.FC<{ children: React.ReactNode }
 
     setExplanations(prev => [...prev, newExplanation]);
     setCurrentExplanation(newExplanation);
+  }, []);
+
+  // 新增更新讲解函数
+  const updateExplanation = useCallback((explanationId: string, newContent: string) => {
+    setExplanations(prev =>
+      prev.map(item =>
+        item.id === explanationId
+          ? { ...item, contentMd: newContent }
+          : item
+      )
+    );
+
+    // 更新当前讲解
+    setCurrentExplanation(prev =>
+      prev && prev.id === explanationId
+        ? { ...prev, contentMd: newContent }
+        : prev
+    );
   }, []);
 
   // 生成讲解方法
@@ -118,6 +136,7 @@ export const QuestionExplanationProvider: React.FC<{ children: React.ReactNode }
             generating,
             error,
             addExplanation,
+            updateExplanation, // 暴露更新函数
             generateExplanation,
             getExplanationByImage
           }}

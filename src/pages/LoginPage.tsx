@@ -26,7 +26,7 @@ const LoginPage: React.FC = () => {
     try {
       const token = await get_login_token(username, password);
       authContextLogin(token);
-      console.log('Stored token:', localStorage.getItem('authToken'));
+      // console.log('Stored token:', localStorage.getItem('authToken'));
       navigate('/home');
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败');

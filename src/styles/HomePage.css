@@ -11,7 +11,10 @@
   align-items: center;
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 }
-
+.content{
+  height: 70vh;
+  transition: all 0.2s;
+}
 .brand {
   display: flex;
   align-items: baseline;
@@ -49,6 +52,7 @@
 
 /* 动态体验卡片样式 */
 .start-experience-container {
+  height: 300px;
   padding: 20px 0;
   margin-bottom: 40px;
 }
@@ -66,7 +70,6 @@
 
 .main-icon {
   font-size: 64px;
-  color: var(--primary-color);
   margin-bottom: 20px;
 }
 
@@ -88,14 +91,62 @@
   transition: all 0.3s;
 }
 
-/* 保持原有功能卡片样式 */
 .feature-cards {
-  margin-top: 24px;
+  margin-top: 20px;
   padding: 0 24px;
 }
 
 .feature-card {
   transition: all 0.2s;
+}
+
+/* 功能卡片容器 */
+.feature-cards-container {
+  background: white;
+
+  margin-top: 20px;
+  padding: 0 16px;
+  height: calc(100vh - 420px); /* 根据实际布局调整高度 */
+  display: flex;
+  flex-direction: column;
+}
+/* 卡片滚动区域 */
+.cards-scroll-area {
+  flex: 1;
+  overflow-y: auto; /* 启用垂直滚动 */
+  overflow-x: hidden;
+  padding: 10px 5px; /* 添加内边距确保滚动条不遮挡内容 */
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+/* 滚动条样式 */
+.cards-scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+.cards-scroll-area::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+.cards-scroll-area::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+.cards-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+/* 调整卡片间距 */
+.feature-card {
+  margin-bottom: 16px;
+}
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .feature-cards-container {
+    height: calc(100vh - 350px);
+  }
+
+  .cards-scroll-area {
+    padding: 8px 3px;
+  }
 }
 
 /* 响应式调整 */

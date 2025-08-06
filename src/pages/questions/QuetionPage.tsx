@@ -97,7 +97,7 @@ const QuestionPage = () => {
           onCollapse={setCollapsed}
           width={240}
           theme="light"
-          className="side-nav"
+          className="question-side-nav"
         >
           <div className="nav-header">
             <Button
@@ -132,7 +132,7 @@ const QuestionPage = () => {
           </Menu>
         </Sider>
 
-        <Content className="question-content">
+        <Content className="question-page-content">
           <Outlet />
         </Content>
       </Layout>

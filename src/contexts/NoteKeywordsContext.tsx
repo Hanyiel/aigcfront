@@ -18,6 +18,7 @@ interface ImageKeywords {
 interface KeywordsContextType {
   keywordsData: ImageKeywords[];
   saveKeywords: (imageId: string, keywords: KeywordData[]) => void;
+  updateKeywords: (imageId: string, keywords: KeywordData[]) => void;
   deleteKeywords: (imageId: string) => void;
   getKeywordsByImage: (imageId: string) => KeywordData[];
   currentKeywords?: KeywordData[];
@@ -46,6 +47,16 @@ export const KeywordsProvider = ({ children }: { children: React.ReactNode }) =>
     ]);
   };
 
+  const updateKeywords = (imageId: string, newKeywords: KeywordData[]) => {
+    setKeywordsData(prev =>
+      prev.map(item =>
+        item.imageId === imageId
+          ? { ...item, keywords: newKeywords }
+          : item
+      )
+    );
+  };
+
   const deleteKeywords = (imageId: string) => {
     setKeywordsData(prev => prev.filter(k => k.imageId !== imageId));
   };
@@ -56,16 +67,17 @@ export const KeywordsProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   return (
-  <KeywordsContext.Provider
-    value={{
-      keywordsData,
-      saveKeywords,
-      deleteKeywords,
-      getKeywordsByImage,
-    }}>
-    {children}
-  </KeywordsContext.Provider>
-);
+      <KeywordsContext.Provider
+          value={{
+            keywordsData,
+            saveKeywords,
+            updateKeywords,
+            deleteKeywords,
+            getKeywordsByImage,
+          }}>
+        {children}
+      </KeywordsContext.Provider>
+  );
 };
 
 export const useKeywords = () => {

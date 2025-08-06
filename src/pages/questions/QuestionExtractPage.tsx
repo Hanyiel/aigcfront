@@ -1,4 +1,3 @@
-// src/pages/questions/extract/index.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,24 +11,28 @@ import {
   Spin,
   List,
   Image,
-  message
+  message,
+  Input
 } from 'antd';
 import {
   ArrowLeftOutlined,
   UploadOutlined,
-  FileImageOutlined, ApartmentOutlined
+  FileImageOutlined,
+  ApartmentOutlined,
+  EditOutlined,
+  SaveOutlined, PlayCircleOutlined
 } from '@ant-design/icons';
-import { useQuestionImageContext} from "../../contexts/QuestionImageContext";
-import {QuestionExtractData, useQuestionExtract} from '../../contexts/QuestionExtractContext';
+import { useQuestionImageContext } from "../../contexts/QuestionImageContext";
+import { QuestionExtractData, useQuestionExtract } from '../../contexts/QuestionExtractContext';
 import '../../styles/questions/extract.css';
 import { useAuth } from "../../contexts/AuthContext";
-import { ExtractData, useExtract } from "../../contexts/ExtractContext";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import ReactMarkdown from "react-markdown";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
+const { TextArea } = Input;
 
 const QuestionExtractPage = () => {
   const navigate = useNavigate();
@@ -41,11 +44,19 @@ const QuestionExtractPage = () => {
     setSelectedImage,
     getImageFile
   } = useQuestionImageContext();
-  const { saveQuestionExtract, getQuestionExtractByImage } = useQuestionExtract();
+  const {
+    saveQuestionExtract,
+    getQuestionExtractByImage,
+    updateQuestionExtract // 从上下文中获取更新函数
+  } = useQuestionExtract();
   const { isAuthenticated, logout } = useAuth();
   const [extracting, setExtracting] = useState(false);
   const [result, setResult] = useState<QuestionExtractData | null>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
+
+  // 编辑状态
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingText, setEditingText] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -57,7 +68,14 @@ const QuestionExtractPage = () => {
     if (selectedImage) {
       const historyExtract = getQuestionExtractByImage(selectedImage.id);
       setResult(historyExtract || null);
+      if (historyExtract) {
+        setEditingText(historyExtract.text_content);
+      }
+    } else {
+      setResult(null);
+      setEditingText('');
     }
+    setIsEditing(false); // 切换图片时退出编辑模式
   }, [selectedImage, getQuestionExtractByImage]);
 
   const handleUpload = (file: File) => {
@@ -102,7 +120,6 @@ const QuestionExtractPage = () => {
         },
         body: formData
       });
-      console.log('response:',apiResponse);
 
       if (apiResponse.status === 401) {
         logout();
@@ -115,15 +132,15 @@ const QuestionExtractPage = () => {
       }
 
       const data = await apiResponse.json();
-      console.log('data', data);
-      const extractData = {
-        question_id: `q_${Date.now()}`,
+      const extractData: QuestionExtractData = {
+        extract_id: `q_${Date.now()}`,
         image_id: selectedImage.id,
         ...data.data
       };
 
       saveQuestionExtract(extractData);
       setResult(extractData);
+      setEditingText(extractData.text_content);
     } catch (err) {
       message.error(err instanceof Error ? err.message : '解析失败');
     } finally {
@@ -131,118 +148,170 @@ const QuestionExtractPage = () => {
     }
   };
 
-  return (
-    <Layout className="extract-layout">
-      <Content className="extract-content">
-        <div className="content-wrapper">
-          <Title level={3} className="main-title">
-            <ApartmentOutlined/>
-            题目提取
-          </Title>
+  // 切换编辑模式
+  const toggleEditMode = () => {
+    if (isEditing) {
+      // 保存编辑内容
+      if (result) {
+        updateQuestionExtract(result.extract_id, editingText);
+        setResult({
+          ...result,
+          text_content: editingText
+        });
+        message.success('内容已保存');
+      }
+    }
+    setIsEditing(!isEditing);
+  };
 
-          <Row gutter={24} className="content-row">
-            <Col xs={24} md={14} lg={16}>
-              <Card
-                  title="提取结果"
-                  className="result-card"
-                  extra={
-                    <Button
-                        type="primary"
-                        onClick={handleExtract}
-                        disabled={!selectedImage}
-                        loading={extracting}
-                    >
-                      {extracting ? '解析中...' : '开始提取'}
-                    </Button>
-                  }
-              >
-                <Spin tip="AI正在解析题目..." spinning={extracting}>
-                  {result? (
-                      <div className="result-content">
-                        <div className="section">
-                          <Text strong>内容摘要：</Text>
-                          <Text className="summary">
-                            <ReactMarkdown
-                                  remarkPlugins={[remarkMath]}
-                                  rehypePlugins={[rehypeKatex]}
-                              >
-                                {result?.text_content}
-                              </ReactMarkdown>
-                          </Text>
-                        </div>
-                      </div>
-                  ) : (
-                      <div className="empty-result">
-                        <FileImageOutlined className="empty-icon"/>
-                        <Text type="secondary">请选择需要解析的图片</Text>
-                    </div>
-                  )}
-                </Spin>
-              </Card>
-            </Col>
+  // 处理文本编辑变化
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditingText(e.target.value);
+  };
 
-            <Col xs={24} md={10} lg={8}>
-              <Card
-                  title="图片列表"
-                  className="image-list-card"
-                  extra={
-                    <Upload
-                        beforeUpload={handleUpload}
-                        showUploadList={false}
-                        accept="image/*"
-                    >
-                      <Button icon={<UploadOutlined />}>添加图片</Button>
-                    </Upload>
-                  }
-              >
-                <List
-                    dataSource={images}
-                    renderItem={(item) => (
-                        <List.Item
-                            className={`list-item ${
-                                selectedImage?.id === item.id ? 'selected' : ''
-                            }`}
-                            onClick={() => setSelectedImage(item)}
-                            extra={
-                              <Button
-                                  type="link"
-                                  danger
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeImage(item.id);
-                                  }}
-                              >
-                                删除
-                              </Button>
-                            }
-                        >
-                          <div className="image-content">
-                            <Image
-                                src={item.url}
-                                alt={item.name}
-                                preview={false}
-                                width={80}
-                                height={60}
-                                className="thumbnail"
-                            />
-                            <div className="image-info">
-                              <Text ellipsis className="image-name">
-                                {item.name}
-                              </Text>
-                              <Text type="secondary" className="image-date">
-                                {new Date(item.timestamp).toLocaleDateString()}
-                              </Text>
-                            </div>
-                          </div>
-                        </List.Item>
-                    )}
-                />
-              </Card>
-            </Col>
-          </Row>
+  const renderToolbar = () => {
+    return (
+        <div className="toolbar">
+          <Button
+              type={isEditing ? "default" : "primary"}
+              icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
+              onClick={toggleEditMode}
+              // disabled={!result}
+          >
+            {isEditing ? '保存内容' : '编辑模式'}
+          </Button>
+          <Button
+              type="primary"
+              icon={<PlayCircleOutlined/>}
+              onClick={handleExtract}
+              disabled={!selectedImage}
+              loading={extracting}
+          >
+            {extracting ? '解析中...' : '开始提取'}
+          </Button>
         </div>
-      </Content>
-    </Layout>
+    )
+  }
+
+  const renderExtractEditor = () => {
+    if (extracting) {
+      return (
+          <div className="loading-container">
+            <Spin tip="AI正在解析题目..." size="large" />
+          </div>
+      );
+    }
+
+    if (!result) {
+      return (
+          <div className="empty-result">
+            <FileImageOutlined className="empty-icon"/>
+            <Text type="secondary">请选择需要解析的图片</Text>
+          </div>
+      );
+    }
+
+    return (
+        <div className="result-content">
+          <div className="section">
+            <Text strong>内容摘要：</Text>
+            {isEditing ? (
+                <TextArea
+                    autoSize={{ minRows: 6, maxRows: 12 }}
+                    value={editingText}
+                    onChange={handleTextChange}
+                    className="editing-textarea"
+                />
+            ) : (
+                <div className="summary">
+                  <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                  >
+                    {result.text_content}
+                  </ReactMarkdown>
+                </div>
+            )}
+          </div>
+        </div>
+    );
+  };
+
+  return (
+      <div className="sub-container">
+        <Row gutter={24} className="sub-row">
+          <Col flex="auto" className="sub-col">
+            <div className="tool-section">
+              <Title level={3} className="tool-title">
+                <ApartmentOutlined/>
+                题目提取
+              </Title>
+              {renderToolbar()}
+            </div>
+            <div className="content-card">
+              {renderExtractEditor()}
+            </div>
+          </Col>
+          <Col xs={24} md={10} lg={8}>
+            <Card
+                title="图片列表"
+                className="image-list-card"
+                extra={
+                  <Upload
+                      beforeUpload={handleUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                  >
+                    <Button icon={<UploadOutlined />}>添加图片</Button>
+                  </Upload>
+                }
+            >
+              <List
+                  dataSource={images}
+                  renderItem={(item) => (
+                      <List.Item
+                          className={`list-item ${
+                              selectedImage?.id === item.id ? 'selected' : ''
+                          }`}
+                          onClick={() => setSelectedImage(item)}
+                          extra={
+                            <Button
+                                type="link"
+                                danger
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(item.id);
+                                }}
+                            >
+                              删除
+                            </Button>
+                          }
+                      >
+                        <div className="image-content">
+                          <Image
+                              src={item.url}
+                              alt={item.name}
+                              preview={false}
+                              width={80}
+                              height={60}
+                              className="thumbnail"
+                          />
+                          <div className="image-info">
+                            <Text ellipsis className="image-name">
+                              {item.name}
+                            </Text>
+                            <Text type="secondary" className="image-date">
+                              {new Date(item.timestamp).toLocaleDateString()}
+                            </Text>
+                          </div>
+                        </div>
+                      </List.Item>
+                  )}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
   );
 };
 

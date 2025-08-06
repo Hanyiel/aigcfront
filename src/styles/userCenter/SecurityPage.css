@@ -1,0 +1,9 @@
+/* ============ 安全设置项 ============ */
+.security-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.security-item:last-child {
+  border-bottom: none;
+}

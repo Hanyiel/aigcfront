@@ -12,6 +12,7 @@ interface ExplanationContextType {
   deleteExplanation: (explanationId: string) => void;
   getExplanation: (explanationId: string) => ExplanationData | undefined;
   getExplanationByImage: (imageId: string) => ExplanationData | undefined;
+  updateExplanation: (data: ExplanationData) => void;
 }
 
 const ExplanationContext = createContext<ExplanationContextType>(null!);
@@ -33,7 +34,12 @@ export const ExplanationProvider = ({ children }: { children: React.ReactNode })
       data
     ]);
     localStorage.setItem(`img_exp_${data.image_id}`, data.explanation_id);
+  };
 
+  const updateExplanation = (data: ExplanationData) => {
+    setExplanations(prev =>
+      prev.map(e => e.explanation_id === data.explanation_id ? data : e)
+    );
   };
 
   const deleteExplanation = (explanationId: string) => {
@@ -44,7 +50,6 @@ export const ExplanationProvider = ({ children }: { children: React.ReactNode })
     console.log(explanations);
     console.log(explanationId);
     return explanations.find(e => e.explanation_id === explanationId);
-
   };
 
   const getExplanationByImage = (imageId: string) => {
@@ -59,7 +64,8 @@ export const ExplanationProvider = ({ children }: { children: React.ReactNode })
             saveExplanation,
             deleteExplanation,
             getExplanation,
-            getExplanationByImage
+            getExplanationByImage,
+            updateExplanation
           }}>
         {children}
       </ExplanationContext.Provider>

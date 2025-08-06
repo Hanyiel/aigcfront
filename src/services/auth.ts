@@ -18,16 +18,16 @@ export const get_login_token = async (username: string, password: string) => {
   const data = await response.json();
   console.log(data);
   localStorage.setItem('authToken', data.data);
-  console.log("yes");
+  localStorage.setItem('username', username); // 保存用户名到本地存储
   return data.data; // 确保后端返回{ token: "jwt_token" }
 };
 
 export const registerUser = async (
-  credentials: {
-    username: string;
-    password: string;
-    email: string
-  }
+    credentials: {
+      username: string;
+      password: string;
+      email: string
+    }
 ): Promise<{ user_id: number }> => {
   const response = await fetch(`${API_URL}/auth/register`, {
     method: 'POST',

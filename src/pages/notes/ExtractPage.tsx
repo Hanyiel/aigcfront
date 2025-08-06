@@ -17,16 +17,16 @@ import {
 import {
   ArrowLeftOutlined,
   UploadOutlined,
-  FileImageOutlined, ApartmentOutlined
+  FileImageOutlined, ApartmentOutlined, DragOutlined, LoadingOutlined
 } from '@ant-design/icons';
 import { useImageContext } from '../../contexts/ImageContext';
 import { ExtractData, useExtract} from '../../contexts/ExtractContext';
 import '../../styles/notes/extract.css';
 import { useAuth } from "../../contexts/AuthContext";
-import LatexRenderer from "../../components/LatexRenderer";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import ReactMarkdown from "react-markdown";
+import TextArea from "antd/es/input/TextArea";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -41,18 +41,21 @@ const ExtractPage = () => {
     setSelectedImage,
     getImageFile
   } = useImageContext();
-  const { saveExtract, getExtractByImage } = useExtract();
+  const { saveExtract, getExtractByImage, updateExtract } = useExtract();
   const { isAuthenticated, logout } = useAuth();
   const [extracting, setExtracting] = useState(false);
   const [result, setResult] = useState<ExtractData | null>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingContent, setEditingContent] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
-//当选择图片时加载历史记录
+
+  //当选择图片时加载历史记录
   useEffect(() => {
     if (selectedImage) {
       const historyExtract = getExtractByImage(selectedImage.id);
@@ -60,7 +63,7 @@ const ExtractPage = () => {
     }
   }, [selectedImage, getExtractByImage]);
 
-  // 修改1: 同步处理文件上传
+  // 同步处理文件上传
   const handleUpload = (file: File) => {
     if (!file.type.startsWith('image/')) {
       message.error('仅支持图片文件');
@@ -77,7 +80,7 @@ const ExtractPage = () => {
     return false;
   };
 
-  // 修改2: 直接使用存储的File对象
+  // 直接使用存储的File对象
   const handleExtract = async () => {
     if (!selectedImage) {
       message.warning('请选择需要解析的图片');
@@ -132,128 +135,164 @@ const ExtractPage = () => {
     }
   };
 
+  // 切换编辑模式
+  const toggleEditMode = () => {
+    if (isEditing) {
+      // 保存编辑内容
+      if (result) {
+        const updatedExtract = {
+          ...result,
+          text_content: editingContent
+        };
+        setResult(updatedExtract);
+        updateExtract(updatedExtract); // 更新上下文中的提取结果
+        message.success('内容已保存');
+      }
+    } else {
+      // 进入编辑模式
+      if (result) {
+        setEditingContent(result.text_content || '');
+      }
+    }
+    setIsEditing(!isEditing);
+  };
+  // 处理内容变更
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditingContent(e.target.value);
+  };
+
+  const renderToolbar = () => {
+    return (
+        <div className="toolbar">
+          <Button
+              type={isEditing ? 'default' : 'primary'}
+              icon={<DragOutlined/>}
+              onClick={toggleEditMode}
+              // disabled={!result}
+          >
+            {isEditing ? '保存编辑' : '编辑模式'}
+          </Button>
+          <Button
+              type="primary"
+              onClick={handleExtract}
+              icon={extracting ? <LoadingOutlined/> : <ApartmentOutlined/>}
+              disabled={!selectedImage}
+              loading={extracting}
+          >
+            {extracting ? '解析中...' : '开始提取'}
+          </Button>
+        </div>
+    )
+  }
+
   return (
-      <Layout className="extract-layout">
-        <Content className="extract-content">
-          <div className="content-wrapper">
-            <Title level={3} className="main-title">
-              <ApartmentOutlined/>
-              笔记提取
-            </Title>
-
-            <Row gutter={24} className="content-row">
-              {/* 左侧结果区域 */}
-              <Col xs={24} md={14} lg={16}>
-                <Card
-                    title="提取结果"
-                    className="result-card"
-                    extra={
-                      <Button
-                          type="primary"
-                          onClick={handleExtract}
-                          disabled={!selectedImage}
-                          loading={extracting}
-                      >
-                        {extracting ? '解析中...' : '开始提取'}
-                      </Button>
-                    }
-                >
-                  <Spin tip="AI正在解析内容..." spinning={extracting}>
-                    {result ? (
-                        <div className="result-content">
-                          <div className="section">
-                            <Text strong>内容摘要：</Text>
-                            <Text className="summary">
-                              <ReactMarkdown
-                                  remarkPlugins={[remarkMath]}
-                                  rehypePlugins={[rehypeKatex]}
-                              >
-                                {result?.text_content}
-                              </ReactMarkdown>
-                            </Text>
-                          </div>
-                          {/*<div className="section">*/}
-                          {/*  <Text strong>关键信息：</Text>*/}
-                          {/*  <div className="keywords">*/}
-                          {/*    {result?.text_content?.split('\n').map((line, i) => (*/}
-                          {/*        <Text key={i}>{line}</Text>*/}
-                          {/*    ))}*/}
-                          {/*  </div>*/}
-                          {/*</div>*/}
-                        </div>
-                    ) : (
-                        <div className="empty-result">
-                          <FileImageOutlined className="empty-icon" />
-                          <Text type="secondary">请选择需要解析的图片</Text>
-                        </div>
-                    )}
-                  </Spin>
-                </Card>
-              </Col>
-
-              {/* 右侧图片列表 */}
-              <Col xs={24} md={10} lg={8}>
-                <Card
-                    title="图片列表"
-                    className="image-list-card"
-                    extra={
-                      <Upload
-                          beforeUpload={handleUpload}
-                          showUploadList={false}
-                          accept="image/*"
-                      >
-                        <Button icon={<UploadOutlined />}>添加图片</Button>
-                      </Upload>
-                    }
-                >
-                  <List
-                      dataSource={images}
-                      renderItem={(item) => (
-                          <List.Item
-                              className={`list-item ${
-                                  selectedImage?.id === item.id ? 'selected' : ''
-                              }`}
-                              onClick={() => setSelectedImage(item)}
-                              extra={
-                                <Button
-                                    type="link"
-                                    danger
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      removeImage(item.id);
-                                    }}
-                                >
-                                  删除
-                                </Button>
-                              }
-                          >
-                            <div className="image-content">
-                              <Image
-                                  src={item.url}
-                                  alt={item.name}
-                                  preview={false}
-                                  width={80}
-                                  height={60}
-                                  className="thumbnail"
+      <div className="sub-container">
+          <Row gutter={24} className="sub-row">
+            <Col flex="auto" className="sub-col">
+              <div className="tool-section">
+                <Title level={3} className="tool-title">
+                  <ApartmentOutlined/> 摘要提取
+                </Title>
+                { renderToolbar() }
+              </div>
+              <div
+                  className="content-card"
+              >
+                <Spin tip="AI正在解析内容..." spinning={extracting}>
+                  {result ? (
+                      <div className="result-content">
+                        <div className="section">
+                          <Text strong>内容摘要：</Text>
+                          {isEditing ? (
+                              <TextArea
+                                  value={editingContent}
+                                  onChange={handleContentChange}
+                                  autoSize={{ minRows: 10, maxRows: 20 }}
+                                  style={{ width: '100%', marginTop: 16 }}
                               />
-                              <div className="image-info">
-                                <Text ellipsis className="image-name">
-                                  {item.name}
-                                </Text>
-                                <Text type="secondary" className="image-date">
-                                  {new Date(item.timestamp).toLocaleDateString()}
-                                </Text>
-                              </div>
+                          ) : (
+                              <Text className="summary">
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                >
+                                  {result.text_content || ''}
+                                </ReactMarkdown>
+                              </Text>
+                          )}
+                        </div>
+                      </div>
+                  ) : (
+                      <div className="empty-result">
+                        <FileImageOutlined className="empty-icon"/>
+                        <Text type="secondary">请选择需要解析的图片</Text>
+                      </div>
+                  )}
+                </Spin>
+              </div>
+            </Col>
+
+            {/* 右侧图片列表 */}
+            <Col xs={24} md={10} lg={8}>
+              <Card
+                  title="图片列表"
+                  className="image-list-card"
+                  extra={
+                    <Upload
+                        beforeUpload={handleUpload}
+                        showUploadList={false}
+                        accept="image/*"
+                    >
+                      <Button icon={<UploadOutlined />}>添加图片</Button>
+                    </Upload>
+                  }
+              >
+                <List
+                    dataSource={images}
+                    renderItem={(item) => (
+                        <List.Item
+                            className={`list-item ${
+                                selectedImage?.id === item.id ? 'selected' : ''
+                            }`}
+                            onClick={() => setSelectedImage(item)}
+                            extra={
+                              <Button
+                                  type="link"
+                                  danger
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeImage(item.id);
+                                  }}
+                              >
+                                删除
+                              </Button>
+                            }
+                        >
+                          <div className="image-content">
+                            <Image
+                                src={item.url}
+                                alt={item.name}
+                                preview={false}
+                                width={80}
+                                height={60}
+                                className="thumbnail"
+                            />
+                            <div className="image-info">
+                              <Text ellipsis className="image-name">
+                                {item.name}
+                              </Text>
+                              <Text type="secondary" className="image-date">
+                                {new Date(item.timestamp).toLocaleDateString()}
+                              </Text>
                             </div>
-                          </List.Item>
-                      )}
-                  />
-                </Card>
-              </Col>
-            </Row>
-          </div>
-        </Content>
-      </Layout>
+                          </div>
+                        </List.Item>
+                    )}
+                />
+              </Card>
+            </Col>
+          </Row>
+        </div>
   );
 };
 

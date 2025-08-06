@@ -32,16 +32,17 @@ const ROUTES = {
     KEYWORDS: { path: '/notes/keywords', tabKey: 'keywords' },
     EXPLANATION: { path: '/notes/smart-lecture', tabKey: 'smart-lecture' },
     SAVE_TO_DB: { path: '/notes/save', tabKey: 'storage' },
+    NOTE_MANAGEMENT: { path: '/user-center/notes-management', tabKey: 'note-management'}
   },
   QUESTIONS: {
-
     INDEX: { path: '/questions/index', tabKey: 'questionIndex' },
     EXTRACT: { path: '/questions/extract', tabKey: 'extract' },
     SAVE: { path: '/questions/save', tabKey: 'save' },
     EXPLAIN: { path: '/questions/explanation', tabKey: 'explanation' },
     KEYWORDS: { path: '/questions/keywords', tabKey: 'keywords' },
     FIND_NOTES: { path: '/questions/related-notes', tabKey: 'related-notes' },
-    AUTO_GRADE: { path: '/questions/auto-grade', tabKey: 'grading' }
+    AUTO_GRADE: { path: '/questions/auto-grade', tabKey: 'grading' },
+    QUESTION_MANAGEMENT: { path: '/user-center/questions-management', tabKey: 'question-management' }
   }
 };
 
@@ -53,6 +54,7 @@ const featureCards = {
     { title: '知识点关键词', icon: <KeyOutlined />, path: ROUTES.NOTES.KEYWORDS },
     { title: '智能生成讲解', icon: <CommentOutlined />, path: ROUTES.NOTES.EXPLANATION },
     { title: '保存笔记', icon: <SaveOutlined />, path: ROUTES.NOTES.SAVE_TO_DB },
+    { title: '管理笔记', icon: <HomeOutlined />, path: ROUTES.NOTES.NOTE_MANAGEMENT}
   ],
   questions: [
     { title: '题目摘要提取', icon: <SolutionOutlined />, path: ROUTES.QUESTIONS.EXTRACT },
@@ -61,7 +63,7 @@ const featureCards = {
     { title: '查找相关笔记', icon: <SearchOutlined />, path: ROUTES.QUESTIONS.FIND_NOTES },
     { title: '自动批改功能', icon: <CheckCircleOutlined />, path: ROUTES.QUESTIONS.AUTO_GRADE },
     { title: '题目保存', icon: <SolutionOutlined />, path: ROUTES.QUESTIONS.SAVE },
-
+    { title: '管理题目', icon: <HomeOutlined />, path: ROUTES.QUESTIONS.QUESTION_MANAGEMENT },
   ]
 };
 
@@ -108,7 +110,7 @@ const HomePage: React.FC = () => {
             <span className="brand-name">LinkMind</span>
             <span className="brand-sub">智能学习云脑引擎</span>
             <Breadcrumb style={{ fontSize: '16px' , margin: '0 0 0 10px' }}>
-              <Breadcrumb.Item onClick={() => navigate('/')}>
+              <Breadcrumb.Item onClick={() => navigate('/home')}>
                 <HomeOutlined /> 首页
               </Breadcrumb.Item>
             </Breadcrumb>
@@ -116,7 +118,7 @@ const HomePage: React.FC = () => {
 
 
           <Dropdown overlay={userMenu} trigger={['click']}>
-            <div className="user-center" onClick={() => navigate('/userCenter')}>
+            <div className="user-center" onClick={() => navigate('/user-center')}>
               <UserOutlined className="user-icon" />
               <span>用户中心</span>
             </div>
@@ -171,24 +173,26 @@ const HomePage: React.FC = () => {
                 </div>
               </Card>
             </div>
-            <div className="feature-cards">
+            <div className="feature-cards-container">
               <Title level={4} className="cards-title">功能入口</Title>
-              <Row gutter={[24, 24]}>
-                {featureCards[selectedKey as keyof typeof featureCards].map((card) => (
-                    <Col key={card.title} xs={24} sm={12} lg={8}>
-                      <Card
-                          hoverable
-                          className="feature-card"
-                          onClick={() => handleCardClick(card.path.path, card.path.tabKey)}
-                      >
-                        <div className="card-content">
-                          <div className="card-icon">{card.icon}</div>
-                          <h3 className="card-title">{card.title}</h3>
-                        </div>
-                      </Card>
-                    </Col>
-                ))}
-              </Row>
+              <div className="cards-scroll-area">
+                <Row gutter={[24, 24]}>
+                  {featureCards[selectedKey as keyof typeof featureCards].map((card) => (
+                      <Col key={card.title} xs={24} sm={12} lg={8}>
+                        <Card
+                            hoverable
+                            className="feature-card"
+                            onClick={() => handleCardClick(card.path.path, card.path.tabKey)}
+                        >
+                          <div className="card-content">
+                            <div className="card-icon">{card.icon}</div>
+                            <h3 className="card-title">{card.title}</h3>
+                          </div>
+                        </Card>
+                      </Col>
+                  ))}
+                </Row>
+              </div>
             </div>
           </Content>
         </Layout>

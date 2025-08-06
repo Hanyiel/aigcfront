@@ -1,4 +1,3 @@
-// src/contexts/QuestionExtractContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export interface QuestionExtractData {
@@ -11,6 +10,7 @@ export interface QuestionExtractData {
 interface QuestionExtractContextType {
   questionExtracts: QuestionExtractData[];
   saveQuestionExtract: (data: QuestionExtractData) => void;
+  updateQuestionExtract: (extractId: string, newContent: string) => void; // 新增更新函数
   deleteQuestionExtract: (questionExtractId: string) => void;
   getQuestionExtractByImage: (imageId: string) => QuestionExtractData | undefined;
 }
@@ -36,6 +36,17 @@ export const QuestionExtractProvider = ({ children }: { children: React.ReactNod
     localStorage.setItem(`img_qext_${data.image_id}`, data.extract_id);
   };
 
+  // 新增更新函数
+  const updateQuestionExtract = (extractId: string, newContent: string) => {
+    setQuestionExtracts(prev =>
+      prev.map(item =>
+        item.extract_id === extractId
+          ? { ...item, text_content: newContent }
+          : item
+      )
+    );
+  };
+
   const deleteQuestionExtract = (questionExtractId: string) => {
     setQuestionExtracts(prev => prev.filter(q => q.extract_id !== questionExtractId));
   };
@@ -50,6 +61,7 @@ export const QuestionExtractProvider = ({ children }: { children: React.ReactNod
       value={{
         questionExtracts,
         saveQuestionExtract,
+        updateQuestionExtract, // 暴露更新函数
         deleteQuestionExtract,
         getQuestionExtractByImage
       }}>

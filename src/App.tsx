@@ -4,7 +4,7 @@ import ProtectedRoute from "./components/ProtectRoute";
 import LoginPage from './pages/LoginPage';
 import RegisterPage from "./pages/RegisterPage";
 import HomePage from './pages/HomePage';
-import UserCenter from "./pages/userCenter/UserCenter";
+/* ========== Notes ========== */
 import NotePage from "./pages/notes/NotePage";
 import NoteIndexPage from "./pages/notes/NoteIndexPage";
 import ExtractPage from "./pages/notes/ExtractPage";
@@ -12,6 +12,7 @@ import MindMapPage from "./pages/notes/MindMapPage";
 import KeywordsPage from "./pages/notes/KeywordsPage";
 import SmartLectureLayout from "./pages/notes/SmartLecturePage";
 import NoteSavePage from "./pages/notes/NoteSavePage";
+/* ========== Questions ========== */
 import QuestionPage from "./pages/questions/QuetionPage";
 import QuestionIndexPage from "./pages/questions/QuestionIndexPage";
 import QuestionExtractPage from "./pages/questions/QuestionExtractPage";
@@ -20,6 +21,13 @@ import QuestionExplanationPage from "./pages/questions/QuestionExplanationPage";
 import RelatedNotesPage from "./pages/questions/RelatedNotePage";
 import AutoGradePage from "./pages/questions/AutoGradePage";
 import SaveQuestionPage from "./pages/questions/SaveQuestionPage";
+/* ========== UserCenter ========== */
+import UserCenter from "./pages/userCenter/UserCenter";
+import ProfilePage from "./pages/userCenter/ProfilePage";
+import SecurityPage from "./pages/userCenter/SecurityPage";
+import NotesManagementPage from "./pages/userCenter/NotesManagementPage";
+import QuestionsManagementPage from "./pages/userCenter/QuestionsManagementPage";
+/* ========== Provider ========== */
 import { ImageProvider } from './contexts/ImageContext';
 import { ExplanationProvider } from './contexts/ExplanationContext';
 import { MindMapProvider} from "./contexts/MindMapContext";
@@ -33,7 +41,6 @@ import { RelatedNoteProvider} from "./contexts/RelatedNoteContext";
 import {AutoGradeProvider} from "./contexts/AutoGradeContext";
 // import { useAuth } from './contexts/AuthContext';
 // import {JSX} from "react";
-
 // 路由守卫组件
 // const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 //   const { isAuthenticated } = useAuth();
@@ -61,12 +68,6 @@ function App() {
                                                                 path="/home"
                                                                 element={
                                                                     <HomePage />
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path={"/userCenter"}
-                                                                element={
-                                                                    <UserCenter />
                                                                 }
                                                             />
                                                         </Route>
@@ -162,6 +163,40 @@ function App() {
                                                                     path="save"
                                                                     element={
                                                                         <SaveQuestionPage />
+                                                                    }
+                                                                />
+                                                            </Route>
+                                                        </Route>
+                                                        <Route element={<ProtectedRoute />}>
+                                                            <Route
+                                                                path="/user-center"
+                                                                element={
+                                                                    <UserCenter />
+                                                                }
+                                                            >
+                                                                <Route index element={<Navigate to="profile" replace />} />
+                                                                <Route
+                                                                    path="profile"
+                                                                    element={
+                                                                        <ProfilePage/>
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="security"
+                                                                    element={
+                                                                        <SecurityPage />
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="notes-management"
+                                                                    element={
+                                                                        <NotesManagementPage />
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="questions-management"
+                                                                    element={
+                                                                        <QuestionsManagementPage />
                                                                     }
                                                                 />
                                                             </Route>

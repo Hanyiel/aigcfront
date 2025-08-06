@@ -1,29 +1,35 @@
-// src/pages/questions/QuestionKeywordsPage.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, Row, Col, List, Tag, Upload, Spin, message } from 'antd';
+import {Button, Card, Row, Col, List, Tag, Upload, Spin, message, Typography, Input} from 'antd';
 import {
   UploadOutlined,
   FileImageOutlined,
   LinkOutlined,
-  SearchOutlined
+  ApartmentOutlined,
+  EditOutlined,
+  SaveOutlined,
+  CloseOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 import { useQuestionImageContext } from '../../contexts/QuestionImageContext';
 import '../../styles/questions/QuestionKeywordsPage.css';
 import { useQuestionKeywords } from "../../contexts/QuestionKeywordsContext";
 import { useAuth } from "../../contexts/AuthContext";
 
+const { Title, Text } = Typography;
+const { Search } = Input;
+
 interface QuestionKeyword {
   term: string;
-  tfidf_score: number;
-  related_notes?: string[];
-  related_questions?: string[];
+  tfidfScore: number;
+  subject?: string;
+  relatedNotes?: string[];
+  relatedQuestions?: string[];
 }
 
 const QuestionKeywordsPage = () => {
   const navigate = useNavigate();
 
-  // Context 替换
   const {
     images: questionImages,
     addImage: addQuestionImage,
@@ -36,15 +42,21 @@ const QuestionKeywordsPage = () => {
   const {
     saveQuestionKeywords,
     getKeywordsByQuestionImage,
+    updateQuestionKeywords // 获取更新函数
   } = useQuestionKeywords();
 
   const [keywords, setKeywords] = useState<QuestionKeyword[]>([]);
   const [loading, setLoading] = useState(false);
-  const [associations, setAssociations] = useState<string[]>([]);
   const [ocrTexts, setOcrTexts] = useState<Record<string, string>>({});
-  const [ocrLoading, setOcrLoading] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
+
+  // 编辑状态
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [newKeywordText, setNewKeywordText] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -52,13 +64,27 @@ const QuestionKeywordsPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  // 当选中图片变化时，更新关键词列表
+  useEffect(() => {
+    if (selectedQuestionImage) {
+      const kws = getKeywordsByQuestionImage(selectedQuestionImage.id) || [];
+      setKeywords(kws);
+    } else {
+      setKeywords([]);
+    }
+    // 切换图片时退出编辑状态
+    setIsEditing(false);
+    setEditingIndex(null);
+    setIsAdding(false);
+  }, [selectedQuestionImage, getKeywordsByQuestionImage]);
+
   const handleUpload = (file: File) => {
     if (!file.type.startsWith('image/')) {
       message.error('仅支持图片文件');
       return false;
     }
     try {
-      addQuestionImage(file); // 方法替换
+      addQuestionImage(file);
       message.success(`${file.name} 已添加预览`);
       if (uploadRef.current) uploadRef.current.value = '';
     } catch (err) {
@@ -70,14 +96,13 @@ const QuestionKeywordsPage = () => {
   const handleExtractKeywords = async () => {
     const token = localStorage.getItem('authToken');
 
-    if (!selectedQuestionImage) { // 变量替换
+    if (!selectedQuestionImage) {
       message.warning('请先选择图片');
       return;
     }
     try {
       setLoading(true);
-      const imageFile = getQuestionImageFile(selectedQuestionImage.id); // 方法替换
-      console.log('token:', token)
+      const imageFile = getQuestionImageFile(selectedQuestionImage.id);
       if (!imageFile) {
         message.error('图片文件不存在');
         return;
@@ -85,7 +110,6 @@ const QuestionKeywordsPage = () => {
       const formData = new FormData();
       formData.append('image', imageFile);
       formData.append('max_keywords', '5');
-      // 接口路径修改
       const response = await fetch('http://localhost:8000/api/questions/keywords', {
         method: 'POST',
         headers: {
@@ -99,22 +123,19 @@ const QuestionKeywordsPage = () => {
         throw new Error(errorData.message || `HTTP错误 ${response.status}`);
       }
       const result = await response.json();
-      console.log('完整响应:', result);
       const data = result.data;
-      console.log(data)
 
       if (!result.data?.keywords) {
-        console.error('异常数据结构:', result);
         throw new Error('返回数据格式异常');
       }
 
-      const keywords = data.keywords.map((k: any) => ({
+      const keywords: QuestionKeyword[] = data.keywords.map((k: any) => ({
         term: k.term,
         tfidfScore: Number(k.tfidf_score),
         subject: data.subject
       }));
 
-      saveQuestionKeywords(selectedQuestionImage.id, keywords); // 方法替换
+      saveQuestionKeywords(selectedQuestionImage.id, keywords);
       setKeywords(keywords);
       message.success(`提取到${keywords.length}个关键词`);
     } catch (err) {
@@ -125,42 +146,212 @@ const QuestionKeywordsPage = () => {
     }
   };
 
-  return (
-    <div className="keywords-container">
-      <Row gutter={24} className="keywords-row">
-        {/* 左侧关键词区域 */}
-        <Col flex="auto" className="keywords-col">
-          <Card
-            title="关键词分析"
-            extra={
-              <Button
-                type="primary"
-                onClick={handleExtractKeywords}
-                loading={loading}
-              >
-                提取关键词
-              </Button>
-            }
+  // 切换编辑模式
+  const toggleEditMode = () => {
+    if (isEditing) {
+      // 保存所有更改
+      if (selectedQuestionImage) {
+        updateQuestionKeywords(selectedQuestionImage.id, keywords);
+        message.success('关键词已保存');
+      }
+    }
+    setIsEditing(!isEditing);
+    setEditingIndex(null);
+    setIsAdding(false);
+  };
+
+  // 开始编辑关键词
+  const startEditing = (index: number, term: string) => {
+    if (!isEditing) return;
+    setEditingIndex(index);
+    setEditingText(term);
+  };
+
+  // 完成关键词编辑
+  const finishEditing = (index: number) => {
+    if (editingText.trim()) {
+      const updatedKeywords = [...keywords];
+      updatedKeywords[index] = {
+        ...updatedKeywords[index],
+        term: editingText
+      };
+      setKeywords(updatedKeywords);
+    }
+    setEditingIndex(null);
+  };
+
+  // 处理关键词文本变化
+  const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingText(e.target.value);
+  };
+
+  // 处理新关键词文本变化
+  const handleNewKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewKeywordText(e.target.value);
+  };
+
+  // 添加新关键词
+  const addNewKeyword = () => {
+    if (!selectedQuestionImage) {
+      message.warning('请先选择图片');
+      return;
+    }
+
+    if (!isAdding) {
+      setIsAdding(true);
+      setNewKeywordText('');
+    } else if (newKeywordText.trim()) {
+      const newKeyword: QuestionKeyword = {
+        term: newKeywordText.trim(),
+        tfidfScore: 0.05,
+        relatedNotes: [],
+        relatedQuestions: []
+      };
+      const updatedKeywords = [...keywords, newKeyword];
+      setKeywords(updatedKeywords);
+      setIsAdding(false);
+    }
+  };
+
+  // 保存新关键词
+  const saveNewKeyword = () => {
+    if (newKeywordText.trim()) {
+      const newKeyword: QuestionKeyword = {
+        term: newKeywordText.trim(),
+        tfidfScore: 0.05,
+        relatedNotes: [],
+        relatedQuestions: []
+      };
+      const updatedKeywords = [...keywords, newKeyword];
+      setKeywords(updatedKeywords);
+    }
+    setIsAdding(false);
+  };
+
+  // 删除关键词
+  const handleDeleteKeyword = (index: number) => {
+    if (!selectedQuestionImage) return;
+
+    const updatedKeywords = [...keywords];
+    updatedKeywords.splice(index, 1);
+    setKeywords(updatedKeywords);
+
+    if (editingIndex === index) {
+      setEditingIndex(null);
+    }
+  };
+
+  const renderKeywordsEditor = () => {
+    return (
+      <div className="keywords-list">
+        {keywords.map((k, i) => (
+          <div
+            key={i}
+            className="keyword-tag-wrapper"
+            onDoubleClick={() => startEditing(i, k.term)}
           >
-            <div className="keywords-list">
-              {selectedQuestionImage && getKeywordsByQuestionImage(selectedQuestionImage.id)?.map((k, i) => ( // 方法替换
-                <Tag
-                  key={i}
-                  color={i % 2 ? 'geekblue' : 'cyan'}
-                  className="keyword-tag"
-                >
-                  {k.term}
-                  <span className="score">({(k.tfidfScore * 100).toFixed(1)}%)</span>
-                </Tag>
-              ))}
-            </div>
-          </Card>
+            {editingIndex === i ? (
+              <Input
+                autoFocus
+                value={editingText}
+                onChange={handleKeywordChange}
+                onPressEnter={() => finishEditing(i)}
+                onBlur={() => finishEditing(i)}
+                size="small"
+                style={{ width: 120 }}
+              />
+            ) : (
+              <Tag
+                color={i % 2 ? 'geekblue' : 'cyan'}
+                className="keyword-tag"
+              >
+                {k.term}
+                <span className="score">({(k.tfidfScore * 100).toFixed(1)}%)</span>
+              </Tag>
+            )}
+            {isEditing && editingIndex !== i && (
+              <Button
+                type="text"
+                danger
+                icon={<CloseOutlined />}
+                className="delete-keyword-btn"
+                onClick={() => handleDeleteKeyword(i)}
+              />
+            )}
+          </div>
+        ))}
+
+        {isEditing && (
+          <div className="add-keyword-container">
+            {isAdding ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Input
+                  autoFocus
+                  value={newKeywordText}
+                  onChange={handleNewKeywordChange}
+                  onPressEnter={saveNewKeyword}
+                  onBlur={saveNewKeyword}
+                  size="small"
+                  placeholder="输入新关键词"
+                  style={{ width: 120 }}
+                />
+              </div>
+            ) : (
+              <Button
+                type="dashed"
+                icon={<PlusOutlined />}
+                size="small"
+                onClick={addNewKeyword}
+              >
+                添加关键词
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderToolbar = () => (
+    <div className="toolbar">
+      <Button
+        type={isEditing ? "primary" : "default"}
+        icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
+        onClick={toggleEditMode}
+        disabled={!selectedQuestionImage}
+      >
+        {isEditing ? '保存编辑' : '编辑模式'}
+      </Button>
+      <Button
+        type="primary"
+        onClick={handleExtractKeywords}
+        loading={loading}
+        disabled={!selectedQuestionImage}
+      >
+        提取关键词
+      </Button>
+    </div>
+  );
+
+  return (
+    <div className="sub-container">
+      <Row gutter={24} className="sub-row">
+        <Col flex="auto" className="sub-col">
+          <div className="tool-section">
+            <Title level={3} className="tool-title">
+              <ApartmentOutlined /> 提取关键词
+            </Title>
+            {renderToolbar()}
+          </div>
+          <div className="content-card">
+            {renderKeywordsEditor()}
+          </div>
         </Col>
 
         {/* 右侧图片列表 */}
-        <Col flex="400px" className="image-col">
+        <Col xs={24} md={10} lg={8}>
           <Card
-            title="题目图片列表"  // 标题修改
+            title="题目图片列表"
             className="image-list-card"
             extra={
               <Upload
@@ -168,23 +359,23 @@ const QuestionKeywordsPage = () => {
                 showUploadList={false}
                 accept="image/*"
               >
-                <Button icon={<UploadOutlined />}>上传题目图片</Button> {/* 文案微调 */}
+                <Button icon={<UploadOutlined />}>上传题目图片</Button>
               </Upload>
             }
           >
             <List
-              dataSource={questionImages} // 数据源替换
+              dataSource={questionImages}
               renderItem={(item) => (
                 <List.Item
-                  className={`list-item ${selectedQuestionImage?.id === item.id ? 'selected' : ''}`} // 变量替换
-                  onClick={() => setSelectedQuestionImage(item)} // 方法替换
+                  className={`list-item ${selectedQuestionImage?.id === item.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedQuestionImage(item)}
                   extra={
                     <Button
                       type="link"
                       danger
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeQuestionImage(item.id); // 方法替换
+                        removeQuestionImage(item.id);
                         setOcrTexts(prev => {
                           const newTexts = { ...prev };
                           delete newTexts[item.id];
@@ -213,6 +404,9 @@ const QuestionKeywordsPage = () => {
                       <span className="text-indicator">
                         <LinkOutlined /> 已解析文本
                       </span>
+                    )}
+                    {getKeywordsByQuestionImage(item.id)?.length > 0 && (
+                      <Tag color="green" className="explanation-tag">已提取关键词</Tag>
                     )}
                   </div>
                 </List.Item>

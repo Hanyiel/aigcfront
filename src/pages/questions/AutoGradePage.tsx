@@ -19,7 +19,8 @@ import {
   Badge,
   Space
 } from 'antd';
-import { CheckCircleFilled,
+import {
+  CheckCircleFilled,
   CloseCircleFilled,
   WarningFilled,
   InboxOutlined,
@@ -28,7 +29,7 @@ import { CheckCircleFilled,
   EditOutlined,
   WarningOutlined,
   ReadOutlined,
-  TagOutlined
+  TagOutlined, ApartmentOutlined
 } from '@ant-design/icons';
 import {GradingResult, useAutoGrade} from '../../contexts/AutoGradeContext';
 import { useImageContext } from '../../contexts/ImageContext';
@@ -171,182 +172,199 @@ const AutoGradePage = () => {
     );
   };
 
-  return (
-      <Row gutter={24} className="grade-container">
-        {/* 左侧批改详情 */}
-        <Col xs={24} md={14} lg={16} className="grading-panel">
-          <Card
-              title="智能批改报告"
-              extra={
-                <div className="header-actions">
-                  <Button
-                      type="primary"
-                      onClick={handleGrade}
-                      disabled={!selectedImage}
-                      loading={loading}
-                  >
-                    立即批改
-                  </Button>
-                </div>
-              }
-          >
-            <Spin spinning={loading} tip="正在智能批改...">
-              {currentGrading ? (
-                  <div className="grading-detail">
-                    {/* 状态标识增强 */}
-                    <div className="status-header" style={{
-                      background: `linear-gradient(15deg, ${getStatusConfig(currentGrading.code).color}10, #ffffff)`,
-                      borderLeft: `4px solid ${getStatusConfig(currentGrading.code).color}`
-                    }}>
-                      <div className="status-icon-wrapper">
-                        {getStatusConfig(currentGrading.code).icon}
-                      </div>
-                      <div className="status-info">
-                        <Title
-                            level={3}
-                            style={{ color: getStatusConfig(currentGrading.code).color, margin: 0 }}
-                        >
-                          {getStatusConfig(currentGrading.code).text}
-                        </Title>
-                        <Text type="secondary">
-                          {getStatusConfig(currentGrading.code).description}
+  const renderToolbar = () => (
+      <div className="toolbar">
+        <Button>
+          编辑模式
+        </Button>
+        <Button
+            type="primary"
+            onClick={handleGrade}
+            disabled={!selectedImage}
+            loading={loading}
+        >
+          立即批改
+        </Button>
+      </div>
+  );
+
+  const renderAutoGradeEditor = () => {
+    return(
+        <Spin spinning={loading} tip="正在智能批改...">
+          {currentGrading ? (
+              <div className="grading-detail">
+                {/* 状态标识增强 */}
+                <div className="status-header" style={{
+                  background: `linear-gradient(15deg, ${getStatusConfig(currentGrading.code).color}10, #ffffff)`,
+                  borderLeft: `4px solid ${getStatusConfig(currentGrading.code).color}`
+                }}>
+                  <div className="status-icon-wrapper">
+                    {getStatusConfig(currentGrading.code).icon}
+                  </div>
+                  <div className="status-info">
+                    <Title
+                        level={3}
+                        style={{color: getStatusConfig(currentGrading.code).color, margin: 0}}
+                    >
+                      {getStatusConfig(currentGrading.code).text}
+                    </Title>
+                    <Text type="secondary">
+                      {getStatusConfig(currentGrading.code).description}
+                    </Text>
+                  </div>
+                  {currentGrading.score !== undefined && (
+                      <div className="score-badge">
+                        <Text strong style={{fontSize: 24}}>
+                          {currentGrading.score}
                         </Text>
+                        <Text type="secondary">分</Text>
                       </div>
-                      {currentGrading.score !== undefined && (
-                          <div className="score-badge">
-                            <Text strong style={{ fontSize: 24 }}>
-                              {currentGrading.score}
-                            </Text>
-                            <Text type="secondary">分</Text>
-                          </div>
-                      )}
+                  )}
+                </div>
+                {/* 答案对比重构 */}
+                <Collapse defaultActiveKey={['answers']} ghost>
+                  <Panel header={<><EditOutlined/> 答案对比分析</>} key="answers">
+                    <div className="answer-compare">
+                      {renderAnswerBlock('你的答案', currentGrading.your_answer)}
+                      {renderAnswerBlock('参考答案', currentGrading.correct_answer)}
                     </div>
-                    {/* 答案对比重构 */}
-                    <Collapse defaultActiveKey={['answers']} ghost>
-                      <Panel header={<><EditOutlined /> 答案对比分析</>} key="answers">
-                        <div className="answer-compare">
-                          {renderAnswerBlock('你的答案', currentGrading.your_answer)}
-                          {renderAnswerBlock('参考答案', currentGrading.correct_answer)}
-                        </div>
-                      </Panel>
-                    </Collapse>
-                    {/* 错误分析优化 */}
-                    {currentGrading.code !== 2 && (
-                        <Collapse defaultActiveKey={['errors']} ghost>
-                          <Panel header={<><WarningOutlined /> 错误分析</>} key="errors">
-                            <div className="error-analysis">
-                              {safeArray(currentGrading.error_analysis).length > 0 ? (
-                                  <div className="error-analysis">
-                                    {safeArray(currentGrading.error_analysis).map((item, idx) => (
-                                        <div key={idx} className="analysis-item">
-                                          <WarningOutlined className="warning-icon" />
-                                          <span><ReactMarkdown
-                                              remarkPlugins={[remarkMath]}
-                                              rehypePlugins={[rehypeKatex]}
-                                          >
+                  </Panel>
+                </Collapse>
+                {/* 错误分析优化 */}
+                {currentGrading.code !== 2 && (
+                    <Collapse defaultActiveKey={['errors']} ghost>
+                      <Panel header={<><WarningOutlined/> 错误分析</>} key="errors">
+                        <div className="error-analysis">
+                          {safeArray(currentGrading.error_analysis).length > 0 ? (
+                              <div className="error-analysis">
+                                {safeArray(currentGrading.error_analysis).map((item, idx) => (
+                                    <div key={idx} className="analysis-item">
+                                      <WarningOutlined className="warning-icon"/>
+                                      <span><ReactMarkdown
+                                          remarkPlugins={[remarkMath]}
+                                          rehypePlugins={[rehypeKatex]}
+                                      >
                                             {item}
                                           </ReactMarkdown>
                                           </span>
-                                        </div>
-                                    ))}
-                                  </div>
-                              ) : (
-                                  <Alert message="本次批改未记录具体错误信息" type="info" showIcon />
-                              )}
-                            </div>
-                          </Panel>
-                        </Collapse>
-                    )}
-                    {/* 知识点展示优化 */}
-                    <Collapse defaultActiveKey={['knowledge']} ghost>
-                      <Panel header={<><ReadOutlined /> 关联知识点</>} key="knowledge">
-                        <div className="knowledge-points">
-                          {safeArray(currentGrading.knowledge_point).length > 0 ? (
-                              <Space size={[8, 16]} wrap>
-                                {safeArray(currentGrading.knowledge_point).map((kp, index) => (
-                                    <Tag
-                                        key={index}
-                                        icon={<TagOutlined />}
-                                        color="geekblue"
-                                        className="knowledge-tag"
-                                    >
-                                      <LatexRenderer content={kp} />
-                                    </Tag>
+                                    </div>
                                 ))}
-                              </Space>
+                              </div>
                           ) : (
-                              <Alert message="未关联到知识点体系" type="info" showIcon />
+                              <Alert message="本次批改未记录具体错误信息" type="info" showIcon/>
                           )}
                         </div>
                       </Panel>
                     </Collapse>
-                  </div>
-              ) : (
-                  <Empty description="请先上传题目进行批改" imageStyle={{ height: 60 }} />
-              )}
-            </Spin>
-          </Card>
-        </Col>
-        {/* 右侧图片列表 */}
-        <Col xs={24} md={10} lg={8}>
-          <Card
-              title="图片列表"
-              className="image-list-card"
-              extra={
-                <Upload
-                    beforeUpload={handleUpload}
-                    showUploadList={false}
-                    accept="image/*"
-                >
-                  <Button icon={<UploadOutlined/>}>添加图片</Button>
-                </Upload>
-              }
-          >
-            <List
-                dataSource={images}
-                renderItem={(item) => (
-                    <List.Item
-                        className={`list-item ${
-                            selectedImage?.id === item.id ? 'selected' : ''
-                        }`}
-                        onClick={() => setSelectedImage(item)}
-                        extra={
-                          <Button
-                              type="link"
-                              danger
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeImage(item.id);
-                              }}
-                          >
-                            删除
-                          </Button>
-                        }
-                    >
-                      <div className="image-content">
-                        <Image
-                            src={item.url}
-                            alt={item.name}
-                            preview={false}
-                            width={80}
-                            height={60}
-                            className="thumbnail"
-                        />
-                        <div className="image-info">
-                          <Text ellipsis className="image-name">
-                            {item.name}
-                          </Text>
-                          <Text type="secondary" className="image-date">
-                            {new Date(item.timestamp).toLocaleDateString()}
-                          </Text>
-                        </div>
-                      </div>
-                    </List.Item>
                 )}
-            />
-          </Card>
-        </Col>
-      </Row>
+                {/* 知识点展示优化 */}
+                <Collapse defaultActiveKey={['knowledge']} ghost>
+                  <Panel header={<><ReadOutlined/> 关联知识点</>} key="knowledge">
+                    <div className="knowledge-points">
+                      {safeArray(currentGrading.knowledge_point).length > 0 ? (
+                          <Space size={[8, 16]} wrap>
+                            {safeArray(currentGrading.knowledge_point).map((kp, index) => (
+                                <Tag
+                                    key={index}
+                                    icon={<TagOutlined/>}
+                                    color="geekblue"
+                                    className="knowledge-tag"
+                                >
+                                  <LatexRenderer content={kp}/>
+                                </Tag>
+                            ))}
+                          </Space>
+                      ) : (
+                          <Alert message="未关联到知识点体系" type="info" showIcon/>
+                      )}
+                    </div>
+                  </Panel>
+                </Collapse>
+              </div>
+          ) : (
+              <Empty description="请先上传题目进行批改" imageStyle={{height: 60}}/>
+          )}
+        </Spin>
+    )
+  }
+
+  return (
+      <div className="sub-container">
+        <Row gutter={24} className="sub-row">
+          <Col flex="auto" className="sub-col">
+            <div className="tool-section">
+              <Title level={3} className="tool-title">
+                <ApartmentOutlined/> 智能批改
+              </Title>
+              {renderToolbar()}
+            </div>
+            <div
+                className="content-card"
+            >
+              {renderAutoGradeEditor()}
+            </div>
+          </Col>
+          {/* 右侧图片列表 */}
+          <Col xs={24} md={10} lg={8}>
+            <Card
+                title="图片列表"
+                className="image-list-card"
+                extra={
+                  <Upload
+                      beforeUpload={handleUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                  >
+                    <Button icon={<UploadOutlined/>}>添加图片</Button>
+                  </Upload>
+                }
+            >
+              <List
+                  dataSource={images}
+                  renderItem={(item) => (
+                      <List.Item
+                          className={`list-item ${
+                              selectedImage?.id === item.id ? 'selected' : ''
+                          }`}
+                          onClick={() => setSelectedImage(item)}
+                          extra={
+                            <Button
+                                type="link"
+                                danger
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(item.id);
+                                }}
+                            >
+                              删除
+                            </Button>
+                          }
+                      >
+                        <div className="image-content">
+                          <Image
+                              src={item.url}
+                              alt={item.name}
+                              preview={false}
+                              width={80}
+                              height={60}
+                              className="thumbnail"
+                          />
+                          <div className="image-info">
+                            <Text ellipsis className="image-name">
+                              {item.name}
+                            </Text>
+                            <Text type="secondary" className="image-date">
+                              {new Date(item.timestamp).toLocaleDateString()}
+                            </Text>
+                          </div>
+                        </div>
+                      </List.Item>
+                  )}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </div>
   );
 };
 

@@ -5,7 +5,7 @@ import {
     FileTextOutlined,
     ApartmentOutlined,
     TagsOutlined,
-    SoundOutlined
+    SoundOutlined, DragOutlined, LoadingOutlined
 } from '@ant-design/icons';
 import {
     ImageContextType, useImageContext,
@@ -20,7 +20,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import ReactMarkdown from "react-markdown";
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
 
 interface NoteSaveResponse {
     code: number;
@@ -161,122 +161,135 @@ const NoteSavePage = () => {
         }
     };
 
-    return (
-        <Row gutter={24} className="note-save-container">
-            {/* 左侧保存面板 */}
-            <Col span={16} className="save-panel">
-                <Card
-                    title={selectedImage?.name || "请选择图片"}
-                    extra={
-                        <Button
-                            type="primary"
-                            icon={<SaveOutlined />}
-                            onClick={handleSave}
-                            disabled={!selectedImage}
-                            loading={loading}
-                        >
-                            保存笔记
-                        </Button>
-                    }
+    const renderToolbar = () => {
+        return (
+            <div className="toolbar">
+                <Button
+                    type="primary"
+                    icon={<SaveOutlined/>}
+                    onClick={handleSave}
+                    disabled={!selectedImage}
+                    loading={loading}
                 >
-                    {selectedImage && (
-                        <>
-                            {/* 主图预览 */}
-                            <div className="main-preview">
-                                <Image
-                                    src={selectedImage.url}
-                                    alt="主预览"
-                                    className="preview-image"
-                                />
-                            </div>
+                    保存笔记
+                </Button>
+            </div>
+        )
+    }
 
-                            {/* 保存选项 */}
-                            <div className="save-options">
-                                <Checkbox.Group
-                                    value={Object.keys(saveOptions).filter(k => saveOptions[k])}
-                                    onChange={values => {
-                                        const newOptions = { ...saveOptions };
-                                        Object.keys(newOptions).forEach(k => {
-                                            newOptions[k] = values.includes(k);
-                                        });
-                                        setSaveOptions(newOptions);
-                                    }}
-                                >
-                                    <Row gutter={24}>
-                                        <Col span={10}>
-                                            <Checkbox value="summary">
-                                                <FileTextOutlined /> 保存摘要
-                                            </Checkbox>
-                                        </Col>
-                                        {/*<Col span={6}>*/}
-                                        {/*    <Checkbox value="mindmap">*/}
-                                        {/*        <ApartmentOutlined /> 思维导图*/}
-                                        {/*    </Checkbox>*/}
-                                        {/*</Col>*/}
-                                        <Col span={10}>
-                                            <Checkbox value="knowledge">
-                                                <TagsOutlined /> 知识点
-                                            </Checkbox>
-                                        </Col>
-                                        <Col span={10}>
-                                            <Checkbox value="lecture">
-                                                <SoundOutlined /> 智能讲解
-                                            </Checkbox>
-                                        </Col>
-                                    </Row>
-                                </Checkbox.Group>
-                            </div>
-
-                            {/* 内容预览区 */}
-                            <div className="content-previews">
-                                <Text type="secondary">预览内容：</Text>
-                                <Text type="secondary">
-
-                                    {Object.keys(saveOptions).map(type =>
-                                    saveOptions[type] && renderPreviewContent(type)
-                                )}
-                                </Text>
-
-                            </div>
-                        </>
-                    )}
-                </Card>
-            </Col>
-
-            {/* 右侧图片列表 */}
-            <Col span={8} className="image-list-col">
-                <Card className="image-list-card" bodyStyle={{ padding: 0 }}>
-                    <List
-                        dataSource={images}
-                        renderItem={item => (
-                            <List.Item
-                                className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
-                                onClick={() => setSelectedImage(item)}
-                            >
-                                <div className="image-content">
+    return (
+        <div className="sub-container">
+            <Row gutter={24} className="sub-row">
+                {/* 左侧保存面板 */}
+                <Col flex="auto" className="sub-col">
+                    <div className="tool-section">
+                        <Title level={3} className="tool-title">
+                            <ApartmentOutlined/> 笔记保存
+                        </Title>
+                        {renderToolbar()}
+                    </div>
+                    <Card
+                        title={selectedImage?.name || "请选择图片"}
+                    >
+                        {selectedImage && (
+                            <>
+                                {/* 主图预览 */}
+                                <div className="main-preview">
                                     <Image
-                                        src={item.url}
-                                        alt={item.name}
-                                        preview={false}
-                                        width={80}
-                                        height={60}
-                                        className="thumbnail"
+                                        src={selectedImage.url}
+                                        alt="主预览"
+                                        className="preview-image"
                                     />
-                                    <div className="image-info">
-                                        <Text ellipsis className="image-name">
-                                            {item.name}
-                                        </Text>
-                                        <Text type="secondary" className="image-date">
-                                            {new Date(item.timestamp).toLocaleDateString()}
-                                        </Text>
-                                    </div>
                                 </div>
-                            </List.Item>
+
+                                {/* 保存选项 */}
+                                <div className="save-options">
+                                    <Checkbox.Group
+                                        value={Object.keys(saveOptions).filter(k => saveOptions[k])}
+                                        onChange={values => {
+                                            const newOptions = {...saveOptions};
+                                            Object.keys(newOptions).forEach(k => {
+                                                newOptions[k] = values.includes(k);
+                                            });
+                                            setSaveOptions(newOptions);
+                                        }}
+                                    >
+                                        <Row gutter={24}>
+                                            <Col span={10}>
+                                                <Checkbox value="summary">
+                                                    <FileTextOutlined/> 保存摘要
+                                                </Checkbox>
+                                            </Col>
+                                            {/*<Col span={6}>*/}
+                                            {/*    <Checkbox value="mindmap">*/}
+                                            {/*        <ApartmentOutlined /> 思维导图*/}
+                                            {/*    </Checkbox>*/}
+                                            {/*</Col>*/}
+                                            <Col span={10}>
+                                                <Checkbox value="knowledge">
+                                                    <TagsOutlined/> 知识点
+                                                </Checkbox>
+                                            </Col>
+                                            <Col span={10}>
+                                                <Checkbox value="lecture">
+                                                    <SoundOutlined/> 智能讲解
+                                                </Checkbox>
+                                            </Col>
+                                        </Row>
+                                    </Checkbox.Group>
+                                </div>
+
+                                {/* 内容预览区 */}
+                                <div className="content-previews">
+                                    <Text type="secondary">预览内容：</Text>
+                                    <Text type="secondary">
+
+                                        {Object.keys(saveOptions).map(type =>
+                                            saveOptions[type] && renderPreviewContent(type)
+                                        )}
+                                    </Text>
+
+                                </div>
+                            </>
                         )}
-                    />
-                </Card>
-            </Col>
-        </Row>
+                    </Card>
+                </Col>
+
+                {/* 右侧图片列表 */}
+                <Col xs={24} md={10} lg={8}>
+                    <Card className="image-list-card" bodyStyle={{padding: 0}}>
+                        <List
+                            dataSource={images}
+                            renderItem={item => (
+                                <List.Item
+                                    className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedImage(item)}
+                                >
+                                    <div className="image-content">
+                                        <Image
+                                            src={item.url}
+                                            alt={item.name}
+                                            preview={false}
+                                            width={80}
+                                            height={60}
+                                            className="thumbnail"
+                                        />
+                                        <div className="image-info">
+                                            <Text ellipsis className="image-name">
+                                                {item.name}
+                                            </Text>
+                                            <Text type="secondary" className="image-date">
+                                                {new Date(item.timestamp).toLocaleDateString()}
+                                            </Text>
+                                        </div>
+                                    </div>
+                                </List.Item>
+                            )}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+        </div>
     );
 };
 

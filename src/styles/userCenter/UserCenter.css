@@ -1,124 +1,135 @@
 /* src/styles/UserCenter.css */
 
-/* 用户中心内容区域 */
-.user-center-content {
-  padding: 24px;
+/* ========== 整体布局 ========= */
+.home-layout {
+  min-height: 100vh;
 }
 
-/* 用户信息卡片 */
-.user-profile-card {
-  text-align: center;
-  padding: 24px 16px;
-  border-bottom: 1px solid #f0f0f0;
+.user-center-layout {
+  display: flex;
+  min-height: calc(100vh - 64px); /* 减去Header高度 */
 }
 
-.user-profile-card .avatar-container {
-  margin-bottom: 16px;
+.header {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 }
 
-.user-profile-card .username {
-  margin-bottom: 4px !important;
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
 }
 
-.user-profile-card .user-email,
-.user-profile-card .join-date {
-  display: block;
-  margin-top: 8px;
+.brand-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.brand-sub {
   font-size: 14px;
-}
-
-/* 统计卡片 */
-.stat-card {
-  border-radius: 8px;
-  text-align: center;
-  transition: all 0.3s;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.stat-card .ant-statistic-title {
-  font-size: 16px;
   color: #666;
 }
 
-.stat-card .ant-statistic-content {
-  font-size: 24px;
-  color: #1890ff;
-}
-
-/* 用户信息区域 */
-.user-info-section {
-  padding: 16px;
-}
-
-.info-item {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.info-item:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-/* 安全设置项 */
-.security-item {
-  padding: 16px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.security-item:last-child {
-  border-bottom: none;
-}
-
-/* 成就卡片 */
-.achievement-card {
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  transition: all 0.3s;
-  height: 140px;
+.user-center {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.3s;
 }
 
-.achievement-card.earned {
-  border-color: #1890ff;
-  background-color: #f0f8ff;
-}
-
-.achievement-card .achievement-icon {
-  font-size: 32px;
-  color: #1890ff;
-  margin-bottom: 12px;
-}
-
-.achievement-card.earned .achievement-icon {
-  color: #52c41a;
-}
-
-.achievement-card .achievement-name {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-.achievement-card .achievement-status .earned-badge {
-  color: #52c41a;
-  background: #f6ffed;
-  padding: 2px 8px;
+.user-center:hover {
+  background: #f5f5f5;
   border-radius: 4px;
-  font-size: 12px;
 }
 
-.achievement-card .achievement-status .not-earned {
-  color: #bfbfbf;
-  font-size: 12px;
+.user-icon {
+  font-size: 18px;
+}
+/* ============ 侧边栏区域 ============ */
+.fixed-sider {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 9;
+  overflow: auto;
+  box-shadow: 2px 0 8px 0 rgba(29, 35, 41, 0.05);
+}
+
+/* ============ 内容区域 ============ */
+.user-center-content {
+  padding: 24px;
+  height: 100%;
+}
+
+/* ============ 面包屑导航样式 ============ */
+.ant-breadcrumb {
+  padding: 8px 0;
+}
+
+.ant-breadcrumb-link {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.ant-breadcrumb-link:hover {
+  color: #1890ff;
+}
+
+/* ============ 响应式调整 ============ */
+@media (max-width: 992px) {
+  .note-resources {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .notes-filter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .notes-filter .ant-input,
+  .notes-filter .ant-select {
+    width: 100% !important;
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .note-card, .question-card {
+    margin-bottom: 16px;
+  }
+
+  .note-actions {
+    flex-wrap: wrap;
+  }
+
+  .note-actions .ant-btn {
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .user-center-content {
+    padding: 16px;
+  }
+}
+
+/* ============ 空状态样式 ============ */
+.ant-empty {
+  margin: 40px 0;
+  padding: 24px;
+  border-radius: 8px;
+  background-color: #fafafa;
+  border: 1px dashed #e8e8e8;
+}
+
+/* ============ 加载状态样式 ============ */
+.ant-card-loading {
+  border-radius: 8px;
 }

@@ -1,8 +1,10 @@
 // src/pages/notes/MindMapPage.tsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Button,
   Card,
+  Modal,
+  Input,
   Typography,
   Row,
   Col,
@@ -11,16 +13,16 @@ import {
   Upload,
   Layout,
   Select,
-  message
+  message, Space
 } from 'antd';
 import {
   ApartmentOutlined,
   PlusOutlined,
   UploadOutlined,
-  LoadingOutlined
+  LoadingOutlined, SaveOutlined, EditOutlined, DragOutlined
 } from '@ant-design/icons';
 import { useImageContext } from '../../contexts/ImageContext';
-import { useMindMapContext, MindNode } from '../../contexts/MindMapContext';
+import { useMindMapContext, MindNode, MindMapData } from '../../contexts/MindMapContext';
 import '../../styles/notes/MindMapPage.css';
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -32,49 +34,21 @@ const { Content } = Layout;
 
 interface MindMapResponse {
   code: number;
-  data: MindMapData;
+  data: {
+    mindmap_id: string;
+    layout_type: string;
+    root_node: MindNode;
+  };
   message: string;
   timestamp: number;
 }
 
-interface ApiMindNode {
-  id: string;
-  label: string;
-  color?: string;
-  link?: string;
-  position?: {
-    x: number;
-    y: number;
-  };
-  children?: ApiMindNode[];
-}
-
-interface MindMapData {
+interface MindMap {
   mindmap_id: string;
   layout_type: string;
-  root_node: ApiMindNode;
+  mindMapData: MindMapData;
   svg_url?: string;
 }
-
-// 优化后的工具函数
-const convertApiNode = (apiNode?: ApiMindNode): MindNode | null => {
-  if (!apiNode?.id) return null;
-
-  const defaultPosition = {
-    x: Math.random() * 400,
-    y: Math.random() * 300
-  };
-
-  return {
-    ...apiNode,
-    label: apiNode.label || '未命名节点',
-    color: apiNode.color || '#4d90fe',
-    position: apiNode.position || defaultPosition,
-    children: (apiNode.children || [])
-        .map(convertApiNode)
-        .filter(Boolean) as MindNode[]
-  };
-};
 
 const MindMapPage = () => {
   const {
@@ -87,103 +61,49 @@ const MindMapPage = () => {
   } = useImageContext();
 
   const { mindMaps, saveMindMap, clearMindMap } = useMindMapContext();
-  const currentMindMap = selectedImage ? mindMaps[selectedImage.id] : undefined;
 
-  const [nodes, setNodes] = useState<MindNode[]>(currentMindMap?.nodes || []);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [layoutStyle, setLayoutStyle] = useState('tree');
   const uploadRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const [canvasRect, setCanvasRect] = useState({ left: 0, top: 0, width: 0, height: 0 });
+
+  // 编辑模式状态
+  const [isEditing, setIsEditing] = useState(false);
+  // 当前编辑的节点ID
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  // 拖拽中的节点ID
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  // 拖拽偏移量
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  // 画布缩放
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
-  const [dragging, setDragging] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  // 画布拖拽
+  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
+  const [dragCanvasStart, setDragCanvasStart] = useState({ x: 0, y: 0 });
+  const [startTransform, setStartTransform] = useState(transform);
 
-  // 同步画布位置和导图数据
+  const [mindMapData, setMindMapData] = useState<MindMapData>({
+    nodes: [],
+    generatedAt: Date.now()
+  });
+
+  const [editingText, setEditingText] = useState('');
+  const [isTextModalVisible, setIsTextModalVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const svgRef = useRef<SVGSVGElement>(null );
+
+  // 当选择的图片改变时，更新思维导图数据
   useEffect(() => {
-    const updateCanvasRect = () => {
-      if (canvasRef.current) {
-        const rect = canvasRef.current.getBoundingClientRect();
-        setCanvasRect({
-          left: rect.left + window.scrollX,
-          top: rect.top + window.scrollY,
-          width: rect.width,
-          height: rect.height
-        });
-      }
-    };
-    updateCanvasRect();
-    window.addEventListener('scroll', updateCanvasRect);
-    window.addEventListener('resize', updateCanvasRect);
-    return () => {
-      window.removeEventListener('scroll', updateCanvasRect);
-      window.removeEventListener('resize', updateCanvasRect);
-    };
-  }, []);
-
-  interface NodeBounds {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }
-  const checkCollision = (a: NodeBounds, b: NodeBounds): boolean => {
-    return (
-        a.x < b.x + b.width &&
-        a.x + a.width > b.x &&
-        a.y < b.y + b.height &&
-        a.y + a.height > b.y
-    );
-  };
-  const calculateLayout = (
-      node: MindNode,
-      startX: number,
-      startY: number,
-      level: number = 0,
-      occupiedAreas: NodeBounds[] = []
-  ) => {
-    const NODE_WIDTH = 200;
-    const NODE_HEIGHT = 60;
-    const LEVEL_VERTICAL_SPACING = 120;
-
-    const nodeArea = {
-      x: startX - NODE_WIDTH/2,
-      y: startY,
-      width: NODE_WIDTH,
-      height: NODE_HEIGHT
-    };
-    // 垂直避让逻辑
-    let adjustedY = startY;
-    while (occupiedAreas.some(area => checkCollision(nodeArea, area))) {
-      adjustedY += LEVEL_VERTICAL_SPACING/2;
-      nodeArea.y = adjustedY;
-    }
-    node.position = {
-      x: startX,
-      y: adjustedY
-    };
-    occupiedAreas.push({...nodeArea});
-    if (node.children.length > 0) {
-      const SIBLING_HORIZONTAL_SPACING = 80;
-      const childrenWidth = node.children.reduce((total, child) => {
-        return total + NODE_WIDTH + SIBLING_HORIZONTAL_SPACING;
-      }, -SIBLING_HORIZONTAL_SPACING);
-      let childX = startX - childrenWidth/2;
-
-      node.children.forEach(child => {
-        calculateLayout(
-            child,
-            childX + NODE_WIDTH/2,
-            adjustedY + LEVEL_VERTICAL_SPACING,
-            level + 1,
-            occupiedAreas
-        );
-        childX += NODE_WIDTH + SIBLING_HORIZONTAL_SPACING;
+    if (selectedImage && mindMaps[selectedImage.id]) {
+      setMindMapData(mindMaps[selectedImage.id]);
+    } else {
+      setMindMapData({
+        nodes: [],
+        generatedAt: Date.now()
       });
     }
-  };
+  }, [selectedImage, mindMaps])
 
+  // 图片上传逻辑
   const handleUpload = (file: File) => {
     if (!file.type.startsWith('image/')) {
       message.error('仅支持图片文件');
@@ -199,6 +119,19 @@ const MindMapPage = () => {
     }
     return false;
   };
+
+  // 递归转换后端数据结构为节点格式
+  const transformBackendNode = (node: any): MindNode => {
+    return {
+      id: node.id,
+      label: node.label,
+      color: node.color || '#1890ff',
+      position: node.position || { x: 0, y: 0 },
+      children: node.children ? node.children.map(transformBackendNode) : []
+    };
+  };
+
+  // 生成思维导图
   const generateMindmap = async () => {
     if (!selectedImage) {
       message.warning('请先选择图片');
@@ -230,39 +163,44 @@ const MindMapPage = () => {
 
       const { data } = await response.json() as MindMapResponse;
       console.log('Data:', data);
-      const rootNode = convertApiNode(data.root_node);
-      console.log('Raw root node:', data.root_node);
-      console.log('Converted root node:', rootNode);
 
-      if (rootNode) {
-        const startX = 0;  // 使用相对坐标系
-        const startY = 0;
-        calculateLayout(rootNode, startX, startY);
-        const newNodes = flattenNodes(rootNode);
+      // 转换后端数据为前端节点结构
+      const transformedRoot = transformBackendNode(data.root_node);
 
-        console.log('Calculated nodes:', newNodes);
-        setTransform({
-          x: canvasRect.width/2 - rootNode.position.x,
-          y: 60,  // 顶部留白
-          scale: 1
-        });
-        saveMindMap(selectedImage.id, {
-          nodes: newNodes,
-          svgUrl: data.svg_url || '',
-          generatedAt: Date.now()
-        });
-        setNodes([...newNodes]); // 使用展开运算符创建新数组
-        // 自动滚动到中心点
-        if (canvasRef.current) {
-          canvasRef.current.scrollTo({
-            left: startX - 400,
-            top: 0,
-            behavior: 'smooth'
-          });
+      // 为节点添加初始位置
+      const positionNodes = (node: MindNode, depth: number, parentX: number, parentY: number) => {
+        // 基础间距设置
+        const horizontalSpacing = 300 - 10 * Math.log2(16 * depth + 1); // 水平间距
+        const verticalSpacing = 200 - 10 * Math.log2(16 * depth + 1);   // 垂直间距
+
+        // 计算节点的初始位置
+        if (depth === 0) {
+          // 根节点位置
+          node.position = { x: 400, y: 100 };
+        } else {
+          // 子节点位置 - 基于父节点位置计算
+          node.position = { x: parentX, y: parentY + verticalSpacing };
         }
-        setNodes(newNodes);
-      }
+        // 计算子节点布局
+        const totalChildren = node.children.length;
+        const startX = node.position.x - (horizontalSpacing * (totalChildren - 1)) / 2;
 
+        // 递归定位所有子节点
+        node.children.forEach((child, index) => {
+          const childX = startX + index * horizontalSpacing;
+          positionNodes(child, depth + 1, childX + 80 * Math.random(), node.position.y + 60 * Math.random());
+        });
+      };
+
+      positionNodes(transformedRoot, 0, 0, 0);
+
+      const newMindMapData: MindMapData = {
+        nodes: [transformedRoot],
+        generatedAt: Date.now()
+      };
+
+      setMindMapData(newMindMapData);
+      saveMindMap(selectedImage.id, newMindMapData);
       message.success('思维导图生成成功');
     } catch (error: any) {
       message.error(error.message || '生成失败');
@@ -270,190 +208,319 @@ const MindMapPage = () => {
       setGenerating(false);
     }
   };
-  const calculateConnectionPath = (
-      start: { x: number; y: number },
-      end: { x: number; y: number }
-  ) => {
-    // 计算贝塞尔曲线控制点
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const cp1 = { x: start.x + dx * 0.25, y: start.y + dy * 0.1 };
-    const cp2 = { x: start.x + dx * 0.75, y: start.y + dy * 0.9 };
-    return `M ${start.x},${start.y} 
-          C ${cp1.x},${cp1.y} 
-            ${cp2.x},${cp2.y} 
-            ${end.x},${end.y}`;
-  };
-  const handleCanvasDragStart = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // 仅处理左键
-    setDragging(true);
-    setStartPos({ x: e.clientX - transform.x, y: e.clientY - transform.y });
-  };
-  const handleCanvasDrag = (e: React.MouseEvent) => {
-    if (dragging) {
-      const newX = e.clientX - startPos.x;
-      const newY = e.clientY - startPos.y;
-      setTransform(prev => ({
-        ...prev,
-        x: newX,
-        y: newY
-      }));
+
+  // 查找节点
+  const findNode = (nodes: MindNode[], id: string): MindNode | null => {
+    for (const node of nodes) {
+      if (node.id === id) return node;
+      if (node.children.length > 0) {
+        const found = findNode(node.children, id);
+        if (found) return found;
+      }
     }
-  };
-  const handleCanvasDragEnd = () => {
-    setDragging(false);
+    return null;
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    const scaleFactor = 0.1;
-    const newScale = e.deltaY < 0
-        ? transform.scale * (1 + scaleFactor)
-        : transform.scale * (1 - scaleFactor);
-    setTransform(prev => ({
+  // 更新节点标签
+  const updateNodeLabel = (id: string, newLabel: string) => {
+    const updateNode = (nodes: MindNode[]): MindNode[] => {
+      return nodes.map(node => {
+        if (node.id === id) {
+          return { ...node, label: newLabel };
+        }
+        if (node.children.length > 0) {
+          return { ...node, children: updateNode(node.children) };
+        }
+        return node;
+      });
+    };
+
+    setMindMapData(prev => ({
       ...prev,
-      scale: Math.min(Math.max(0.5, newScale), 3)
+      nodes: updateNode(prev.nodes)
     }));
   };
 
-  const handleNodeDrag = (id: string, e: React.MouseEvent) => {
-    const updatedNodes = nodes.map(node =>
-        node.id === id
-            ? {
-              ...node,
-              position: {
-                x: e.pageX - canvasRect.left,
-                y: e.pageY - canvasRect.top
-              }
-            }
-            : node
-    );
-    setNodes(updatedNodes);
+  // 更新节点位置
+  const updateNodePosition = (id: string, newPosition: { x: number; y: number }) => {
+    const updateNode = (nodes: MindNode[]): MindNode[] => {
+      return nodes.map(node => {
+        if (node.id === id) {
+          return { ...node, position: newPosition };
+        }
+        if (node.children.length > 0) {
+          return { ...node, children: updateNode(node.children) };
+        }
+        return node;
+      });
+    };
+
+    setMindMapData(prev => ({
+      ...prev,
+      nodes: updateNode(prev.nodes)
+    }));
   };
+
+  // 处理鼠标按下事件（开始拖拽）
+  const handleMouseDown = (e: React.MouseEvent, nodeId: string) => {
+    if (!isEditing) {
+      e.preventDefault();
+      setIsDraggingCanvas(true);
+      setDragCanvasStart({ x: e.clientX, y: e.clientY });
+      setStartTransform(transform);
+    }
+
+    e.stopPropagation();
+    setDraggingNodeId(nodeId);
+
+    const node = findNode(mindMapData.nodes, nodeId);
+    if (!node) return;
+
+    // 计算鼠标相对于节点中心的偏移量
+    if (svgRef.current) {
+      const pt = svgRef.current.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const cursorPoint = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+
+      setDragOffset({
+        x: cursorPoint.x - node.position.x,
+        y: cursorPoint.y - node.position.y
+      });
+    }
+  };
+
+  // 处理鼠标移动事件（拖拽中）
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDraggingCanvas) {
+      e.preventDefault();
+      const dx = e.clientX - dragCanvasStart.x;
+      const dy = e.clientY - dragCanvasStart.y;
+
+      setTransform({
+        ...startTransform,
+        x: startTransform.x + dx,
+        y: startTransform.y + dy
+      });
+    } else if (isEditing && draggingNodeId && svgRef.current) {
+
+      const pt = svgRef.current.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const cursorPoint = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+
+      // 计算节点新位置
+      const newPosition = {
+        x: cursorPoint.x - dragOffset.x,
+        y: cursorPoint.y - dragOffset.y
+      };
+      updateNodePosition(draggingNodeId, newPosition);
+    }
+  };
+
+  // 处理鼠标松开事件（结束拖拽）
+  const handleMouseUp = () => {
+    setDraggingNodeId(null);
+    setIsDraggingCanvas(false);
+  };
+
+  // 处理双击事件（编辑节点文本）
+  const handleDoubleClick = (nodeId: string, label: string) => {
+    if (!isEditing) return;
+    setEditingNodeId(nodeId);
+    setEditingText(label);
+    setIsTextModalVisible(true);
+  };
+
+  // 处理鼠标滚轮事件（缩放画布）
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    if (e.shiftKey) {
+      e.preventDefault();
+      const delta = e.deltaY;
+      const scaleFactor = 0.001; // 缩放因子
+
+      // 计算新的缩放比例
+      const factor = Math.exp(-delta * scaleFactor);
+      const newScale = transform.scale * factor;
+
+      // 限制缩放范围
+      const clampedScale = Math.max(0.1, Math.min(5, newScale));
+
+      // 计算鼠标位置相对于SVG的坐标
+      if (svgRef.current) {
+        const rect = svgRef.current.getBoundingClientRect();
+        const point = svgRef.current.createSVGPoint();
+        point.x = e.clientX;
+        point.y = e.clientY;
+        const cursor = point.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+
+        // 计算缩放中心
+        const scaleCenter = {
+          x: (cursor.x - transform.x) / transform.scale,
+          y: (cursor.y - transform.y) / transform.scale
+        };
+
+        // 计算平移偏移量
+        const translate = {
+          x: transform.x + (scaleCenter.x * (transform.scale - clampedScale)),
+          y: transform.y + (scaleCenter.y * (transform.scale - clampedScale))
+        };
+
+        setTransform({
+          x: translate.x,
+          y: translate.y,
+          scale: clampedScale
+        });
+      }
+    }
+  };
+
+  // 渲染节点和连接线
+  const renderNode = (node: MindNode) => {
+    // 应用缩放和平移变换到节点位置
+    const transformedPosition = {
+      x: node.position.x * transform.scale + transform.x,
+      y: node.position.y * transform.scale + transform.y
+    };
+    // 渲染子节点
+    const childNodes = node.children.map(child => renderNode(child));
+
+    // 渲染连接到子节点的线
+    const connections = node.children.map(child => {
+      const childPosition = {
+        x: child.position.x * transform.scale + transform.x,
+        y: child.position.y * transform.scale + transform.y
+      };
+
+      return (
+          <line
+              key={`${node.id}-${child.id}`}
+              x1={transformedPosition.x}
+              y1={transformedPosition.y}
+              x2={childPosition.x}
+              y2={childPosition.y}
+              stroke="#999"
+              strokeWidth={isEditing ? 2 : 1.5}
+          />
+      );
+    });
+
+    const nodeWidth = 180;
+    const nodeHeight = 50;
+
+    return (
+        <React.Fragment key={node.id}>
+          {connections}
+          <g
+              onMouseDown={(e) => handleMouseDown(e, node.id)}
+              onDoubleClick={() => handleDoubleClick(node.id, node.label)}
+              style={{ cursor: isEditing ? 'move' : 'default' }}
+          >
+            <rect
+                x={transformedPosition.x - nodeWidth / 2}
+                y={transformedPosition.y - nodeHeight / 2}
+                width={nodeWidth}
+                height={nodeHeight}
+                rx={8}
+                ry={8}
+                fill={node.color || '#fff'}
+                stroke={isEditing ? '#1890ff' : '#ddd'}
+                strokeWidth={isEditing ? 2 : 1}
+            />
+            <text
+                x={transformedPosition.x}
+                y={transformedPosition.y + 5}
+                textAnchor="middle"
+                fill={node.color ? '#fff' : '#333'}
+                fontWeight={node.children.length > 0 ? 'bold' : 'normal'}
+                fontSize={node.children.length > 0 ? 10 : 10}
+            >
+              { node.label.length > 10 ? node.label.substring(0, 9) + '...' : node.label }
+            </text>
+          </g>
+          {childNodes}
+        </React.Fragment>
+    );
+  };
+
+  // 渲染所有节点
+  const renderMindMap = () => {
+    return mindMapData.nodes.map(rootNode => renderNode(rootNode));
+  };
+
+  // 切换编辑模式
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+    setEditingNodeId(null);
+    setDraggingNodeId(null);
+  };
+
+  // 保存文本编辑
+  const handleTextSave = () => {
+    if (editingNodeId) {
+      updateNodeLabel(editingNodeId, editingText);
+      message.success('节点内容已更新');
+    }
+    setIsTextModalVisible(false);
+  };
+
+  const renderMindMapEditor = () => {
+    return (
+        <div style={{position: 'relative', height: 'calc(100vh - 200px)'}}>
+          <svg
+              ref={svgRef}
+              width="100%"
+              height="100%"
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onWheel={handleWheel}
+              style={{backgroundColor: '#f9f9f9', borderRadius: 8}}
+          >
+            { renderMindMap() }
+          </svg>
+        </div>
+    )
+  }
 
   const renderToolbar = () => (
       <div className="toolbar">
-        {/*<Select*/}
-        {/*    value={layoutStyle}*/}
-        {/*    onChange={setLayoutStyle}*/}
-        {/*    style={{ width: 120, marginRight: 12 }}*/}
-        {/*>*/}
-        {/*  <Option value="tree">树状布局</Option>*/}
-        {/*  <Option value="radial">放射布局</Option>*/}
-        {/*  <Option value="organic">自由布局</Option>*/}
-        {/*</Select>*/}
 
         <Button
+            type={isEditing ? 'default' : 'primary'}
+            icon={<DragOutlined/>}
+            onClick={toggleEditMode}
+            // disabled={!images}
+        >
+          {isEditing ? '保存编辑' : '编辑模式'}
+        </Button>
+        <Button
             type="primary"
-            icon={generating ? <LoadingOutlined /> : <ApartmentOutlined />}
+            icon={generating ? <LoadingOutlined/> : <ApartmentOutlined/>}
             onClick={generateMindmap}
-            disabled={generating}
-            className="generate-btn"
+            disabled={!selectedImage}
+            loading={generating}
         >
           {generating ? '生成中...' : '生成导图'}
         </Button>
       </div>
   );
-  const renderNodes = () => (
-      <g transform={`translate(${transform.x},${transform.y}) scale(${transform.scale})`}>
-        {/* 先渲染连接线 */}
-        {nodes.flatMap(node =>
-            node.children.map(child => {
-              const start = node.position;
-              const end = child.position;
-              return (
-                  <path
-                      key={`${node.id}-${child.id}`}
-                      d={calculateConnectionPath(start, end)}
-                      stroke="#4d90fe"
-                      fill="none"
-                      strokeWidth={2 / transform.scale} // 随缩放调整线宽
-                      markerEnd={transform.scale > 0.7 ? "url(#arrow)" : undefined}
-                  />
-              );
-            })
-        )}
 
-        {/* 后渲染节点确保盖在线上方 */}
-        {nodes.map(node => (
-            <g
-                key={node.id}
-                transform={`translate(${node.position.x},${node.position.y})`}
-                className="mindmap-node"
-            >
-              <rect
-                  width="200"
-                  height="60"
-                  rx="12"
-                  fill="#ffffff"
-                  stroke="#4d90fe"
-                  strokeWidth="1.5"
-              />
-              <foreignObject width="200" height="60" className="node-content">
-                <div className="node-label">
-                  {node.link ? (
-                      <a href={node.link} target="_blank" rel="noopener noreferrer">
-                        <ReactMarkdown
-                            remarkPlugins={[remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                        >
-                          {node.label}
-                        </ReactMarkdown>
-                      </a>
-                  ) : (
-                        node.label
-                  )}
-                </div>
-                {node.children.length > 0 && (
-                    <div className="children-count">
-                      {node.children.length}个子节点
-                    </div>
-                )}
-              </foreignObject>
-            </g>
-        ))}
-      </g>
-  );
   return (
-      <div className="mindmap-container">
-        <Row gutter={24} className="mindmap-row">
-          <Col flex="auto" className="mindmap-col">
-            <div className="header-section">
-              <Title level={3} className="panel-title">
-                <ApartmentOutlined/> 智能思维导图
+      <div className="sub-container">
+        <Row gutter={24} className="sub-row">
+          <Col flex="auto" className="sub-col">
+            <div className="tool-section">
+              <Title level={3} className="tool-title">
+                <ApartmentOutlined/> 思维导图
               </Title>
-              {renderToolbar()}
+              { renderToolbar() }
             </div>
-            <Card className="mindmap-card">
-              <div
-                  className="mindmap-canvas"
-                  ref={canvasRef}
-                  onMouseDown={handleCanvasDragStart}
-                  onMouseMove={handleCanvasDrag}
-                  onMouseUp={handleCanvasDragEnd}
-                  onMouseLeave={handleCanvasDragEnd}
-                  onWheel={handleWheel}
-              >
-                <svg className="canvas-svg">
-                  <defs>
-                    <linearGradient id="gradient-default" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#4d90fe" />
-                      <stop offset="100%" stopColor="#69c0ff" />
-                    </linearGradient>
-                    <marker
-                        id="arrow"
-                        markerWidth="10"
-                        markerHeight="10"
-                        refX="9"
-                        refY="3"
-                        orient="auto"
-                    >
-                      <path d="M0,0 L0,6 L9,3 z" fill="#4d90fe" />
-                    </marker>
-                  </defs>
-                  {renderNodes()}
-                </svg>
-              </div>
-            </Card>
+            <div
+                className="content-card"
+            >
+              { renderMindMapEditor() }
+            </div>
           </Col>
 
           <Col xs={24} md={10} lg={8}>
@@ -515,16 +582,45 @@ const MindMapPage = () => {
             </Card>
           </Col>
         </Row>
+
+        <Modal
+            title="编辑节点内容"
+            open={isTextModalVisible}
+            onOk={handleTextSave}
+            onCancel={() => setIsTextModalVisible(false)}
+            okText="保存"
+            cancelText="取消"
+            width={600}
+            footer={[
+              <Button key="back" onClick={() => setIsTextModalVisible(false)}>
+                取消
+              </Button>,
+              <Button
+                  key="submit"
+                  type="primary"
+                  onClick={handleTextSave}
+                  icon={<SaveOutlined />}
+              >
+                保存
+              </Button>,
+            ]}
+        >
+          <div style={{ margin: '20px 0' }}>
+            <Input.TextArea
+                value={editingText}
+                onChange={(e) => setEditingText(e.target.value)}
+                autoSize={{ minRows: 6, maxRows: 12 }}
+                style={{ width: '100%' }}
+                placeholder="输入节点内容..."
+            />
+          </div>
+          <div style={{ textAlign: 'right', marginTop: 10, color: '#999' }}>
+            支持多行文本编辑
+          </div>
+        </Modal>
       </div>
   );
 };
 
-// 辅助函数放在最后
-const flattenNodes = (node: MindNode): MindNode[] => {
-  return [
-    node,
-    ...(node.children?.flatMap(n => flattenNodes(n)) || [])
-  ];
-};
 
 export default MindMapPage;

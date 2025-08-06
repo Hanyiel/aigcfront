@@ -22,7 +22,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import ReactMarkdown from "react-markdown";
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
 
 interface QuestionSaveResponse {
     code: number;
@@ -139,11 +139,11 @@ const SaveQuestionPage = () => {
                         {currentExtract ? (
                             <div className="extract-content">
                                 <ReactMarkdown
-                                          remarkPlugins={[remarkMath]}
-                                          rehypePlugins={[rehypeKatex]}
-                                      >
-                                {currentExtract.text_content}
-                                      </ReactMarkdown>
+                                    remarkPlugins={[remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                >
+                                    {currentExtract.text_content}
+                                </ReactMarkdown>
                             </div>
                         ) : (
                             <div className="no-content">
@@ -162,11 +162,11 @@ const SaveQuestionPage = () => {
                         {currentExplanation ? (
                             <div className="explanation-content">
                                 <ReactMarkdown
-                                          remarkPlugins={[remarkMath]}
-                                          rehypePlugins={[rehypeKatex]}
-                                      >
-                                {currentExplanation.contentMd}
-                                      </ReactMarkdown>
+                                    remarkPlugins={[remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                >
+                                    {currentExplanation.contentMd}
+                                </ReactMarkdown>
                             </div>
                         ) : (
                             <div className="no-content">
@@ -277,127 +277,135 @@ const SaveQuestionPage = () => {
         }
     };
 
+    const renderToolbar = () => (
+        <div className="toolbar">
+            <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                onClick={handleSave}
+                loading={loading}
+            >
+                保存题目
+            </Button>
+        </div>
+    );
+
     return (
-        <Row gutter={16} className="question-save-container">
-            {/* Left side content area */}
-            <Col span={16} className="content-col">
-                <Card className="content-card">
-                    <div className="card-header">
-                        <h2>题目保存</h2>
-                        <Button
-                            type="primary"
-                            icon={<SaveOutlined />}
-                            onClick={handleSave}
-                            loading={loading}
-                        >
-                            保存题目
-                        </Button>
+        <div className="sub-container">
+            <Row gutter={24} className="sub-row">
+                <Col flex="auto" className="sub-col">
+                    <div className="tool-section">
+                        <Title level={3} className="tool-title">
+                            <ApartmentOutlined/> 题目保存
+                        </Title>
+                        {renderToolbar()}
                     </div>
-
-                    {/* Main content */}
-                    {!selectedImage ? (
-                        <div className="no-image-selected">
-                            请从右侧选择一张题目图片
-                        </div>
-                    ) : (
-                        <>
-                            {/* Preview of the current image */}
-                            <div className="selected-image-preview">
-                                <Image
-                                    src={selectedImage.url}
-                                    alt={selectedImage.name}
-                                    style={{ maxWidth: '100%', maxHeight: '300px' }}
-                                />
+                    <div className="content-card">
+                        {/* Main content */}
+                        {!selectedImage ? (
+                            <div className="no-image-selected">
+                                请从右侧选择一张题目图片
                             </div>
-
-                            {/* Save options */}
-                            <div className="save-options">
-                                <h3>保存选项</h3>
-                                <Checkbox.Group
-                                    value={Object.keys(saveOptions).filter(k => saveOptions[k])}
-                                    onChange={(values) => {
-                                        const newOptions = { ...saveOptions };
-                                        Object.keys(newOptions).forEach(k => {
-                                            newOptions[k] = values.includes(k);
-                                        });
-                                        setSaveOptions(newOptions);
-                                    }}
-                                >
-                                    <Row gutter={16}>
-                                        <Col span={8}>
-                                            <Checkbox value="extract">
-                                                <FileTextOutlined /> 题目提取
-                                            </Checkbox>
-                                        </Col>
-                                        <Col span={8}>
-                                            <Checkbox value="explanation">
-                                                <SoundOutlined /> 题目讲解
-                                            </Checkbox>
-                                        </Col>
-                                        <Col span={8}>
-                                            <Checkbox value="keywords">
-                                                <TagsOutlined /> 知识点
-                                            </Checkbox>
-                                        </Col>
-                                        {/*<Col span={6}>*/}
-                                        {/*    <Checkbox value="autograde">*/}
-                                        {/*        <CheckCircleOutlined /> 自动批改*/}
-                                        {/*    </Checkbox>*/}
-                                        {/*</Col>*/}
-                                        <Col span={8}>
-                                            <Checkbox value="related">
-                                                <BookOutlined /> 相关笔记
-                                            </Checkbox>
-                                        </Col>
-                                    </Row>
-                                </Checkbox.Group>
-                            </div>
-
-                            {/* Content previews */}
-                            <div className="content-previews">
-                                {Object.keys(saveOptions).map(type =>
-                                    saveOptions[type] && renderPreviewContent(type)
-                                )}
-                            </div>
-                        </>
-                    )}
-                </Card>
-            </Col>
-
-            {/* Right side image list */}
-            <Col span={8} className="image-list-col">
-                <Card className="image-list-card" bodyStyle={{ padding: 0 }}>
-                    <List
-                        dataSource={images}
-                        renderItem={item => (
-                            <List.Item
-                                className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
-                                onClick={() => setSelectedImage(item)}
-                            >
-                                <div className="image-content">
+                        ) : (
+                            <>
+                                {/* Preview of the current image */}
+                                <div className="selected-image-preview">
                                     <Image
-                                        src={item.url}
-                                        alt={item.name}
-                                        preview={false}
-                                        width={80}
-                                        height={60}
-                                        className="thumbnail"
+                                        src={selectedImage.url}
+                                        alt={selectedImage.name}
+                                        style={{maxWidth: '100%', maxHeight: '300px'}}
                                     />
-                                    <div className="image-info">
-                                        <Text ellipsis className="image-name">
-                                            {item.name}
-                                        </Text>
-                                        <Text type="secondary" className="image-date">
-                                            {new Date(item.timestamp).toLocaleDateString()}
-                                        </Text>
-                                    </div>
                                 </div>
-                            </List.Item>
+
+                                {/* Save options */}
+                                <div className="save-options">
+                                    <h3>保存选项</h3>
+                                    <Checkbox.Group
+                                        value={Object.keys(saveOptions).filter(k => saveOptions[k])}
+                                        onChange={(values) => {
+                                            const newOptions = {...saveOptions};
+                                            Object.keys(newOptions).forEach(k => {
+                                                newOptions[k] = values.includes(k);
+                                            });
+                                            setSaveOptions(newOptions);
+                                        }}
+                                    >
+                                        <Row gutter={16}>
+                                            <Col span={8}>
+                                                <Checkbox value="extract">
+                                                    <FileTextOutlined/> 题目提取
+                                                </Checkbox>
+                                            </Col>
+                                            <Col span={8}>
+                                                <Checkbox value="explanation">
+                                                    <SoundOutlined/> 题目讲解
+                                                </Checkbox>
+                                            </Col>
+                                            <Col span={8}>
+                                                <Checkbox value="keywords">
+                                                    <TagsOutlined/> 知识点
+                                                </Checkbox>
+                                            </Col>
+                                            {/*<Col span={6}>*/}
+                                            {/*    <Checkbox value="autograde">*/}
+                                            {/*        <CheckCircleOutlined /> 自动批改*/}
+                                            {/*    </Checkbox>*/}
+                                            {/*</Col>*/}
+                                            <Col span={8}>
+                                                <Checkbox value="related">
+                                                    <BookOutlined/> 相关笔记
+                                                </Checkbox>
+                                            </Col>
+                                        </Row>
+                                    </Checkbox.Group>
+                                </div>
+
+                                {/* Content previews */}
+                                <div className="content-previews">
+                                    {Object.keys(saveOptions).map(type =>
+                                        saveOptions[type] && renderPreviewContent(type)
+                                    )}
+                                </div>
+                            </>
                         )}
-                    />
-                </Card>
-            </Col>
-        </Row>
+                    </div>
+                </Col>
+
+                {/* Right side image list */}
+                <Col span={8} className="image-list-col">
+                    <Card className="image-list-card" bodyStyle={{padding: 0}}>
+                    <List
+                            dataSource={images}
+                            renderItem={item => (
+                                <List.Item
+                                    className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedImage(item)}
+                                >
+                                    <div className="image-content">
+                                        <Image
+                                            src={item.url}
+                                            alt={item.name}
+                                            preview={false}
+                                            width={80}
+                                            height={60}
+                                            className="thumbnail"
+                                        />
+                                        <div className="image-info">
+                                            <Text ellipsis className="image-name">
+                                                {item.name}
+                                            </Text>
+                                            <Text type="secondary" className="image-date">
+                                                {new Date(item.timestamp).toLocaleDateString()}
+                                            </Text>
+                                        </div>
+                                    </div>
+                                </List.Item>
+                            )}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+        </div>
     );
 };
 

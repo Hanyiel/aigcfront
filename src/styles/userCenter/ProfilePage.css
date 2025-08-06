@@ -1,0 +1,43 @@
+/* ============ 用户信息卡片 ============ */
+.user-profile-card {
+  text-align: center;
+  padding: 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-profile-card .avatar-container {
+  margin-bottom: 16px;
+}
+
+.user-profile-card .username {
+  margin-bottom: 4px !important;
+}
+
+.user-profile-card .user-email,
+.user-profile-card .join-date {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+/* 统计卡片 */
+.stat-card {
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .ant-statistic-title {
+  font-size: 16px;
+  color: #666;
+}
+
+.stat-card .ant-statistic-content {
+  font-size: 24px;
+  color: #1890ff;
+}

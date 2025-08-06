@@ -37,12 +37,14 @@
   margin-bottom: 8px;
 }
 
-.note-content {
-  color: rgba(0, 0, 0, 0.85);
-  margin: 8px 0;
+.related-note-content {
+  color: rgba(0, 0, 0, 0.9);
+  margin: 8px;
+  padding: 8px;
 }
 
 .note-points {
+  padding: 8px;
   margin-top: 8px;
 }
 
