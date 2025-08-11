@@ -56,10 +56,10 @@ type NotesSubTabKey = 'all-notes' | 'knowledge-query';
 
 // 资源状态类型
 type ResourceStatus = {
-  keywords: boolean;
-  mindmap: boolean;
-  explanation: boolean;
-  summary: boolean;
+    keywords: boolean;
+    mindmap: boolean;
+    explanation: boolean;
+    summary: boolean;
 };
 
 const SecurityPage: React.FC = () => {
@@ -78,21 +78,40 @@ const SecurityPage: React.FC = () => {
             <Row gutter={24}>
                 <Col span={24}>
                     <div className="security-item">
-                        <Title level={5}>修改密码</Title>
-                        <Text type="secondary">定期修改密码可以提高账户安全性</Text>
-                        <Button type="primary" style={{ marginTop: 10 }}>修改密码</Button>
+                        <Row >
+                            <Col span={22}>
+                                <Title level={5}>修改密码</Title>
+                                <Text type="secondary">定期修改密码可以提高账户安全性</Text>
+                            </Col>
+                            <Col span={2}>
+                                <Button type="primary" style={{ marginTop: 36 }}>修改密码</Button>
+                            </Col>
+                        </Row>
+                    </div>
+
+
+                    <div className="security-item">
+                        <Row>
+                            <Col span={22}>
+                                <Title level={5}>双重认证</Title>
+                                <Text type="secondary">启用后，登录时需要输入手机验证码</Text>
+                            </Col>
+                            <Col span={2}>
+                                <Button style={{ marginTop: 36 }}>启用双重认证</Button>
+                            </Col>
+                        </Row>
                     </div>
 
                     <div className="security-item">
-                        <Title level={5}>双重认证</Title>
-                        <Text type="secondary">启用后，登录时需要输入手机验证码</Text>
-                        <Button style={{ marginTop: 10 }}>启用双重认证</Button>
-                    </div>
-
-                    <div className="security-item">
-                        <Title level={5}>登录设备管理</Title>
-                        <Text type="secondary">查看并管理已登录的设备</Text>
-                        <Button style={{ marginTop: 10 }}>查看登录设备</Button>
+                        <Row>
+                            <Col span={22}>
+                                <Title level={5}>登录设备管理</Title>
+                                <Text type="secondary">查看并管理已登录的设备</Text>
+                            </Col>
+                            <Col span={2}>
+                                <Button style={{ marginTop: 36 }}>查看登录设备</Button>
+                            </Col>
+                        </Row>
                     </div>
                 </Col>
             </Row>

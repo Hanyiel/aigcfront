@@ -6,11 +6,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBrain } from '@fortawesome/free-solid-svg-icons';
 import '../styles/LoginPage.css';
 import { useAuth } from "../contexts/AuthContext";
+import {ApartmentOutlined, LoadingOutlined} from "@ant-design/icons";
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [login, setLogin] = useState(false);
   const navigate = useNavigate();
   const { login: authContextLogin } = useAuth();
 
@@ -24,11 +26,14 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setLogin(true);
       const token = await get_login_token(username, password);
       authContextLogin(token);
+      setLogin(false);
       // console.log('Stored token:', localStorage.getItem('authToken'));
       navigate('/home');
     } catch (err) {
+      setLogin(false);
       setError(err instanceof Error ? err.message : '登录失败');
     }
   };
@@ -71,7 +76,13 @@ const LoginPage: React.FC = () => {
               required
             />
           </div>
-          <button type="submit" className="login-button">登录</button>
+          <button
+              type="submit"
+              className="login-button"
+          >
+            {login ? <LoadingOutlined/> : null}
+            {login ? '登录中...' : '登录'}
+          </button>
 
           {/* 新增跳转注册链接 */}
           <div className="auth-redirect">

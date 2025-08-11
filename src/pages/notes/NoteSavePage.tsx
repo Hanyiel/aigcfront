@@ -11,10 +11,10 @@ import {
     ImageContextType, useImageContext,
 } from '../../contexts/ImageContext';
 import '../../styles/notes/NoteSavePage.css';
-import {useExtract} from "../../contexts/ExtractContext";
-import {useMindMapContext} from "../../contexts/MindMapContext";
-import {useKeywords} from "../../contexts/NoteKeywordsContext";
-import {useExplanation} from "../../contexts/ExplanationContext";
+import {ExtractData, useExtract} from "../../contexts/ExtractContext";
+import {MindMapData, useMindMapContext, MindNode} from "../../contexts/MindMapContext";
+import {KeywordData, useKeywords} from "../../contexts/NoteKeywordsContext";
+import {ExplanationData, useExplanation} from "../../contexts/ExplanationContext";
 import LatexRenderer from "../../components/LatexRenderer";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -35,6 +35,13 @@ interface NoteData {
     note_id: string;
     storage_status: string;
 }
+
+interface SaveData {
+    extract?: ExtractData;
+    mindMap?: MindMapData;
+    keywords?: KeywordData[];
+    explanation?: ExplanationData;
+}
 const NoteSavePage = () => {
     // Context hooks
     const {
@@ -52,7 +59,7 @@ const NoteSavePage = () => {
     const [loading, setloading] = useState(false)
     // Local state
     const [saveOptions, setSaveOptions] = useState<Record<string, boolean>>({
-        summary: true,
+        summary: false,
         mindmap: false,
         knowledge: false,
         lecture: false
@@ -81,6 +88,19 @@ const NoteSavePage = () => {
             if(!image)
                 formData.append('options', JSON.stringify(saveOptions));
 
+            const saveData: SaveData = {};
+
+            if(currentExtract)
+                saveData.extract = currentExtract;
+
+            if(currentMindMap)
+                saveData.mindMap = currentMindMap;
+            if(currentKeywords)
+                saveData.keywords = currentKeywords;
+            if(currentExplanation)
+                saveData.explanation = currentExplanation;
+
+            formData.append('extra', JSON.stringify(saveData));
             const { data } = await saveNoteToAPI(formData);
 
             message.success(`笔记保存成功！ID: ${data.note_id}`);
@@ -91,6 +111,8 @@ const NoteSavePage = () => {
             message.error(`保存失败: ${errorMessage}`);
         }
     };
+
+
     const saveNoteToAPI = async (formData: FormData): Promise<NoteSaveResponse> => {
         const token = localStorage.getItem('authToken');
         const response = await fetch('http://localhost:8000/api/notes/record', {
@@ -115,7 +137,32 @@ const NoteSavePage = () => {
         }
         return result;
     };
-// 渲染预览内容
+
+    const renderMindMapPreview = (mindMap: MindMapData | undefined, isEditing: boolean = false) => {
+        if (!mindMap || !mindMap.nodes.length) return null;
+
+        return (
+            <div className="mindmap-preview-container">
+                {mindMap.nodes.map(rootNode => renderMindMapNode(rootNode, isEditing))}
+            </div>
+        );
+    };
+    const renderMindMapNode = (node: MindNode, isEditing: boolean) => {
+        return (
+            <div key={node.id} className="mindmap-node">
+                <div className="node-content">
+                    <div className="node-label">{node.label}</div>
+                </div>
+                {node.children.length > 0 && (
+                    <div className="node-children">
+                        {node.children.map(child => renderMindMapNode(child, isEditing))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // 渲染预览内容
     const renderPreviewContent = (type: string) => {
         if (!saveOptions[type]) return null;
 
@@ -129,12 +176,16 @@ const NoteSavePage = () => {
                 ) : <Text type="secondary">未找到相关摘要内容</Text>;
 
             case 'mindmap':
-                return currentMindMap?.svgUrl ? (
+                return (
                     <div className="preview-section">
-                        <Text className="preview-title">思维导图预览</Text>
-                        <img src={currentMindMap.svgUrl} alt="思维导图" className="mindmap-preview" />
+                        {/*<Text className="preview-title">思维导图预览</Text>*/}
+                        <div className="mindmap-preview-container">
+                            暂不支持思维导图的预览
+                            {/*{renderMindMapPreview(currentMindMap)}*/}
+                        </div>
                     </div>
-                ) : <Text type="secondary">未生成思维导图</Text>;
+                );
+
 
             case 'knowledge':
                 return currentKeywords.length > 0 ? (
@@ -220,11 +271,11 @@ const NoteSavePage = () => {
                                                     <FileTextOutlined/> 保存摘要
                                                 </Checkbox>
                                             </Col>
-                                            {/*<Col span={6}>*/}
-                                            {/*    <Checkbox value="mindmap">*/}
-                                            {/*        <ApartmentOutlined /> 思维导图*/}
-                                            {/*    </Checkbox>*/}
-                                            {/*</Col>*/}
+                                            <Col span={10}>
+                                                <Checkbox value="mindmap">
+                                                    <ApartmentOutlined /> 思维导图
+                                                </Checkbox>
+                                            </Col>
                                             <Col span={10}>
                                                 <Checkbox value="knowledge">
                                                     <TagsOutlined/> 知识点

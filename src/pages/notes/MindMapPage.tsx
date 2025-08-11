@@ -60,7 +60,7 @@ const MindMapPage = () => {
     getImageFile
   } = useImageContext();
 
-  const { mindMaps, saveMindMap, clearMindMap } = useMindMapContext();
+  const { mindMaps, saveMindMap, clearMindMap, updateMindMap } = useMindMapContext();
 
   const [generating, setGenerating] = useState(false);
   const [layoutStyle, setLayoutStyle] = useState('tree');
@@ -209,6 +209,87 @@ const MindMapPage = () => {
     }
   };
 
+  // 添加子节点
+  const addChildNode = (parentId: string) => {
+    if (!selectedImage) return;
+
+    const newNodeId = `node-${Date.now()}`; // 生成唯一ID
+
+    updateMindMap(selectedImage.id, (prev) => {
+      const addNode = (nodes: MindNode[]): MindNode[] => {
+        return nodes.map(node => {
+          if (node.id === parentId) {
+            const parentPosition = node.position;
+            const newNode: MindNode = {
+              id: newNodeId,
+              label: '新节点',
+              position: {
+                x: parentPosition.x + 100,
+                y: parentPosition.y + (node.children.length * 50)
+              },
+              children: []
+            };
+            return {
+              ...node,
+              children: [...node.children, newNode]
+            };
+          }
+          if (node.children.length > 0) {
+            return { ...node, children: addNode(node.children) };
+          }
+          return node;
+        });
+      };
+
+      return {
+        ...prev,
+        nodes: addNode(prev.nodes)
+      };
+    });
+    setMindMapData(prev => {
+      const addNode = (nodes: MindNode[]): MindNode[] => {
+        return nodes.map(node => {
+          if (node.id === parentId) {
+            const parentPosition = node.position;
+            const newNode: MindNode = {
+              id: newNodeId,
+              label: '新节点',
+              position: {
+                x: parentPosition.x + 100,
+                y: parentPosition.y + (node.children.length * 50)
+              },
+              children: []
+            };
+            return {
+              ...node,
+              children: [...node.children, newNode]
+            };
+          }
+          if (node.children.length > 0) {
+            return { ...node, children: addNode(node.children) };
+          }
+          return node;
+        });
+      };
+
+      return {
+        ...prev,
+        nodes: addNode(prev.nodes)
+      };
+    });
+
+    // 关闭模态框
+    setIsTextModalVisible(false);
+    // // 选中新节点并进入编辑模式
+    // setEditingNodeId(newNodeId);
+    // setEditingText('新节点');
+    //
+    // // 短暂延迟后重新打开编辑模态框
+    // setTimeout(() => {
+    //   setIsTextModalVisible(true);
+    // }, 100);
+  };
+
   // 查找节点
   const findNode = (nodes: MindNode[], id: string): MindNode | null => {
     for (const node of nodes) {
@@ -223,6 +304,28 @@ const MindMapPage = () => {
 
   // 更新节点标签
   const updateNodeLabel = (id: string, newLabel: string) => {
+
+    if (!selectedImage) return;
+
+    updateMindMap(selectedImage.id, (prev) => {
+      const updateNode = (nodes: MindNode[]): MindNode[] => {
+        return nodes.map(node => {
+          if (node.id === id) {
+            return { ...node, label: newLabel };
+          }
+          if (node.children.length > 0) {
+            return { ...node, children: updateNode(node.children) };
+          }
+          return node;
+        });
+      };
+
+      return {
+        ...prev,
+        nodes: updateNode(prev.nodes)
+      };
+    });
+
     const updateNode = (nodes: MindNode[]): MindNode[] => {
       return nodes.map(node => {
         if (node.id === id) {
@@ -239,10 +342,33 @@ const MindMapPage = () => {
       ...prev,
       nodes: updateNode(prev.nodes)
     }));
+
   };
 
   // 更新节点位置
   const updateNodePosition = (id: string, newPosition: { x: number; y: number }) => {
+
+    if (!selectedImage) return;
+
+    updateMindMap(selectedImage.id, (prev) => {
+      const updateNode = (nodes: MindNode[]): MindNode[] => {
+        return nodes.map(node => {
+          if (node.id === id) {
+            return { ...node, position: newPosition };
+          }
+          if (node.children.length > 0) {
+            return { ...node, children: updateNode(node.children) };
+          }
+          return node;
+        });
+      };
+
+      return {
+        ...prev,
+        nodes: updateNode(prev.nodes)
+      };
+    });
+
     const updateNode = (nodes: MindNode[]): MindNode[] => {
       return nodes.map(node => {
         if (node.id === id) {
@@ -423,17 +549,17 @@ const MindMapPage = () => {
                 height={nodeHeight}
                 rx={8}
                 ry={8}
-                fill={node.color || '#fff'}
-                stroke={isEditing ? '#1890ff' : '#ddd'}
-                strokeWidth={isEditing ? 2 : 1}
+                fill="#e6f7ff" // 背景
+                stroke="#1890ff" // 边框
+                strokeWidth={2} // 边框宽度
             />
             <text
                 x={transformedPosition.x}
                 y={transformedPosition.y + 5}
                 textAnchor="middle"
-                fill={node.color ? '#fff' : '#333'}
+                fill="#333" // 深色文字
                 fontWeight={node.children.length > 0 ? 'bold' : 'normal'}
-                fontSize={node.children.length > 0 ? 10 : 10}
+                fontSize={node.children.length > 0 ? 13 : 13}
             >
               { node.label.length > 10 ? node.label.substring(0, 9) + '...' : node.label }
             </text>
@@ -591,19 +717,28 @@ const MindMapPage = () => {
             okText="保存"
             cancelText="取消"
             width={600}
-            footer={[
-              <Button key="back" onClick={() => setIsTextModalVisible(false)}>
-                取消
-              </Button>,
-              <Button
-                  key="submit"
-                  type="primary"
-                  onClick={handleTextSave}
-                  icon={<SaveOutlined />}
-              >
-                保存
-              </Button>,
-            ]}
+            footer={
+              [
+                <Button
+                    key="add-child"
+                    type="dashed"
+                    onClick={() => editingNodeId && addChildNode(editingNodeId)}
+                    icon={<PlusOutlined />}
+                >
+                  添加子节点
+                </Button>,
+                <Button key="back" onClick={() => setIsTextModalVisible(false)}>
+                  取消
+                </Button>,
+                <Button
+                    key="submit"
+                    type="primary"
+                    onClick={handleTextSave}
+                    icon={<SaveOutlined />}
+                >
+                  保存
+                </Button>,
+              ]}
         >
           <div style={{ margin: '20px 0' }}>
             <Input.TextArea
@@ -613,9 +748,6 @@ const MindMapPage = () => {
                 style={{ width: '100%' }}
                 placeholder="输入节点内容..."
             />
-          </div>
-          <div style={{ textAlign: 'right', marginTop: 10, color: '#999' }}>
-            支持多行文本编辑
           </div>
         </Modal>
       </div>

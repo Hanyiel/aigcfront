@@ -253,9 +253,9 @@ const UserCenter: React.FC = () => {
               <Text type="secondary" className="user-email">
                 <MailOutlined /> {userData.email}
               </Text>
-              <Text type="secondary" className="join-date">
-                加入于 {userData.joinDate}
-              </Text>
+              {/*<Text type="secondary" className="join-date">*/}
+              {/*  加入于 {userData.joinDate}*/}
+              {/*</Text>*/}
             </div>
 
             <Menu

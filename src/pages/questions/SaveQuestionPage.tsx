@@ -13,11 +13,11 @@ import {
     useQuestionImageContext,
 } from '../../contexts/QuestionImageContext';
 import '../../styles/questions/SaveQuestionPage.css'; // Note: You might need to create this CSS file
-import { useQuestionExtract } from "../../contexts/QuestionExtractContext";
-import { useQuestionKeywords } from "../../contexts/QuestionKeywordsContext";
-import { useQuestionExplanationContext } from "../../contexts/QuestionExplanationContext";
+import {QuestionExtractData, useQuestionExtract} from "../../contexts/QuestionExtractContext";
+import {QuestionKeywordData, useQuestionKeywords} from "../../contexts/QuestionKeywordsContext";
+import {QuestionExplanation, useQuestionExplanationContext} from "../../contexts/QuestionExplanationContext";
 import { useRelatedNote } from "../../contexts/RelatedNoteContext";
-import { useAutoGrade } from "../../contexts/AutoGradeContext";
+import {GradingCode, GradingResult, useAutoGrade} from "../../contexts/AutoGradeContext";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import ReactMarkdown from "react-markdown";
@@ -37,6 +37,14 @@ interface QuestionSaveResponse {
 interface QuestionData {
     question_id: string;
     storage_status: string;
+}
+
+interface SaveData {
+    extract?: QuestionExtractData;
+    explanation?: QuestionExplanation,
+    keywords?: QuestionKeywordData[],
+    autograde?: GradingResult,
+    // related:
 }
 
 const SaveQuestionPage = () => {
@@ -81,12 +89,24 @@ const SaveQuestionPage = () => {
             setLoading(true);
             const formData = new FormData();
             const image = getImageFile(selectedImage.id);
+            const saveData: SaveData = {};
             if (!image) {
                 message.error('图片数据获取失败');
                 return;
             }
             formData.append('image', image);
-            formData.append('options', JSON.stringify(saveOptions));
+            if(!image)
+                formData.append('options', JSON.stringify(saveOptions));
+
+            if(currentExtract)
+                saveData.extract = currentExtract;
+            if(currentKeywords)
+                saveData.keywords = currentKeywords;
+            if(currentExplanation)
+                saveData.explanation = currentExplanation;
+            if(currentGradingResult)
+                saveData.autograde = currentGradingResult;
+            formData.append('extra', JSON.stringify(saveData));
 
             const { data } = await saveQuestionToAPI(formData);
 

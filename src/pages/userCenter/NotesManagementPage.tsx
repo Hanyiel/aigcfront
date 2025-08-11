@@ -32,6 +32,7 @@ import {
   MoreOutlined,
   ArrowLeftOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import '../../styles/userCenter/NotesManagementPage.css';
 
 // 笔记管理子标签类型
@@ -44,6 +45,7 @@ type ResourceType = 'keywords' | 'mindmap' | 'explanation' | 'summary';
 type NoteDetailTabKey = 'original' | 'mindmap' | 'explanation';
 
 const NotesManagementPage: React.FC = () => {
+  const navigate = useNavigate();
   const [notesSubTab, setNotesSubTab] = useState<NotesSubTabKey>('all-notes');
   const [noteDetailTab, setNoteDetailTab] = useState<NoteDetailTabKey>('original');
   const [selectedNote, setSelectedNote] = useState<any>(null);
@@ -502,7 +504,11 @@ const NotesManagementPage: React.FC = () => {
           onTabChange={(key) => setNotesSubTab(key as NotesSubTabKey)}
           extra={
               notesSubTab === 'all-notes' && (
-                  <Button type="primary" icon={<PlusOutlined/>}>新建笔记</Button>
+                  <Button
+                      type="primary"
+                      icon={<PlusOutlined/>}
+                      onClick={() => navigate('/notes/index')}
+                  >新建笔记</Button>
               )
           }
       >

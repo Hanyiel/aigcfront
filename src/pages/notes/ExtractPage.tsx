@@ -15,7 +15,6 @@ import {
   message
 } from 'antd';
 import {
-  ArrowLeftOutlined,
   UploadOutlined,
   FileImageOutlined, ApartmentOutlined, DragOutlined, LoadingOutlined
 } from '@ant-design/icons';
@@ -48,6 +47,7 @@ const ExtractPage = () => {
   const uploadRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingContent, setEditingContent] = useState('');
+
 
   useEffect(() => {
     if (!isAuthenticated) {

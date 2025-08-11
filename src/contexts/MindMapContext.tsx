@@ -24,6 +24,7 @@ interface MindMapContextType {
   mindMaps: Record<string, MindMapData>; // imageId到导图的映射
   currentMindMap?: MindMapData;
   saveMindMap: (imageId: string, data: MindMapData) => void;
+  updateMindMap: (imageId:string, updater: (prev: MindMapData) => MindMapData) => void;
   clearMindMap: (imageId: string) => void;
   exportAsImage: (options?: ExportOptions) => Promise<void>;
   exportAsSVG: () => void;
@@ -37,6 +38,7 @@ interface ExportOptions {
 const MindMapContext = createContext<MindMapContextType>({
   mindMaps: {},
   saveMindMap: () => {},
+  updateMindMap: () => {},
   clearMindMap: () => {},
   exportAsImage: async () => {},
   exportAsSVG: () => {},
@@ -54,6 +56,19 @@ export const MindMapProvider: React.FC<{ children: React.ReactNode }> = ({ child
         generatedAt: Date.now()
       }
     }));
+  }, []);
+
+  // 更新思维导图
+  const updateMindMap = useCallback((imageId: string, updater: (prev: MindMapData) => MindMapData) => {
+    setMindMaps(prev => {
+      if (!prev[imageId]) return prev;
+
+      const updated = updater(prev[imageId]);
+      return {
+        ...prev,
+        [imageId]: updated
+      };
+    });
   }, []);
 
   // 清除指定导图
@@ -82,6 +97,7 @@ export const MindMapProvider: React.FC<{ children: React.ReactNode }> = ({ child
       mindMaps,
       currentMindMap: undefined, // 可根据需要扩展当前导图状态
       saveMindMap,
+      updateMindMap,
       clearMindMap,
       exportAsImage,
       exportAsSVG

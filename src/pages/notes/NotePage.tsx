@@ -1,7 +1,7 @@
 // src/pages/notes/note.tsx
 import React, { useState } from 'react';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { Layout, Menu, Button, Typography, Breadcrumb } from 'antd';
+import {Layout, Menu, Button, Typography, Breadcrumb, Dropdown} from 'antd';
 import {
   HomeOutlined,
   BookOutlined,
@@ -10,7 +10,7 @@ import {
   ClusterOutlined,
   ExportOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined, CommentOutlined
+  MenuUnfoldOutlined, CommentOutlined, UserOutlined, LogoutOutlined
 } from '@ant-design/icons';
 import '../../styles/notes/NotePage.css';
 
@@ -66,6 +66,20 @@ const NotePage = () => {
     location.pathname.includes(tab.key)
   )?.key || 'extract';
 
+  const userMenu = (
+      <Menu>
+        <Menu.Item key="profile" icon={<UserOutlined />}>个人中心</Menu.Item>
+        <Menu.Divider />
+        <Menu.Item
+            key="logout"
+            icon={<LogoutOutlined />}
+            onClick={() => navigate('/login')}
+        >
+          退出登录
+        </Menu.Item>
+      </Menu>
+  );
+
   return (
     <Layout className="note-layout">
       {/* 头部区域 */}
@@ -82,6 +96,12 @@ const NotePage = () => {
             </Breadcrumb.Item>
           </Breadcrumb>
         </div>
+        <Dropdown overlay={userMenu} trigger={['click']}>
+            <div className="user-center" onClick={() => navigate('../user-center')}>
+              <UserOutlined className="user-icon" />
+              <span>用户中心</span>
+            </div>
+          </Dropdown>
       </Header>
 
       <Layout>

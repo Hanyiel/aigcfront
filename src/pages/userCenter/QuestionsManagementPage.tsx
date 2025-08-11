@@ -36,6 +36,7 @@ import {
   CloseCircleOutlined
 } from '@ant-design/icons';
 import '../../styles/userCenter/QuestionsMangementPage.css';
+import {useNavigate} from "react-router-dom";
 
 const { Text } = Typography;
 const { Panel } = Collapse;
@@ -47,6 +48,7 @@ type QuestionsSubTabKey = 'all-questions' | 'incorrect-questions' | 'question-de
 type QuestionDetailTabKey = 'summary' | 'explanation' | 'related-notes' | 'grading';
 
 const QuestionsManagementPage: React.FC = () => {
+  const navigate = useNavigate()
   const [questionsSubTab, setQuestionsSubTab] = useState<QuestionsSubTabKey>('all-questions');
   const [questionDetailTab, setQuestionDetailTab] = useState<QuestionDetailTabKey>('summary');
   const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
@@ -704,11 +706,11 @@ const QuestionsManagementPage: React.FC = () => {
             }
           }}
           extra={
-            questionsSubTab !== 'question-detail' ? (
-                <Button type="primary" icon={<PlusOutlined />}>添加题目</Button>
-            ) : (
-                <Button type="primary" icon={<PlusOutlined />}>保存题目</Button>
-            )
+            <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => navigate('/questions/index')}
+            >添加题目</Button>
           }
       >
         {questionsSubTab === 'all-questions' ? renderAllQuestionsPage() :
