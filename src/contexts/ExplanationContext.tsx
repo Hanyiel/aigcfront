@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export interface ExplanationData {
   explanation_id: string;
-  image_id: string;
+  note_id: string;
   content_md: string;
 }
 
@@ -33,7 +33,7 @@ export const ExplanationProvider = ({ children }: { children: React.ReactNode })
       ...prev.filter(e => e.explanation_id !== data.explanation_id),
       data
     ]);
-    localStorage.setItem(`img_exp_${data.image_id}`, data.explanation_id);
+    localStorage.setItem(`note_exp_${data.note_id}`, data.explanation_id);
   };
 
   const updateExplanation = (data: ExplanationData) => {
@@ -53,7 +53,7 @@ export const ExplanationProvider = ({ children }: { children: React.ReactNode })
   };
 
   const getExplanationByImage = (imageId: string) => {
-    const expId = localStorage.getItem(`img_exp_${imageId}`);
+    const expId = localStorage.getItem(`note_exp_${imageId}`);
     return expId ? explanations.find(e => e.explanation_id === expId) : undefined;
   };
 

@@ -10,16 +10,22 @@ interface UploadedImage {
   timestamp: number;
   status: 'uploaded';  // 简化状态（仅展示用）
   file: File;          // 保留原始文件引用
+  hasExtract: boolean;
+  hasMindMap: boolean;
+  hasKeywords: boolean;
+  hasExplanation: boolean;
+  has_saved: boolean;
 }
 
 export interface ImageContextType {
   images: UploadedImage[];
-  addImage: (file: File) => void;  // 改为同步操作
+  addImage: (file: File, imageId?: string) => void;
   removeImage: (imageId: string) => void;
   selectedImage: UploadedImage | null;
   setSelectedImage: (image: UploadedImage | null) => void;
-  getImageFile: (imageId: string) => File | null;  // 新增文件获取方法
+  getImageFile: (imageId: string) => File | null;
   getExplanationId: (imageId: string) => string | null;
+  setSaved: (imageId: string) => void;
 }
 
 const ImageContext = createContext<ImageContextType>({} as ImageContextType);
@@ -39,17 +45,28 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  const addImage = useCallback((file: File) => {
+  const addImage = useCallback(( file: File, imageId?: string) => {
     const tempUrl = URL.createObjectURL(file);
+    let id = uuidv4();
+    let has_saved = false;
+    if(imageId){
+      id = imageId
+      has_saved = true
+
+    }
     const newImage: UploadedImage = {
-      id: uuidv4(),
+      id: id,
       url: tempUrl,
       name: file.name,
       timestamp: Date.now(),
       status: 'uploaded',
-      file: file  // 保留原始文件引用
+      file: file,  // 保留原始文件引用
+      hasExtract: false,
+      hasMindMap: false,
+      hasKeywords: false,
+      hasExplanation: false,
+      has_saved: has_saved
     };
-
     setImages(prev => [...prev, newImage]);
   }, []);
 
@@ -70,7 +87,17 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [images]);
 
   const getExplanationId = useCallback((imageId: string) => {
-    return localStorage.getItem(`img_exp_${imageId}`);
+    return localStorage.getItem(`note_exp_${imageId}`);
+  }, []);
+
+  const setSaved = useCallback((imageId: string) => {
+    setImages(prevImages =>
+      prevImages.map(img =>
+        img.id === imageId
+          ? { ...img, has_saved: true }
+          : img
+      )
+    );
   }, []);
 
   return (
@@ -81,7 +108,8 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         selectedImage,
         setSelectedImage,
         getImageFile,
-        getExplanationId
+        getExplanationId,
+        setSaved
       }}>
         {children}
       </ImageContext.Provider>

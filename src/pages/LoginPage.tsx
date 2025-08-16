@@ -81,7 +81,7 @@ const LoginPage: React.FC = () => {
               className="login-button"
           >
             {login ? <LoadingOutlined/> : null}
-            {login ? '登录中...' : '登录'}
+            {login ? ' 登录中...' : '登录'}
           </button>
 
           {/* 新增跳转注册链接 */}

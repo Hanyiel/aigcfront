@@ -47,6 +47,7 @@ const ExtractPage = () => {
   const uploadRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingContent, setEditingContent] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -91,7 +92,6 @@ const ExtractPage = () => {
       setExtracting(true);
       const token = localStorage.getItem('authToken');
       const file = getImageFile(selectedImage.id);
-      console.log('token', token)
       if (!file) {
         message.error('图片数据获取失败');
         return;
@@ -119,6 +119,7 @@ const ExtractPage = () => {
       }
 
       const result = await apiResponse.json();
+      console.log(result)
 
       const extractData = {
         extract_id: `ext_${Date.now()}`,
@@ -129,6 +130,7 @@ const ExtractPage = () => {
       saveExtract(extractData);
       setResult(extractData);
     } catch (err) {
+      console.log("error")
       message.error(err instanceof Error ? err.message : '解析失败');
     } finally {
       setExtracting(false);
@@ -187,112 +189,146 @@ const ExtractPage = () => {
 
   return (
       <div className="sub-container">
-          <Row gutter={24} className="sub-row">
-            <Col flex="auto" className="sub-col">
-              <div className="tool-section">
-                <Title level={3} className="tool-title">
-                  <ApartmentOutlined/> 摘要提取
-                </Title>
-                { renderToolbar() }
-              </div>
-              <div
-                  className="content-card"
-              >
-                <Spin tip="AI正在解析内容..." spinning={extracting}>
-                  {result ? (
-                      <div className="result-content">
-                        <div className="section">
-                          <Text strong>内容摘要：</Text>
-                          {isEditing ? (
-                              <TextArea
-                                  value={editingContent}
-                                  onChange={handleContentChange}
-                                  autoSize={{ minRows: 10, maxRows: 20 }}
-                                  style={{ width: '100%', marginTop: 16 }}
-                              />
-                          ) : (
-                              <Text className="summary">
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkMath]}
-                                    rehypePlugins={[rehypeKatex]}
-                                >
-                                  {result.text_content || ''}
-                                </ReactMarkdown>
+        <Row gutter={24} className="sub-row">
+          <Col flex="auto" className="sub-col">
+            <div className="tool-section">
+              <Title level={3} className="tool-title">
+                <ApartmentOutlined/> 摘要提取
+              </Title>
+              { renderToolbar() }
+            </div>
+            <div
+                className="content-card"
+            >
+              <Spin tip="AI正在解析内容..." spinning={extracting}>
+                {result ? (
+                    <div className="result-content">
+                      <div className="section">
+                        <Text strong>内容摘要：</Text>
+                        {isEditing ? (
+                            <TextArea
+                                value={editingContent}
+                                onChange={handleContentChange}
+                                autoSize={{ minRows: 10, maxRows: 20 }}
+                                style={{ width: '100%', marginTop: 16 }}
+                            />
+                        ) : (
+                            <Text className="summary">
+                              <ReactMarkdown
+                                  remarkPlugins={[remarkMath]}
+                                  rehypePlugins={[rehypeKatex]}
+                              >
+                                {result.text_content || ''}
+                              </ReactMarkdown>
+                            </Text>
+                        )}
+                      </div>
+                    </div>
+                ) : (
+                    <div className="empty-result">
+                      <FileImageOutlined className="empty-icon"/>
+                      <Text type="secondary">请选择需要解析的图片</Text>
+                    </div>
+                )}
+              </Spin>
+            </div>
+          </Col>
+
+          {/* 右侧图片列表 */}
+          {/* 右侧图片列表 */}
+          <Col xs={24} md={10} lg={8}>
+            <Card
+                title="图片列表"
+                className="note-image-list-card"
+                extra={
+                  <Upload
+                      beforeUpload={handleUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                  >
+                    <Button icon={<UploadOutlined/>}>上传图片</Button>
+                  </Upload>
+                }
+            >
+              <List
+                  dataSource={images}
+                  renderItem={(item) => (
+                      <List.Item
+                          className={`note-list-item ${
+                              selectedImage?.id === item.id ? 'selected' : ''
+                          }`}
+                          onClick={() => setSelectedImage(item)}
+                          extra={
+                            <Button
+                                type="link"
+                                danger
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(item.id);
+                                }}
+                            >
+                              删除
+                            </Button>
+                          }
+                      >
+                        <div className="note-thumbnail-wrapper">
+                          <img
+                              src={item.url}
+                              alt={item.name}
+                              className="note-thumbnail"
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                              style={{cursor: 'pointer'}} // 添加指针样式表示可点击
+                          />
+                          <FileImageOutlined
+                              className="note-file-icon"
+                              style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                          />
+                        </div>
+                        <div className="note-image-info">
+                            <span className="note-image-name">
+                              {item.name}
+                            </span>
+                          <span className="note-image-date">
+                              {new Date(item.timestamp).toLocaleDateString()}
+                            </span>
+                          {item.has_saved ? (
+                              <Text type="secondary" className="note-image-date">
+                                {"   --saved"}
                               </Text>
+                          ) : (
+                              <div></div>
                           )}
                         </div>
-                      </div>
-                  ) : (
-                      <div className="empty-result">
-                        <FileImageOutlined className="empty-icon"/>
-                        <Text type="secondary">请选择需要解析的图片</Text>
-                      </div>
-                  )}
-                </Spin>
-              </div>
-            </Col>
 
-            {/* 右侧图片列表 */}
-            <Col xs={24} md={10} lg={8}>
-              <Card
-                  title="图片列表"
-                  className="image-list-card"
-                  extra={
-                    <Upload
-                        beforeUpload={handleUpload}
-                        showUploadList={false}
-                        accept="image/*"
-                    >
-                      <Button icon={<UploadOutlined />}>添加图片</Button>
-                    </Upload>
+                      </List.Item>
+                  )}
+              />
+            </Card>
+          </Col>
+        </Row>
+        {/* 图片预览组件 */}
+        {previewImage && (
+            <Image
+                width={0}
+                height={0}
+                style={{ display: 'none' }}
+                src={previewImage}
+                preview={{
+                  visible: !!previewImage,
+                  onVisibleChange: (visible) => {
+                    if (!visible) setPreviewImage(null);
                   }
-              >
-                <List
-                    dataSource={images}
-                    renderItem={(item) => (
-                        <List.Item
-                            className={`list-item ${
-                                selectedImage?.id === item.id ? 'selected' : ''
-                            }`}
-                            onClick={() => setSelectedImage(item)}
-                            extra={
-                              <Button
-                                  type="link"
-                                  danger
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeImage(item.id);
-                                  }}
-                              >
-                                删除
-                              </Button>
-                            }
-                        >
-                          <div className="image-content">
-                            <Image
-                                src={item.url}
-                                alt={item.name}
-                                preview={false}
-                                width={80}
-                                height={60}
-                                className="thumbnail"
-                            />
-                            <div className="image-info">
-                              <Text ellipsis className="image-name">
-                                {item.name}
-                              </Text>
-                              <Text type="secondary" className="image-date">
-                                {new Date(item.timestamp).toLocaleDateString()}
-                              </Text>
-                            </div>
-                          </div>
-                        </List.Item>
-                    )}
-                />
-              </Card>
-            </Col>
-          </Row>
-        </div>
+                }}
+            />
+        )}
+      </div>
   );
 };
 

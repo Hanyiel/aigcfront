@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export interface ExtractData {
   extract_id: string;
-  image_id: string;
+  note_id: string;
   text_content: string;
   expend?: string;
 }
@@ -31,15 +31,15 @@ export const ExtractProvider = ({ children }: { children: React.ReactNode }) => 
 
   const saveExtract = (data: ExtractData) => {
     setExtracts(prev => [
-      ...prev.filter(e => e.image_id !== data.image_id),
+      ...prev.filter(e => e.note_id !== data.note_id),
       data
     ]);
-    localStorage.setItem(`img_ext_${data.image_id}`, data.extract_id);
+    localStorage.setItem(`note_ext_${data.note_id}`, data.extract_id);
   };
 
   const updateExtract = (data: ExtractData) => {
     setExtracts(prev =>
-      prev.map(e => e.image_id === data.image_id ? data : e)
+      prev.map(e => e.note_id === data.note_id ? data : e)
     );
   };
 
@@ -48,7 +48,7 @@ export const ExtractProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const getExtractByImage = (imageId: string) => {
-    const extId = localStorage.getItem(`img_ext_${imageId}`);
+    const extId = localStorage.getItem(`note_ext_${imageId}`);
     return extId ? extracts.find(e => e.extract_id === extId) : undefined;
   };
 

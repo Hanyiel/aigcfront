@@ -19,7 +19,7 @@ import {
   ApartmentOutlined,
   PlusOutlined,
   UploadOutlined,
-  LoadingOutlined, SaveOutlined, EditOutlined, DragOutlined
+  LoadingOutlined, SaveOutlined, EditOutlined, DragOutlined, FileImageOutlined
 } from '@ant-design/icons';
 import { useImageContext } from '../../contexts/ImageContext';
 import { useMindMapContext, MindNode, MindMapData } from '../../contexts/MindMapContext';
@@ -80,6 +80,7 @@ const MindMapPage = () => {
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
   const [dragCanvasStart, setDragCanvasStart] = useState({ x: 0, y: 0 });
   const [startTransform, setStartTransform] = useState(transform);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [mindMapData, setMindMapData] = useState<MindMapData>({
     nodes: [],
@@ -649,13 +650,18 @@ const MindMapPage = () => {
             </div>
           </Col>
 
+          {/* 右侧图片列表 */}
           <Col xs={24} md={10} lg={8}>
             <Card
                 title="图片列表"
-                className="image-list-card"
+                className="note-image-list-card"
                 extra={
-                  <Upload beforeUpload={handleUpload} showUploadList={false} accept="image/*">
-                    <Button icon={<UploadOutlined />}>添加图片</Button>
+                  <Upload
+                      beforeUpload={handleUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                  >
+                    <Button icon={<UploadOutlined/>}>上传图片</Button>
                   </Upload>
                 }
             >
@@ -663,7 +669,7 @@ const MindMapPage = () => {
                   dataSource={images}
                   renderItem={(item) => (
                       <List.Item
-                          className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                          className={`note-list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
                           onClick={() => setSelectedImage(item)}
                           extra={
                             <Button
@@ -679,28 +685,40 @@ const MindMapPage = () => {
                             </Button>
                           }
                       >
-                        <div className="image-content">
-                          <Image
+                        <div className="note-thumbnail-wrapper">
+                          <img
                               src={item.url}
                               alt={item.name}
-                              preview={false}
-                              width={80}
-                              height={60}
-                              className="thumbnail"
+                              className="note-thumbnail"
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                              style={{cursor: 'pointer'}} // 添加指针样式表示可点击
                           />
-                          <div className="image-info">
-                            <Text ellipsis className="image-name">
+                          <FileImageOutlined
+                              className="note-file-icon"
+                              style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                          />
+                        </div>
+                        <div className="note-image-info">
+                            <span className="note-image-name">
                               {item.name}
-                            </Text>
-                            <Text type="secondary" className="image-date">
+                            </span>
+                          <span className="note-image-date">
                               {new Date(item.timestamp).toLocaleDateString()}
-                            </Text>
-                            {mindMaps[item.id]?.nodes?.length ? (
-                                <Text type="secondary" className="mindmap-status">
-                                  已生成导图（{mindMaps[item.id].nodes.length}节点）
-                                </Text>
-                            ) : null}
-                          </div>
+                            </span>
+                          {item.has_saved ? (
+                              <Text type="secondary" className="note-image-date">
+                                {"   --saved"}
+                              </Text>
+                          ) : (
+                              <div></div>
+                          )}
                         </div>
                       </List.Item>
                   )}
@@ -750,6 +768,21 @@ const MindMapPage = () => {
             />
           </div>
         </Modal>
+        {/* 图片预览组件 */}
+        {previewImage && (
+            <Image
+                width={0}
+                height={0}
+                style={{ display: 'none' }}
+                src={previewImage}
+                preview={{
+                  visible: !!previewImage,
+                  onVisibleChange: (visible) => {
+                    if (!visible) setPreviewImage(null);
+                  }
+                }}
+            />
+        )}
       </div>
   );
 };

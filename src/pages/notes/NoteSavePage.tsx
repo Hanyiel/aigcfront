@@ -1,11 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { Tag, Card, List, Checkbox, Button, Image, Row, Col, Typography, message } from 'antd';
+import {Tag, Card, List, Checkbox, Button, Image, Row, Col, Typography, message, Upload} from 'antd';
 import {
     SaveOutlined,
     FileTextOutlined,
     ApartmentOutlined,
     TagsOutlined,
-    SoundOutlined, DragOutlined, LoadingOutlined
+    SoundOutlined, DragOutlined, LoadingOutlined, UploadOutlined, FileImageOutlined
 } from '@ant-design/icons';
 import {
     ImageContextType, useImageContext,
@@ -50,7 +50,8 @@ const NoteSavePage = () => {
         removeImage,
         selectedImage,
         setSelectedImage,
-        getImageFile
+        getImageFile,
+        setSaved
     } = useImageContext();
     const { getExtractByImage } = useExtract();
     const { currentMindMap } = useMindMapContext();
@@ -69,6 +70,7 @@ const NoteSavePage = () => {
     const currentExtract = selectedImage ? getExtractByImage(selectedImage.id) : undefined;
     const currentKeywords = selectedImage ? getKeywordsByImage(selectedImage.id) : [];
     const currentExplanation = selectedImage ? getExplanationByImage(selectedImage.id) : undefined;
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     // 处理保存操作
     const handleSave = async () => {
@@ -103,7 +105,10 @@ const NoteSavePage = () => {
             formData.append('extra', JSON.stringify(saveData));
             const { data } = await saveNoteToAPI(formData);
 
+            setSaved(selectedImage.id)
+
             message.success(`笔记保存成功！ID: ${data.note_id}`);
+
             setloading(false)
         } catch (err) {
             setloading(false);
@@ -179,7 +184,7 @@ const NoteSavePage = () => {
                 return (
                     <div className="preview-section">
                         {/*<Text className="preview-title">思维导图预览</Text>*/}
-                        <div className="mindmap-preview-container">
+                        <div className="mindmap-preview-co  ntainer">
                             暂不支持思维导图的预览
                             {/*{renderMindMapPreview(currentMindMap)}*/}
                         </div>
@@ -308,38 +313,74 @@ const NoteSavePage = () => {
 
                 {/* 右侧图片列表 */}
                 <Col xs={24} md={10} lg={8}>
-                    <Card className="image-list-card" bodyStyle={{padding: 0}}>
+                    <Card
+                        title="图片列表"
+                        className="note-image-list-card"
+                    >
                         <List
                             dataSource={images}
                             renderItem={item => (
                                 <List.Item
-                                    className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                    className={`note-list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
                                     onClick={() => setSelectedImage(item)}
                                 >
-                                    <div className="image-content">
-                                        <Image
+                                    <div className="note-thumbnail-wrapper">
+                                        <img
                                             src={item.url}
                                             alt={item.name}
-                                            preview={false}
-                                            width={80}
-                                            height={60}
-                                            className="thumbnail"
+                                            className="note-thumbnail"
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                                setPreviewImage(item.url); // 设置预览图片
+                                            }}
+                                            style={{cursor: 'pointer'}} // 添加指针样式表示可点击
                                         />
-                                        <div className="image-info">
-                                            <Text ellipsis className="image-name">
-                                                {item.name}
-                                            </Text>
-                                            <Text type="secondary" className="image-date">
-                                                {new Date(item.timestamp).toLocaleDateString()}
-                                            </Text>
-                                        </div>
+                                        <FileImageOutlined
+                                            className="note-file-icon"
+                                            style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                                setPreviewImage(item.url); // 设置预览图片
+                                            }}
+                                        />
                                     </div>
+                                    <div className="note-image-info">
+                                            <span className="note-image-name">
+                                                {item.name}
+                                            </span>
+                                        <span className="note-image-date">
+                                                {new Date(item.timestamp).toLocaleDateString()}
+                                            </span>
+                                        {item.has_saved ? (
+                                            <Text type="secondary" className="note-image-date">
+                                                {"   --saved"}
+                                            </Text>
+                                        ) : (
+                                            <div></div>
+                                        )}
+                                    </div>
+
                                 </List.Item>
                             )}
                         />
                     </Card>
                 </Col>
             </Row>
+            {/* 图片预览组件 */}
+            {previewImage && (
+                <Image
+                    width={0}
+                    height={0}
+                    style={{ display: 'none' }}
+                    src={previewImage}
+                    preview={{
+                        visible: !!previewImage,
+                        onVisibleChange: (visible) => {
+                            if (!visible) setPreviewImage(null);
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Layout,
   Card,
+  Image,
   Row,
   Col,
   Button,
@@ -20,7 +21,7 @@ import {
   PlayCircleOutlined,
   DeleteOutlined,
   EditOutlined,
-  SaveOutlined, ApartmentOutlined, LoadingOutlined
+  SaveOutlined, ApartmentOutlined, LoadingOutlined, FileImageOutlined
 } from '@ant-design/icons';
 import ReactMarkdown  from 'react-markdown';
 import { useImageContext } from '../../contexts/ImageContext';
@@ -57,6 +58,7 @@ const SmartLectureLayout = () => {
   // 添加编辑状态
   const [isEditing, setIsEditing] = useState(false);
   const [editingContent, setEditingContent] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedImage) {
@@ -119,7 +121,7 @@ const SmartLectureLayout = () => {
       console.log("data:", data)
       const expData: ExplanationData = {
         ...data,
-        image_id: selectedImage.id
+        note_id: selectedImage.id
       };
       saveExplanation(expData);
 
@@ -242,14 +244,14 @@ const SmartLectureLayout = () => {
           <Col xs={24} md={10} lg={8}>
             <Card
                 title="图片列表"
-                className="image-list-card"
+                className="note-image-list-card"
                 extra={
                   <Upload
                       beforeUpload={handleUpload}
                       showUploadList={false}
                       accept="image/*"
                   >
-                    <Button icon={<UploadOutlined />}>添加图片</Button>
+                    <Button icon={<UploadOutlined/>}>上传图片</Button>
                   </Upload>
                 }
             >
@@ -257,7 +259,7 @@ const SmartLectureLayout = () => {
                   dataSource={images}
                   renderItem={(item) => (
                       <List.Item
-                          className={`list-item ${
+                          className={`note-list-item ${
                               selectedImage?.id === item.id ? 'selected' : ''
                           }`}
                           onClick={() => setSelectedImage(item)}
@@ -274,23 +276,40 @@ const SmartLectureLayout = () => {
                             </Button>
                           }
                       >
-                        <div className="image-content">
-                          <AntImage
+                        <div className="note-thumbnail-wrapper">
+                          <img
                               src={item.url}
                               alt={item.name}
-                              preview={false}
-                              width={80}
-                              height={60}
-                              className="thumbnail"
+                              className="note-thumbnail"
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                              style={{cursor: 'pointer'}} // 添加指针样式表示可点击
                           />
-                          <div className="image-info">
-                            <Text ellipsis className="image-name">
+                          <FileImageOutlined
+                              className="note-file-icon"
+                              style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                          />
+                        </div>
+                        <div className="note-image-info">
+                            <span className="note-image-name">
                               {item.name}
-                            </Text>
-                            <Text type="secondary" className="image-date">
+                            </span>
+                          <span className="note-image-date">
                               {new Date(item.timestamp).toLocaleDateString()}
-                            </Text>
-                          </div>
+                            </span>
+                          {item.has_saved ? (
+                              <Text type="secondary" className="note-image-date">
+                                {"   --saved"}
+                              </Text>
+                          ) : (
+                              <div></div>
+                          )}
                         </div>
                       </List.Item>
                   )}
@@ -298,6 +317,21 @@ const SmartLectureLayout = () => {
             </Card>
           </Col>
         </Row>
+        {/* 图片预览组件 */}
+        {previewImage && (
+            <Image
+                width={0}
+                height={0}
+                style={{ display: 'none' }}
+                src={previewImage}
+                preview={{
+                  visible: !!previewImage,
+                  onVisibleChange: (visible) => {
+                    if (!visible) setPreviewImage(null);
+                  }
+                }}
+            />
+        )}
       </div>
   );
 };

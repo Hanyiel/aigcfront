@@ -57,11 +57,17 @@
 }
 
 .mindmap-description {
-  padding: 15px;
+  padding: 5px;
   background: #f0f8ff;
   border-radius: 4px;
-  margin-top: 20px;
+  margin-top: 10px;
 }
+.note-extract-content {
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: calc(60vh - 70px);
+}
+
 /* ========= 智能讲解 ========*/
 .explanation-content {
   padding: 0 10px;
@@ -83,7 +89,7 @@
 .explanation-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   padding-bottom: 10px;
   border-bottom: 1px solid #f0f0f0;
 }

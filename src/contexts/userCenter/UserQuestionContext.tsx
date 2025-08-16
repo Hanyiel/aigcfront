@@ -1,106 +1,187 @@
+// src/contexts/UserQuestionContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { message } from 'antd';
+import { logout } from '../../services/auth';
+
+const API_URL = 'http://localhost:8000/api';
 
 interface Question {
-    question_id: string;
-    content: string;
-    type: string;
-    isWrong: boolean;
-    hasMindMap: boolean;
-    hasKeywords: boolean;
-    hasExplanation: boolean;
-    hasAutoScoreReport: boolean;
-    hasRelatedItems: boolean;
+  questionId: string;
+  content: string;
+  type: string;
+  isWrong: boolean;
+  hasMindMap: boolean;
+  hasKeywords: boolean;
+  hasExplanation: boolean;
+  hasAutoScoreReport: boolean;
+  hasRelatedItems: boolean;
+  imageName?: string;
+  createTime: string;
+  updateTime: string;
 }
-interface Questions {
-    total: number;
-    questions: Question[] | null;
+
+interface QuestionBasic {
+  questionId: string;
+  content: string;
+  type: string;
+  isWrong: boolean;
 }
-// 摘要
-interface QuestionExtract {
-    question_id: string;
-    content: string;
+
+interface MindNode {
+  id: string;
+  label: string;
+  color?: string;
+  link?: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  children: MindNode[];
 }
-// 思维导图
-interface MindMapNode {
-    id: string;
-    label: string;
-    color?: string;
-    link?: string;
-    position: {
-        x: number;
-        y: number;
-    };
-    children: MindMapNode[];
+export interface MindMapData {
+  nodes: MindNode[];
+  svgUrl?: string;
+  generatedAt: number;
 }
-interface MindMapData {
-    mindmap_id: string | null;
-    root_node: MindMapNode[] | null;
+
+interface QuestionMindMap {
+  mindMap_id: string;
+  mindMapData: MindMapData
 }
-interface MindMap {
-    question_id: string;
-    mindMap: MindMapData | null;
-}
-// 关键词
+
 interface Keyword {
-    term: string;
-    tfidf_score: number;
+  term: string;
+  tfidf_score: number;
 }
-interface Keywords {
-    question_id: string;
-    keywords: Keyword[];
+
+interface QuestionKeywords {
+  keywords: Keyword[];
 }
-// 讲解
-interface Explanation {
-    question_id: string;
-    explanation: string;
+
+interface QuestionExplanation {
+  explanation: string;
 }
-// 批改
+
 interface AutoScoreReport {
-    code: number;
-    score: number;
-    correct_answer: string;
-    your_answer: string;
-    error_analysis: string[];
-    explanation: string[];
-    knowledge_point: string[];
+  code: number;
+  score: number;
+  correct_answer: string;
+  your_answer: string;
+  error_analysis: string[];
+  explanation: string[];
+  knowledge_point: string[];
 }
-interface AutoGrade {
-    question_id: string;
-    autoScoreReport: AutoScoreReport[];
+
+interface QuestionAutoScore {
+  autoScoreReport: AutoScoreReport;
 }
-// 相关内容
+
 interface RelatedNote {
-    note_id: string;
-    title: string;
-    content: string;
-    similarity: 0.85;
+  noteId: string;
+  title: string;
+  content: string;
+  similarity: number;
 }
-interface RelatedQuestions {
-    question_id: string;
-    content: string;
-    similarity: number;
+
+interface RelatedQuestion {
+  questionId: string;
+  content: string;
+  similarity: number;
+}
+
+interface QuestionRelatedItems {
+  relatedItems: {
+    related_notes: RelatedNote[];
+    related_questions: RelatedQuestion[];
+  };
 }
 
 interface UserQuestionContextType {
-
+  getQuestionBasic: (questionId: string) => Promise<QuestionBasic | null>;
+  getQuestionMindMap: (questionId: string) => Promise<QuestionMindMap | null>;
+  getQuestionKeywords: (questionId: string) => Promise<QuestionKeywords | null>;
+  getQuestionExplanation: (questionId: string) => Promise<QuestionExplanation | null>;
+  getQuestionAutoScore: (questionId: string) => Promise<QuestionAutoScore | null>;
+  getQuestionRelatedItems: (questionId: string) => Promise<QuestionRelatedItems | null>;
 }
 
 const UserQuestionContext = createContext<UserQuestionContextType>({} as UserQuestionContextType);
 
-const UserQuestionProvider: React.FC<{ children: React.ReactNode}> = ({ children}) => {
-    // 获取当前题目的摘要
-    // 获取当前题目的图片
-    // 获取当前题目的思维导图
-    // 获取当前题目的关键词
-    // 获取当前题目的智能讲解
-    // 获取当前题目的相关词条
-    // 保存（更新）当前题目所有信息
-    return (
-        <UserQuestionContext.Provider value={{
+const UserQuestionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const getAuthToken = () => localStorage.getItem('authToken');
 
-        }}>
-            {children}
-        </UserQuestionContext.Provider>
-    )
-}
+  const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken();
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      ...options.headers,
+    };
 
+    try {
+      const response = await fetch(url, { ...options, headers });
+
+      if (response.status === 401) {
+        logout();
+        window.location.href = '/login';
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(`请求失败: ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('API请求错误:', error);
+      message.error(error instanceof Error ? error.message : 'API请求错误');
+      return null;
+    }
+  };
+
+  const getQuestionBasic = useCallback(async (questionId: string) => {
+    const result = await fetchWithAuth(`${API_URL}/questions/${questionId}/basic`);
+    return result?.data || null;
+  }, []);
+
+  const getQuestionMindMap = useCallback(async (questionId: string) => {
+    const result = await fetchWithAuth(`${API_URL}/questions/${questionId}/mindmap`);
+    return result?.data || null;
+  }, []);
+
+  const getQuestionKeywords = useCallback(async (questionId: string) => {
+    const result = await fetchWithAuth(`${API_URL}/questions/${questionId}/keywords`);
+    return result?.data || null;
+  }, []);
+
+  const getQuestionExplanation = useCallback(async (questionId: string) => {
+    const result = await fetchWithAuth(`${API_URL}/questions/${questionId}/explanation`);
+    return result?.data || null;
+  }, []);
+
+  const getQuestionAutoScore = useCallback(async (questionId: string) => {
+    const result = await fetchWithAuth(`${API_URL}/questions/${questionId}/auto-score`);
+    return result?.data || null;
+  }, []);
+
+  const getQuestionRelatedItems = useCallback(async (questionId: string) => {
+    const result = await fetchWithAuth(`${API_URL}/questions/${questionId}/related-items`);
+    return result?.data || null;
+  }, []);
+
+  return (
+    <UserQuestionContext.Provider
+      value={{
+        getQuestionBasic,
+        getQuestionMindMap,
+        getQuestionKeywords,
+        getQuestionExplanation,
+        getQuestionAutoScore,
+        getQuestionRelatedItems,
+      }}
+    >
+      {children}
+    </UserQuestionContext.Provider>
+  );
+};
+
+export { UserQuestionContext, UserQuestionProvider };

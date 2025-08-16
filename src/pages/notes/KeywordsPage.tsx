@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import {Button, Card, Row, Col, List, Tag, Upload, Spin, message, Input, Typography} from 'antd';
+import {Button, Image, Card, Row, Col, List, Tag, Upload, Spin, message, Input, Typography} from 'antd';
 import {
     CloseOutlined,
     EditOutlined,
@@ -15,6 +15,7 @@ import { useImageContext } from '../../contexts/ImageContext';
 import '../../styles/notes/KeywordsPage.css';
 import { useKeywords } from "../../contexts/NoteKeywordsContext";
 import { useAuth } from "../../contexts/AuthContext";
+import {gray} from "d3";
 
 const { Title, Text } = Typography;
 
@@ -55,6 +56,7 @@ const KeywordsPage = () => {
     const [editingText, setEditingText] = useState('');
     const [isAdding, setIsAdding] = useState(false);
     const [newKeywordText, setNewKeywordText] = useState('');
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -352,7 +354,7 @@ const KeywordsPage = () => {
                 <Col xs={24} md={10} lg={8}>
                     <Card
                         title="图片列表"
-                        className="image-list-card"
+                        className="note-image-list-card"
                         extra={
                             <Upload
                                 beforeUpload={handleUpload}
@@ -367,7 +369,7 @@ const KeywordsPage = () => {
                             dataSource={images}
                             renderItem={(item) => (
                                 <List.Item
-                                    className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                    className={`note-list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
                                     onClick={() => setSelectedImage(item)}
                                     extra={
                                         <Button
@@ -387,23 +389,39 @@ const KeywordsPage = () => {
                                         </Button>
                                     }
                                 >
-                                    <div className="thumbnail-wrapper">
+                                    <div className="note-thumbnail-wrapper">
                                         <img
                                             src={item.url}
                                             alt={item.name}
-                                            className="thumbnail"
+                                            className="note-thumbnail"
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                                setPreviewImage(item.url); // 设置预览图片
+                                            }}
+                                            style={{cursor: 'pointer'}} // 添加指针样式表示可点击
                                         />
-                                        <FileImageOutlined className="file-icon"/>
+                                        <FileImageOutlined
+                                            className="note-file-icon"
+                                            style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                                setPreviewImage(item.url); // 设置预览图片
+                                            }}
+                                        />
                                     </div>
-                                    <div className="image-info">
-                                        <span className="image-name">{item.name}</span>
-                                        <span className="image-date">
-                      {new Date(item.timestamp).toLocaleDateString()}
-                    </span>
-                                        {ocrTexts[item.id] && (
-                                            <span className="text-indicator">
-                        <LinkOutlined/> 已解析文本
-                      </span>
+                                    <div className="note-image-info">
+                                        <span className="note-image-name">{item.name}</span>
+                                        <span className="note-image-date">
+                                            {new Date(item.timestamp).toLocaleDateString()}
+                                            </span>
+                                        {item.has_saved ? (
+                                            <Text type="secondary" className="note-image-date">
+                                                {"   --saved"}
+                                            </Text>
+                                        ): (
+                                            <div>
+
+                                            </div>
                                         )}
                                     </div>
                                 </List.Item>
@@ -412,6 +430,21 @@ const KeywordsPage = () => {
                     </Card>
                 </Col>
             </Row>
+            {/* 图片预览组件 */}
+            {previewImage && (
+                <Image
+                    width={0}
+                    height={0}
+                    style={{ display: 'none' }}
+                    src={previewImage}
+                    preview={{
+                        visible: !!previewImage,
+                        onVisibleChange: (visible) => {
+                            if (!visible) setPreviewImage(null);
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };
