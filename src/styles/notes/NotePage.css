@@ -1,9 +1,9 @@
 /* 布局样式 */
 .note-layout {
-  min-height: 100vh;
+  min-height: 100%;
 }
 
-.note-header {
+.note-page-header {
   background: #fff;
   padding: 0 24px;
   display: flex;
@@ -25,10 +25,10 @@
 }
 
 .side-nav {
-  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  border-top: 1px solid rgba(0,0,0,0.05);
 }
 
-.nav-header {
+.note-nav-header {
   padding: 16px;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -141,7 +141,7 @@
   border-radius: 8px;
 }
 
-.note-list-item {
+.note-page-list-item {
   padding: 12px 16px;
   cursor: pointer;
   transition: all 0.3s;
@@ -150,7 +150,7 @@
   align-items: center;
 }
 
-.note-list-item.selected {
+.note-page-list-item.selected {
   background: #e6f7ff;
   border-right: 3px solid #1890ff;
 }
@@ -193,7 +193,7 @@
   white-space: nowrap;
 }
 
-.key-image-date {
+.note-image-date {
   font-size: 12px;
   color: rgba(0,0,0,0.45);
 }

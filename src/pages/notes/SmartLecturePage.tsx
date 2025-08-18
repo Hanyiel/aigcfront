@@ -259,7 +259,7 @@ const SmartLectureLayout = () => {
                   dataSource={images}
                   renderItem={(item) => (
                       <List.Item
-                          className={`note-list-item ${
+                          className={`note-page-list-item ${
                               selectedImage?.id === item.id ? 'selected' : ''
                           }`}
                           onClick={() => setSelectedImage(item)}

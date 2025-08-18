@@ -9,6 +9,7 @@ export interface QuestionImage {
   timestamp: number;
   status: 'uploaded';  // 简化状态（仅展示用）
   file: File;          // 保留原始文件引用
+  has_saved: boolean;
 }
 
 interface QuestionImageContextType {
@@ -22,7 +23,6 @@ interface QuestionImageContextType {
 }
 
 const QuestionImageContext = createContext<QuestionImageContextType>({} as QuestionImageContextType);
-
 
 export const QuestionImageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [images, setImages] = useState<QuestionImage[]>(() => {
@@ -39,15 +39,22 @@ export const QuestionImageProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
 
-  const addImage = useCallback((file: File) => {
+  const addImage = useCallback((file: File, imageId?: string) => {
     const tempUrl = URL.createObjectURL(file);
+    let id = uuidv4();
+    let has_saved = false;
+    if(imageId){
+      id = imageId;
+      has_saved = true;
+    }
     const newImage: QuestionImage = {
-      id: uuidv4(),
+      id: id,
       url: tempUrl,
       name: file.name,
       timestamp: Date.now(),
       status: 'uploaded',
-      file: file  // 保留原始文件引用
+      file: file,  // 保留原始文件引用
+      has_saved: has_saved
     };
 
     setImages(prev => [...prev, newImage]);
@@ -70,7 +77,7 @@ export const QuestionImageProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [images]);
 
   const getExplanationId = useCallback((imageId: string) => {
-    return localStorage.getItem(`img_exp_${imageId}`);
+    return localStorage.getItem(`question_exp_${imageId}`);
   }, []);
 
   return (

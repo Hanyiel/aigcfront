@@ -48,6 +48,9 @@ const ExtractPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingContent, setEditingContent] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  useEffect(() => {
+    console.log('result changed:', result);
+  }, [result]);
 
 
   useEffect(() => {
@@ -60,6 +63,7 @@ const ExtractPage = () => {
   useEffect(() => {
     if (selectedImage) {
       const historyExtract = getExtractByImage(selectedImage.id);
+      console.log("historyExtract", historyExtract)
       setResult(historyExtract || null);
     }
   }, [selectedImage, getExtractByImage]);
@@ -118,17 +122,20 @@ const ExtractPage = () => {
         throw new Error(`请求失败: ${apiResponse.statusText}`);
       }
 
-      const result = await apiResponse.json();
-      console.log(result)
+      const resultData = await apiResponse.json();
+      console.log("result", resultData.data)
 
       const extractData = {
         extract_id: `ext_${Date.now()}`,
-        image_id: selectedImage.id,
-        ...result.data
+        note_id: selectedImage.id,
+        ...resultData.data
       };
+
+      console.log("extractData",extractData)
 
       saveExtract(extractData);
       setResult(extractData);
+      console.log("result2", result)
     } catch (err) {
       console.log("error")
       message.error(err instanceof Error ? err.message : '解析失败');
@@ -235,7 +242,6 @@ const ExtractPage = () => {
           </Col>
 
           {/* 右侧图片列表 */}
-          {/* 右侧图片列表 */}
           <Col xs={24} md={10} lg={8}>
             <Card
                 title="图片列表"
@@ -254,7 +260,7 @@ const ExtractPage = () => {
                   dataSource={images}
                   renderItem={(item) => (
                       <List.Item
-                          className={`note-list-item ${
+                          className={`note-page-list-item ${
                               selectedImage?.id === item.id ? 'selected' : ''
                           }`}
                           onClick={() => setSelectedImage(item)}

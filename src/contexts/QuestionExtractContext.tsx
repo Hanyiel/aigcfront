@@ -33,7 +33,7 @@ export const QuestionExtractProvider = ({ children }: { children: React.ReactNod
       ...prev.filter(q => q.image_id !== data.image_id),
       data
     ]);
-    localStorage.setItem(`img_qext_${data.image_id}`, data.extract_id);
+    localStorage.setItem(`question_ext_${data.image_id}`, data.extract_id);
   };
 
   // 新增更新函数
@@ -52,7 +52,7 @@ export const QuestionExtractProvider = ({ children }: { children: React.ReactNod
   };
 
   const getQuestionExtractByImage = (imageId: string) => {
-    const qId = localStorage.getItem(`img_qext_${imageId}`);
+    const qId = localStorage.getItem(`question_ext_${imageId}`);
     return qId ? questionExtracts.find(q => q.extract_id === qId) : undefined;
   };
 

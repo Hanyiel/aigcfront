@@ -2,20 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import {
-  Row,
-  Col,
-  Card,
-  List,
-  Tag,
-  Alert,
-  Typography,
-  Spin,
-  Empty,
-  Upload,
-  Button,
-  Image,
-  message,
-  Input
+    Row,
+    Col,
+    Card,
+    List,
+    Tag,
+    Alert,
+    Typography,
+    Spin,
+    Empty,
+    Upload,
+    Button,
+    Image,
+    message,
+    Input
 } from 'antd';
 import {
     CodeOutlined,
@@ -25,7 +25,7 @@ import {
     PlayCircleOutlined,
     ApartmentOutlined,
     EditOutlined,
-    SaveOutlined
+    SaveOutlined, FileImageOutlined
 } from '@ant-design/icons';
 import { useQuestionExplanationContext } from '../../contexts/QuestionExplanationContext';
 import { useQuestionImageContext } from '../../contexts/QuestionImageContext';
@@ -63,6 +63,7 @@ const QuestionExplanationPage = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editingText, setEditingText] = useState('');
     const [currentExplanationForImage, setCurrentExplanationForImage] = useState<QuestionExplanation | null>(null);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     // 当选中图片变化时，更新讲解内容
     useEffect(() => {
@@ -223,15 +224,15 @@ const QuestionExplanationPage = () => {
                 {/* 右侧图片列表 */}
                 <Col xs={24} md={10} lg={8}>
                     <Card
-                        title="题目图片"
-                        className="image-list-card"
+                        title="图片列表"
+                        className="question-image-list-card"
                         extra={
                             <Upload
                                 beforeUpload={handleUpload}
                                 showUploadList={false}
                                 accept="image/*"
                             >
-                                <Button icon={<UploadOutlined />}>上传图片</Button>
+                                <Button icon={<UploadOutlined/>}>上传图片</Button>
                             </Upload>
                         }
                     >
@@ -239,7 +240,7 @@ const QuestionExplanationPage = () => {
                             dataSource={images}
                             renderItem={(item) => (
                                 <List.Item
-                                    className={`list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                    className={`question-page-list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
                                     onClick={() => setSelectedImage(item)}
                                     extra={
                                         <Button
@@ -254,26 +255,36 @@ const QuestionExplanationPage = () => {
                                         </Button>
                                     }
                                 >
-                                    <div className="image-content">
-                                        <Image
+                                    <div className="question-thumbnail-wrapper">
+                                        <img
                                             src={item.url}
                                             alt={item.name}
-                                            preview={false}
-                                            width={80}
-                                            height={60}
-                                            className="thumbnail"
+                                            className="question-thumbnail"
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                                setPreviewImage(item.url); // 设置预览图片
+                                            }}
+                                            style={{cursor: 'pointer'}} // 添加指针样式表示可点击
                                         />
-                                        <div className="image-info">
-                                            <Text ellipsis className="image-name">
-                                                {item.name}
-                                            </Text>
-                                            <Text type="secondary" className="image-date">
-                                                {new Date(item.timestamp).toLocaleDateString()}
-                                            </Text>
-                                            {getExplanationId(item.id) && (
-                                                <Tag color="green" className="explanation-tag">已生成解析</Tag>
-                                            )}
-                                        </div>
+                                        <FileImageOutlined
+                                            className="question-file-icon"
+                                            style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                                setPreviewImage(item.url); // 设置预览图片
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="question-image-info">
+                                        <span className="question-image-name">
+                                            {item.name}
+                                        </span>
+                                        <span className="qeustion-image-date">
+                                            {new Date(item.timestamp).toLocaleDateString()}
+                                        </span>
+                                        {getExplanationId(item.id) && (
+                                            <Tag color="green" className="explanation-tag">已生成解析</Tag>
+                                        )}
                                     </div>
                                 </List.Item>
                             )}
@@ -281,6 +292,21 @@ const QuestionExplanationPage = () => {
                     </Card>
                 </Col>
             </Row>
+            {/* 图片预览组件 */}
+            {previewImage && (
+                <Image
+                    width={0}
+                    height={0}
+                    style={{ display: 'none' }}
+                    src={previewImage}
+                    preview={{
+                        visible: !!previewImage,
+                        onVisibleChange: (visible) => {
+                            if (!visible) setPreviewImage(null);
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

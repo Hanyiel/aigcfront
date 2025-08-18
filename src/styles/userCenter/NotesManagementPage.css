@@ -69,15 +69,15 @@
 }
 
 /* ========= 智能讲解 ========*/
-.explanation-content {
-  padding: 0 10px;
+.note-explanation-content {
+  padding: 10px 10px;
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.explanation-scroll-container {
-  max-height: calc(70vh - 200px); /* 设置最大高度 */
+.note-explanation-scroll-container {
+  max-height: calc(65vh - 180px); /* 设置最大高度 */
   overflow-y: auto; /* 添加垂直滚动条 */
   margin-bottom: 0;
   border: 1px solid #f0f0f0;
@@ -86,7 +86,7 @@
   background: #fafafa;
 }
 
-.explanation-header {
+.note-detail-explanation-header {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
@@ -317,12 +317,12 @@
 }
 
 @media (max-width: 768px) {
-  .explanation-scroll-container {
+  .note-explanation-scroll-container {
     max-height: 200px;
   }
 }
 @media (max-width: 576px) {
-  .explanation-scroll-container {
+  .note-explanation-scroll-container {
     max-height: 150px;
     padding: 10px;
   }

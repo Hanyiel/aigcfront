@@ -112,6 +112,46 @@
   color: #ff4d4f;
 }
 
+/* 详情框架 */
+.question-management-detail-content {
+  padding: 10px 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.question-management-detail-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.question-detail-scroll-container {
+  max-height: calc(65vh - 180px); /* 设置最大高度 */
+  overflow-y: auto; /* 添加垂直滚动条 */
+  margin-bottom: 0;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  padding: 15px 15px 0 15px;
+  background: #fafafa;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .question-detail-scroll-container {
+    max-height: 200px;
+  }
+}
+@media (max-width: 576px) {
+  .question-detail-scroll-container {
+    max-height: 150px;
+    padding: 10px;
+  }
+
+  .explanation-text {
+    font-size: 14px;
+  }
+}
 /* 题目详情页面样式 */
 .question-detail-empty {
   display: flex;
@@ -124,8 +164,11 @@
 }
 
 .question-detail-container {
-  max-height: calc(80vh - 90px);
-  padding: 16px;
+    height: calc(80vh - 120px);
+}
+
+.question-summary-card {
+    height: 100%;
 }
 
 .question-header-card {
@@ -140,9 +183,7 @@
 }
 
 .question-detail-card {
-  max-height: calc(70vh - 120px); /* 设置最大高度 */
-  overflow-y: auto; /* 添加垂直滚动条 */
-  min-height: 500px;
+    height: 100%;
 }
 
 .question-summary-detail {

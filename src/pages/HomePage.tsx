@@ -131,6 +131,7 @@ const HomePage: React.FC = () => {
               collapsed={collapsed}
               onCollapse={setCollapsed}
               width={250}
+              className="side-nav"
               theme="light"
           >
             <Menu

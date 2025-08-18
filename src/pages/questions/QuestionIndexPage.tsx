@@ -1,7 +1,7 @@
 // QuestionIndexPage.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Button, Card, List, Modal, message, Row, Col } from 'antd';
+import {Upload, Button, Card, List, Modal, message, Row, Col, Image} from 'antd';
 import { InboxOutlined, RocketOutlined, KeyOutlined, BookOutlined, SaveOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { useImageContext } from '../../contexts/ImageContext';
@@ -21,6 +21,7 @@ const QuestionIndexPage = () => {
   } = useQuestionImageContext();
   const [previewVisible, setPreviewVisible] = useState(false);
   const navigate = useNavigate();
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const uploadProps: UploadProps = {
     name: 'image',
@@ -72,108 +73,123 @@ const QuestionIndexPage = () => {
   }
 
   return (
-    <div className="questions-page-container"> {/* 类名变更 */}
-      <Row gutter={24} className="main-layout">
-        <Col xs={24} md={8} lg={6}>
-          <Card title="题目素材管理" className="upload-card"> {/* 标题变更 */}
-            <Dragger {...uploadProps} className="custom-uploader">
-              <div className="upload-content">
-                <InboxOutlined className="upload-icon" />
-                <p className="upload-text">点击或拖拽文件到此处添加</p>
-                <p className="upload-hint">支持常见题目图片格式</p> {/* 文案变更 */}
-              </div>
-            </Dragger>
-          </Card>
-        </Col>
+      <div className="questions-page-container"> {/* 类名变更 */}
+        <Row gutter={24} className="main-layout">
+          <Col xs={24} md={8} lg={6}>
+            <Card title="题目素材管理" className="upload-card"> {/* 标题变更 */}
+              <Dragger {...uploadProps} className="custom-uploader">
+                <div className="upload-content">
+                  <InboxOutlined className="upload-icon" />
+                  <p className="upload-text">点击或拖拽文件到此处添加</p>
+                  <p className="upload-hint">支持常见题目图片格式</p> {/* 文案变更 */}
+                </div>
+              </Dragger>
+            </Card>
+          </Col>
 
-        <Col xs={24} md={16} lg={18}>
-          <Card title="题目素材库" className="question-image-list-card"> {/* 标题变更 */}
-            <List
-              grid={{ gutter: 16, column: 4 }}
-              dataSource={images}
-              renderItem={item => (
-                <List.Item>
-                  <div
-                    className={`image-card ${selectedImage?.id === item.id ? 'selected' : ''}`}
-                    onClick={() => handleSelectImage(item)}
-                    onDoubleClick={() => setPreviewVisible(true)}
-                  >
-                    <img
-                      src={item.url}
-                      alt={item.name}
-                      className="thumbnail-image"
-                    />
+          <Col xs={24} md={16} lg={18}>
+            <Card title="题目素材库" className="index-image-list-card"> {/* 标题变更 */}
+              <List
+                  grid={{ gutter: 16, column: 4 }}
+                  dataSource={images}
+                  renderItem={item => (
+                      <List.Item>
+                        <div
+                            className={`image-card ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                            onClick={() => handleSelectImage(item)}
+                            onDoubleClick={() => setPreviewVisible(true)}
+                        >
+                          <img
+                              src={item.url}
+                              alt={item.name}
+                              className="thumbnail-image"
+                          />
 
-                    <div className="image-info">
-                      <span className="image-name">{item.name}</span>
-                      <span className="upload-time">
+                          <div className="image-info">
+                            <span className="image-name">{item.name}</span>
+                            <span className="upload-time">
                         {new Date(item.timestamp).toLocaleDateString()}
                       </span>
-                      <Button
-                        type="link"
-                        danger
-                        className="delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeImage(item.id);
-                        }}
-                      >
-                        删除
-                      </Button>
-                    </div>
-                  </div>
-                </List.Item>
-              )}
+                            <Button
+                                type="link"
+                                danger
+                                className="delete-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(item.id);
+                                }}
+                            >
+                              删除
+                            </Button>
+                          </div>
+                        </div>
+                      </List.Item>
+                  )}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        {/*<div className="function-nav">*/}
+        {/*  <Button*/}
+        {/*    type="primary"*/}
+        {/*    icon={<KeyOutlined />}*/}
+        {/*    onClick={() => handleAction('extract')}*/}
+        {/*  >*/}
+        {/*    题目提取*/}
+        {/*  </Button>*/}
+        {/*  <Button*/}
+        {/*    type="primary"*/}
+        {/*    icon={<RocketOutlined />}*/}
+        {/*    onClick={() => handleAction('analysis')} // 功能变更*/}
+        {/*  >*/}
+        {/*    题目分析*/}
+        {/*  </Button>*/}
+        {/*  <Button*/}
+        {/*    type="primary"*/}
+        {/*    icon={<BookOutlined />}*/}
+        {/*    onClick={() => handleAction('solution')} // 功能变更*/}
+        {/*  >*/}
+        {/*    解题思路*/}
+        {/*  </Button>*/}
+        {/*  <Button*/}
+        {/*    type="primary"*/}
+        {/*    icon={<SaveOutlined />}*/}
+        {/*    onClick={() => handleAction('save')}*/}
+        {/*  >*/}
+        {/*    保存题目*/}
+        {/*  </Button>*/}
+        {/*</div>*/}
+
+        <Modal
+            open={previewVisible}
+            onCancel={() => setPreviewVisible(false)}
+            footer={null}
+            width="80vw"
+            centered
+        >
+          <img
+              src={selectedImage?.url}
+              alt="题目预览"
+              className="preview-image"
+          />
+        </Modal>
+        {/* 图片预览组件 */}
+        {previewImage && (
+            <Image
+                width={0}
+                height={0}
+                style={{ display: 'none' }}
+                src={previewImage}
+                preview={{
+                  visible: !!previewImage,
+                  onVisibleChange: (visible) => {
+                    if (!visible) setPreviewImage(null);
+                  }
+                }}
             />
-          </Card>
-        </Col>
-      </Row>
-
-      <div className="function-nav">
-        <Button
-          type="primary"
-          icon={<KeyOutlined />}
-          onClick={() => handleAction('extract')}
-        >
-          题目提取
-        </Button>
-        <Button
-          type="primary"
-          icon={<RocketOutlined />}
-          onClick={() => handleAction('analysis')} // 功能变更
-        >
-          题目分析
-        </Button>
-        <Button
-          type="primary"
-          icon={<BookOutlined />}
-          onClick={() => handleAction('solution')} // 功能变更
-        >
-          解题思路
-        </Button>
-        <Button
-          type="primary"
-          icon={<SaveOutlined />}
-          onClick={() => handleAction('save')}
-        >
-          保存题目
-        </Button>
+        )}
       </div>
-
-      <Modal
-        open={previewVisible}
-        onCancel={() => setPreviewVisible(false)}
-        footer={null}
-        width="80vw"
-        centered
-      >
-        <img
-          src={selectedImage?.url}
-          alt="题目预览"
-          className="preview-image"
-        />
-      </Modal>
-    </div>
   );
 };
 

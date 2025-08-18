@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {Button, Card, Row, Col, List, Tag, Upload, Spin, message, Typography, Input} from 'antd';
+import {Button, Card, Row, Col, List, Tag, Upload, Spin, message, Typography, Input, Image, Empty} from 'antd';
 import {
   UploadOutlined,
   FileImageOutlined,
@@ -57,6 +57,7 @@ const QuestionKeywordsPage = () => {
   const [editingText, setEditingText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [newKeywordText, setNewKeywordText] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -242,180 +243,214 @@ const QuestionKeywordsPage = () => {
   };
 
   const renderKeywordsEditor = () => {
-    return (
-      <div className="keywords-list">
-        {keywords.map((k, i) => (
-          <div
-            key={i}
-            className="keyword-tag-wrapper"
-            onDoubleClick={() => startEditing(i, k.term)}
-          >
-            {editingIndex === i ? (
-              <Input
-                autoFocus
-                value={editingText}
-                onChange={handleKeywordChange}
-                onPressEnter={() => finishEditing(i)}
-                onBlur={() => finishEditing(i)}
-                size="small"
-                style={{ width: 120 }}
-              />
-            ) : (
-              <Tag
-                color={i % 2 ? 'geekblue' : 'cyan'}
-                className="keyword-tag"
-              >
-                {k.term}
-                <span className="score">({(k.tfidfScore * 100).toFixed(1)}%)</span>
-              </Tag>
-            )}
-            {isEditing && editingIndex !== i && (
-              <Button
-                type="text"
-                danger
-                icon={<CloseOutlined />}
-                className="delete-keyword-btn"
-                onClick={() => handleDeleteKeyword(i)}
-              />
-            )}
+    if(keywords.length < 1){
+      return (
+          <div className="empty-state">
+            <Empty description={
+              <span>
+                {selectedQuestionImage ? '点击生成讲解获取解析' : '请先选择题目图片'}
+              </span>
+            }/>
           </div>
-        ))}
+      );
+    }
 
-        {isEditing && (
-          <div className="add-keyword-container">
-            {isAdding ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Input
-                  autoFocus
-                  value={newKeywordText}
-                  onChange={handleNewKeywordChange}
-                  onPressEnter={saveNewKeyword}
-                  onBlur={saveNewKeyword}
-                  size="small"
-                  placeholder="输入新关键词"
-                  style={{ width: 120 }}
-                />
-              </div>
-            ) : (
-              <Button
-                type="dashed"
-                icon={<PlusOutlined />}
-                size="small"
-                onClick={addNewKeyword}
+    return (
+        <div className="keywords-list">
+          {keywords.map((k, i) => (
+              <div
+                  key={i}
+                  className="keyword-tag-wrapper"
+                  onDoubleClick={() => startEditing(i, k.term)}
               >
-                添加关键词
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
+                {editingIndex === i ? (
+                    <Input
+                        autoFocus
+                        value={editingText}
+                        onChange={handleKeywordChange}
+                        onPressEnter={() => finishEditing(i)}
+                        onBlur={() => finishEditing(i)}
+                        size="small"
+                        style={{ width: 120 }}
+                    />
+                ) : (
+                    <Tag
+                        color={i % 2 ? 'geekblue' : 'cyan'}
+                        className="keyword-tag"
+                    >
+                      {k.term}
+                      <span className="score">({(k.tfidfScore * 100).toFixed(1)}%)</span>
+                    </Tag>
+                )}
+                {isEditing && editingIndex !== i && (
+                    <Button
+                        type="text"
+                        danger
+                        icon={<CloseOutlined />}
+                        className="delete-keyword-btn"
+                        onClick={() => handleDeleteKeyword(i)}
+                    />
+                )}
+              </div>
+          ))}
+
+          {isEditing && (
+              <div className="add-keyword-container">
+                {isAdding ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Input
+                          autoFocus
+                          value={newKeywordText}
+                          onChange={handleNewKeywordChange}
+                          onPressEnter={saveNewKeyword}
+                          onBlur={saveNewKeyword}
+                          size="small"
+                          placeholder="输入新关键词"
+                          style={{ width: 120 }}
+                      />
+                    </div>
+                ) : (
+                    <Button
+                        type="dashed"
+                        icon={<PlusOutlined />}
+                        size="small"
+                        onClick={addNewKeyword}
+                    >
+                      添加关键词
+                    </Button>
+                )}
+              </div>
+          )}
+        </div>
     );
   };
 
   const renderToolbar = () => (
-    <div className="toolbar">
-      <Button
-        type={isEditing ? "primary" : "default"}
-        icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
-        onClick={toggleEditMode}
-        disabled={!selectedQuestionImage}
-      >
-        {isEditing ? '保存编辑' : '编辑模式'}
-      </Button>
-      <Button
-        type="primary"
-        onClick={handleExtractKeywords}
-        loading={loading}
-        disabled={!selectedQuestionImage}
-      >
-        提取关键词
-      </Button>
-    </div>
+      <div className="toolbar">
+        <Button
+            type={isEditing ? "primary" : "default"}
+            icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
+            onClick={toggleEditMode}
+            disabled={!selectedQuestionImage}
+        >
+          {isEditing ? '保存编辑' : '编辑模式'}
+        </Button>
+        <Button
+            type="primary"
+            onClick={handleExtractKeywords}
+            loading={loading}
+            disabled={!selectedQuestionImage}
+        >
+          提取关键词
+        </Button>
+      </div>
   );
 
   return (
-    <div className="sub-container">
-      <Row gutter={24} className="sub-row">
-        <Col flex="auto" className="sub-col">
-          <div className="tool-section">
-            <Title level={3} className="tool-title">
-              <ApartmentOutlined /> 提取关键词
-            </Title>
-            {renderToolbar()}
-          </div>
-          <div className="content-card">
-            {renderKeywordsEditor()}
-          </div>
-        </Col>
+      <div className="sub-container">
+        <Row gutter={24} className="sub-row">
+          <Col flex="auto" className="sub-col">
+            <div className="tool-section">
+              <Title level={3} className="tool-title">
+                <ApartmentOutlined /> 提取关键词
+              </Title>
+              {renderToolbar()}
+            </div>
+            <div className="content-card">
+              {renderKeywordsEditor()}
+            </div>
+          </Col>
 
-        {/* 右侧图片列表 */}
-        <Col xs={24} md={10} lg={8}>
-          <Card
-            title="题目图片列表"
-            className="image-list-card"
-            extra={
-              <Upload
-                beforeUpload={handleUpload}
-                showUploadList={false}
-                accept="image/*"
-              >
-                <Button icon={<UploadOutlined />}>上传题目图片</Button>
-              </Upload>
-            }
-          >
-            <List
-              dataSource={questionImages}
-              renderItem={(item) => (
-                <List.Item
-                  className={`list-item ${selectedQuestionImage?.id === item.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedQuestionImage(item)}
-                  extra={
-                    <Button
-                      type="link"
-                      danger
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeQuestionImage(item.id);
-                        setOcrTexts(prev => {
-                          const newTexts = { ...prev };
-                          delete newTexts[item.id];
-                          return newTexts;
-                        });
-                      }}
-                    >
-                      删除
-                    </Button>
-                  }
-                >
-                  <div className="thumbnail-wrapper">
-                    <img
-                      src={item.url}
-                      alt={item.name}
-                      className="thumbnail"
-                    />
-                    <FileImageOutlined className="file-icon" />
-                  </div>
-                  <div className="image-info">
-                    <span className="image-name">{item.name}</span>
-                    <span className="image-date">
+          {/* 右侧图片列表 */}
+          <Col xs={24} md={10} lg={8}>
+            <Card
+                title="图片列表"
+                className="question-image-list-card"
+                extra={
+                  <Upload
+                      beforeUpload={handleUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                  >
+                    <Button icon={<UploadOutlined/>}>上传图片</Button>
+                  </Upload>
+                }
+            >
+              <List
+                  dataSource={questionImages}
+                  renderItem={(item) => (
+                      <List.Item
+                          className={`question-page-list-item ${selectedQuestionImage?.id === item.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedQuestionImage(item)}
+                          extra={
+                            <Button
+                                type="link"
+                                danger
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeQuestionImage(item.id);
+                                  setOcrTexts(prev => {
+                                    const newTexts = {...prev};
+                                    delete newTexts[item.id];
+                                    return newTexts;
+                                  });
+                                }}
+                            >
+                              删除
+                            </Button>
+                          }
+                      >
+                        <div className="question-thumbnail-wrapper">
+                          <img
+                              src={item.url}
+                              alt={item.name}
+                              className="question-thumbnail"
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                              style={{cursor: 'pointer'}} // 添加指针样式表示可点击
+                          />
+                          <FileImageOutlined
+                              className="question-file-icon"
+                              style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                          />
+                        </div>
+                        <div className="question-image-info">
+                          <span className="qeustion-image-name">{item.name}</span>
+                          <span className="question-image-date">
                       {new Date(item.timestamp).toLocaleDateString()}
                     </span>
-                    {ocrTexts[item.id] && (
-                      <span className="text-indicator">
-                        <LinkOutlined /> 已解析文本
-                      </span>
-                    )}
-                    {getKeywordsByQuestionImage(item.id)?.length > 0 && (
-                      <Tag color="green" className="explanation-tag">已提取关键词</Tag>
-                    )}
-                  </div>
-                </List.Item>
-              )}
+                          {getKeywordsByQuestionImage(item.id)?.length > 0 && (
+                              <Tag color="green" className="explanation-tag">已提取关键词</Tag>
+                          )}
+                        </div>
+                      </List.Item>
+                  )}
+              />
+            </Card>
+          </Col>
+        </Row>
+        {/* 图片预览组件 */}
+        {previewImage && (
+            <Image
+                width={0}
+                height={0}
+                style={{ display: 'none' }}
+                src={previewImage}
+                preview={{
+                  visible: !!previewImage,
+                  onVisibleChange: (visible) => {
+                    if (!visible) setPreviewImage(null);
+                  }
+                }}
             />
-          </Card>
-        </Col>
-      </Row>
-    </div>
+        )}
+      </div>
   );
 };
 

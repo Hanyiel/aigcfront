@@ -29,7 +29,7 @@ import {
   EditOutlined,
   WarningOutlined,
   ReadOutlined,
-  TagOutlined, ApartmentOutlined
+  TagOutlined, ApartmentOutlined, FileImageOutlined
 } from '@ant-design/icons';
 import {GradingResult, useAutoGrade} from '../../contexts/AutoGradeContext';
 import { useImageContext } from '../../contexts/ImageContext';
@@ -67,6 +67,7 @@ const AutoGradePage = () => {
   const {isAuthenticated, logout} = useAuth();
   const [result, setResult] = useState<GradingResult | null>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
 
   // 图片上传处理
@@ -308,14 +309,14 @@ const AutoGradePage = () => {
           <Col xs={24} md={10} lg={8}>
             <Card
                 title="图片列表"
-                className="image-list-card"
+                className="question-image-list-card"
                 extra={
                   <Upload
                       beforeUpload={handleUpload}
                       showUploadList={false}
                       accept="image/*"
                   >
-                    <Button icon={<UploadOutlined/>}>添加图片</Button>
+                    <Button icon={<UploadOutlined/>}>上传图片</Button>
                   </Upload>
                 }
             >
@@ -323,7 +324,7 @@ const AutoGradePage = () => {
                   dataSource={images}
                   renderItem={(item) => (
                       <List.Item
-                          className={`list-item ${
+                          className={`question-page-list-item ${
                               selectedImage?.id === item.id ? 'selected' : ''
                           }`}
                           onClick={() => setSelectedImage(item)}
@@ -340,23 +341,33 @@ const AutoGradePage = () => {
                             </Button>
                           }
                       >
-                        <div className="image-content">
-                          <Image
+                        <div className="question-thumbnail-wrapper">
+                          <img
                               src={item.url}
                               alt={item.name}
-                              preview={false}
-                              width={80}
-                              height={60}
-                              className="thumbnail"
+                              className="question-thumbnail"
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                              style={{cursor: 'pointer'}} // 添加指针样式表示可点击
                           />
-                          <div className="image-info">
-                            <Text ellipsis className="image-name">
-                              {item.name}
-                            </Text>
-                            <Text type="secondary" className="image-date">
-                              {new Date(item.timestamp).toLocaleDateString()}
-                            </Text>
-                          </div>
+                          <FileImageOutlined
+                              className="question-file-icon"
+                              style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                          />
+                        </div>
+                        <div className="question-image-info">
+                          <span className="question-image-name">
+                            {item.name}
+                          </span>
+                          <span className="question-image-date">
+                            {new Date(item.timestamp).toLocaleDateString()}
+                          </span>
                         </div>
                       </List.Item>
                   )}
@@ -364,6 +375,21 @@ const AutoGradePage = () => {
             </Card>
           </Col>
         </Row>
+        {/* 图片预览组件 */}
+        {previewImage && (
+            <Image
+                width={0}
+                height={0}
+                style={{ display: 'none' }}
+                src={previewImage}
+                preview={{
+                  visible: !!previewImage,
+                  onVisibleChange: (visible) => {
+                    if (!visible) setPreviewImage(null);
+                  }
+                }}
+            />
+        )}
       </div>
   );
 };

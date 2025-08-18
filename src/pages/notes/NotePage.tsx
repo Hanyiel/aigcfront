@@ -83,7 +83,7 @@ const NotePage = () => {
   return (
     <Layout className="note-layout">
       {/* 头部区域 */}
-      <Header className="note-header">
+      <Header className="note-page-header">
         <div className="brand-section">
           <span className="app-name">LinkMind</span>
           <Breadcrumb className="breadcrumb">
@@ -114,7 +114,7 @@ const NotePage = () => {
           theme="light"
           className="side-nav"
         >
-          <div className="nav-header">
+          <div className="note-nav-header">
             <Button
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}

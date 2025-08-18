@@ -37,12 +37,12 @@
 }
 
 /* 图片列表 */
-.question-image-list-card {
-  height: 600px;
+.index-image-list-card {
+  height: 80vh;
   overflow: hidden;
 }
 
-.image-list-card .ant-card-body {
+.index-image-list-card .ant-card-body {
   height: calc(100% - 56px);
   overflow-y: auto;
 }

@@ -369,7 +369,7 @@ const KeywordsPage = () => {
                             dataSource={images}
                             renderItem={(item) => (
                                 <List.Item
-                                    className={`note-list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
+                                    className={`note-page-list-item ${selectedImage?.id === item.id ? 'selected' : ''}`}
                                     onClick={() => setSelectedImage(item)}
                                     extra={
                                         <Button

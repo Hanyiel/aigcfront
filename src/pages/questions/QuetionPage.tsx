@@ -119,7 +119,7 @@ const QuestionPage = () => {
           theme="light"
           className="question-side-nav"
         >
-          <div className="nav-header">
+          <div className="question-nav-header">
             <Button
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}

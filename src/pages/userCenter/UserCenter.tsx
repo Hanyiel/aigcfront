@@ -1,5 +1,5 @@
 // src/pages/UserCenter.tsx
-import React, { useState, useEffect } from 'react'; // 添加 useEffect
+import React, {useState, useEffect, createContext} from 'react'; // 添加 useEffect
 import { Outlet, useLocation } from 'react-router-dom';
 
 import {
@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/userCenter/UserCenter.css';
+import {Note, NoteDetail} from "../../contexts/userCenter/UserNoteContext";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -60,13 +61,44 @@ const USER_CENTER_TABS = [
   }
 ]
 
+// 笔记管理上下文
+interface NoteManagementContextType {
+
+  selectedNote: Note | null;
+  setSelectedNote: React.Dispatch<React.SetStateAction<Note | null>>;
+  selectedNoteDetail: NoteDetail | null;
+  setSelectedNoteDetail: React.Dispatch<React.SetStateAction<NoteDetail | null>>;
+  selectedSubject: string | null;
+  setSelectedSubject: React.Dispatch<React.SetStateAction<string | null>>;
+  subjects: string[];
+  setSubjects: React.Dispatch<React.SetStateAction<string[]>>;
+  notes: Note[];
+  setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
+}
+
+export const NoteManagementContext = createContext<NoteManagementContextType>({
+    selectedNote: null,
+    setSelectedNote: () => {},
+    selectedNoteDetail: null,
+    setSelectedNoteDetail: () => {},
+    selectedSubject: null,
+    setSelectedSubject: () => {},
+    subjects: [],
+    setSubjects: () => {},
+    notes: [],
+    setNotes: () => {}
+});
+
 const UserCenter: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
   const [notesSubTab, setNotesSubTab] = useState<NotesSubTabKey>('all-notes');
   const [username, setUsername] = useState('LinkMind用户'); // 添加用户名状态
-
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [selectedNoteDetail, setSelectedNoteDetail] = useState<NoteDetail | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   // 在组件挂载时从本地存储获取用户名
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
@@ -285,8 +317,20 @@ const UserCenter: React.FC = () => {
           </Sider>
 
           <Content className="content user-center-content">
-            {/* 使用路由出口嵌入子页面 */}
-            <Outlet />
+            <NoteManagementContext.Provider value={{
+              selectedNote,
+              setSelectedNote,
+              selectedNoteDetail,
+              setSelectedNoteDetail,
+              selectedSubject,
+              setSelectedSubject,
+              subjects,
+              setSubjects,
+              notes,
+              setNotes
+            }}>
+              <Outlet />
+            </NoteManagementContext.Provider>
           </Content>
         </Layout>
       </Layout>

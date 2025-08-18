@@ -96,7 +96,7 @@ const NoteIndexPage = () => {
           </Col>
 
           <Col xs={24} md={16} lg={18}>
-            <Card title="图片库" className="image-list-card">
+            <Card title="图片库" className="index-image-list-card">
               <List
                   grid={{ gutter: 16, column: 4 }}
                   dataSource={images}
@@ -141,36 +141,36 @@ const NoteIndexPage = () => {
           </Col>
         </Row>
 
-        <div className="function-nav">
-          <Button
-              type="primary"
-              icon={<KeyOutlined />}
-              onClick={() => handleAction('extract')}
-          >
-            笔记提取
-          </Button>
-          <Button
-              type="primary"
-              icon={<RocketOutlined />}
-              onClick={() => handleAction('mindmap')}
-          >
-            思维导图
-          </Button>
-          <Button
-              type="primary"
-              icon={<BookOutlined />}
-              onClick={() => handleAction('explanation')}
-          >
-            智能讲解
-          </Button>
-          <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={() => handleAction('save')}
-          >
-            保存笔记
-          </Button>
-        </div>
+        {/*<div className="function-nav">*/}
+        {/*  <Button*/}
+        {/*      type="primary"*/}
+        {/*      icon={<KeyOutlined />}*/}
+        {/*      onClick={() => handleAction('extract')}*/}
+        {/*  >*/}
+        {/*    笔记提取*/}
+        {/*  </Button>*/}
+        {/*  <Button*/}
+        {/*      type="primary"*/}
+        {/*      icon={<RocketOutlined />}*/}
+        {/*      onClick={() => handleAction('mindmap')}*/}
+        {/*  >*/}
+        {/*    思维导图*/}
+        {/*  </Button>*/}
+        {/*  <Button*/}
+        {/*      type="primary"*/}
+        {/*      icon={<BookOutlined />}*/}
+        {/*      onClick={() => handleAction('explanation')}*/}
+        {/*  >*/}
+        {/*    智能讲解*/}
+        {/*  </Button>*/}
+        {/*  <Button*/}
+        {/*      type="primary"*/}
+        {/*      icon={<SaveOutlined />}*/}
+        {/*      onClick={() => handleAction('save')}*/}
+        {/*  >*/}
+        {/*    保存笔记*/}
+        {/*  </Button>*/}
+        {/*</div>*/}
 
         <Modal
             open={previewVisible}

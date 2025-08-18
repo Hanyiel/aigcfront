@@ -12,7 +12,7 @@ import {
   List,
   Image,
   message,
-  Input
+  Input, Empty
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -57,6 +57,7 @@ const QuestionExtractPage = () => {
   // 编辑状态
   const [isEditing, setIsEditing] = useState(false);
   const [editingText, setEditingText] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -132,6 +133,8 @@ const QuestionExtractPage = () => {
       }
 
       const data = await apiResponse.json();
+
+      console.log("quesre", data)
       const extractData: QuestionExtractData = {
         extract_id: `q_${Date.now()}`,
         image_id: selectedImage.id,
@@ -202,13 +205,16 @@ const QuestionExtractPage = () => {
       );
     }
 
-    if (!result) {
+    if(!result){
       return (
-          <div className="empty-result">
-            <FileImageOutlined className="empty-icon"/>
-            <Text type="secondary">请选择需要解析的图片</Text>
-          </div>
-      );
+                <div className="empty-state">
+                    <Empty description={
+                        <span>
+                            {selectedImage ? '点击右上角生成摘要' : '请先选择题目图片'}
+                        </span>
+                    }/>
+                </div>
+            );
     }
 
     return (
@@ -252,17 +258,18 @@ const QuestionExtractPage = () => {
               {renderExtractEditor()}
             </div>
           </Col>
+
           <Col xs={24} md={10} lg={8}>
             <Card
                 title="图片列表"
-                className="image-list-card"
+                className="question-image-list-card"
                 extra={
                   <Upload
                       beforeUpload={handleUpload}
                       showUploadList={false}
                       accept="image/*"
                   >
-                    <Button icon={<UploadOutlined />}>添加图片</Button>
+                    <Button icon={<UploadOutlined/>}>上传图片</Button>
                   </Upload>
                 }
             >
@@ -270,7 +277,7 @@ const QuestionExtractPage = () => {
                   dataSource={images}
                   renderItem={(item) => (
                       <List.Item
-                          className={`list-item ${
+                          className={`question-page-list-item ${
                               selectedImage?.id === item.id ? 'selected' : ''
                           }`}
                           onClick={() => setSelectedImage(item)}
@@ -287,30 +294,56 @@ const QuestionExtractPage = () => {
                             </Button>
                           }
                       >
-                        <div className="image-content">
-                          <Image
+                        <div className="question-thumbnail-wrapper">
+                          <img
                               src={item.url}
                               alt={item.name}
-                              preview={false}
-                              width={80}
-                              height={60}
-                              className="thumbnail"
+                              className="note-thumbnail"
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                              style={{cursor: 'pointer'}} // 添加指针样式表示可点击
                           />
-                          <div className="image-info">
-                            <Text ellipsis className="image-name">
-                              {item.name}
-                            </Text>
-                            <Text type="secondary" className="image-date">
-                              {new Date(item.timestamp).toLocaleDateString()}
-                            </Text>
-                          </div>
+                          <FileImageOutlined
+                              className="question-file-icon"
+                              style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                              onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡到列表项
+                                setPreviewImage(item.url); // 设置预览图片
+                              }}
+                          />
                         </div>
+                        <div className="question-image-info">
+                          <span className="question-image-name">
+                            {item.name}
+                          </span>
+                          <span className="question-image-date">
+                            {new Date(item.timestamp).toLocaleDateString()}
+                          </span>
+                        </div>
+
                       </List.Item>
                   )}
               />
             </Card>
           </Col>
         </Row>
+        {/* 图片预览组件 */}
+        {previewImage && (
+            <Image
+                width={0}
+                height={0}
+                style={{ display: 'none' }}
+                src={previewImage}
+                preview={{
+                  visible: !!previewImage,
+                  onVisibleChange: (visible) => {
+                    if (!visible) setPreviewImage(null);
+                  }
+                }}
+            />
+        )}
       </div>
   );
 };

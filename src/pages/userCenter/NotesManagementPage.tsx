@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, {useEffect, useState, useRef, useContext} from 'react';
 import {
   Card,
   Button,
@@ -40,13 +40,15 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/userCenter/NotesManagementPage.css';
+import {NoteManagementContext} from "./UserCenter";
 import { logout } from "../../services/auth";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import ReactMarkdown from "react-markdown";
 
 import {MindNode, MindMapData} from "../../contexts/MindMapContext"
-import {Note, NoteDetail,useUserNoteContext} from "../../contexts/userCenter/UserNoteContext"
+import {Note, NoteDetail, useUserNoteContext} from "../../contexts/userCenter/UserNoteContext"
+
 const API_URL = 'http://localhost:8000/api';
 const UPLOADS_URL = 'http://localhost:8000/uploads';
 
@@ -63,11 +65,22 @@ const NotesManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const [notesSubTab, setNotesSubTab] = useState<NotesSubTabKey>('all-notes');
   const [noteDetailTab, setNoteDetailTab] = useState<NoteDetailTabKey>('original');
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [selectedNoteDetail, setSelectedNoteDetail] = useState<NoteDetail | null>(null);
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [subjects, setSubjects] = useState<string[]>([]);
-  const [notes, setNotes] = useState<Note[]>([]);
+
+  const noteManagementContext = useContext(NoteManagementContext);
+
+  const{
+    selectedNote = null,
+    setSelectedNote = () => {},
+    selectedNoteDetail = null,
+    setSelectedNoteDetail = () => {},
+    selectedSubject = null,
+    setSelectedSubject = () => {},
+    subjects = [],
+    setSubjects = () => {},
+    notes = [],
+    setNotes = () => {}
+  } = noteManagementContext || {};
+
   const [pagination, setPagination] = useState({
     pageNum: 1,
     pageSize: 10,
@@ -752,11 +765,11 @@ const NotesManagementPage: React.FC = () => {
     if (!selectedNoteDetail || !selectedNote) return null;
 
     return (
-        <div className="explanation-content">
-          <div className="explanation-header">
+        <div className="note-explanation-content">
+          <div className="note-detail-explanation-header">
             <h3>笔记内容</h3>
           </div>
-          <div className="explanation-scroll-container">
+          <div className="note-explanation-scroll-container">
             <ReactMarkdown
                 remarkPlugins={[remarkMath]}
                 rehypePlugins={[rehypeKatex]}
@@ -779,11 +792,13 @@ const NotesManagementPage: React.FC = () => {
     );
 
     return (
-        <div className="explanation-content">
-          <div className="explanation-header">
+        <div className="note-explanation-content">
+          <div className="note-detail-explanation-header">
             <h3>思维导图解析</h3>
           </div>
-          {renderMindMapEditor()}
+          <div className="note-explanation-scroll-container">
+            {renderMindMapEditor()}
+          </div>
         </div>
     );
   };
@@ -792,14 +807,14 @@ const NotesManagementPage: React.FC = () => {
     if (!selectedNoteDetail) return null;
 
     return (
-        <div className="explanation-content">
-          <div className="explanation-header">
+        <div className="note-explanation-content">
+          <div className="note-detail-explanation-header">
             {/*<AudioOutlined style={{ fontSize: 24, color: '#1890ff', marginRight: 10 }} />*/}
             <h3>智能讲解：{selectedNoteDetail.title}</h3>
           </div>
 
           {selectedNoteDetail.explanation ? (
-              <div className="explanation-scroll-container">
+              <div className="note-explanation-scroll-container">
                 <div className="explanation-text">
                   <ReactMarkdown
                       remarkPlugins={[remarkMath]}
@@ -945,7 +960,6 @@ const NotesManagementPage: React.FC = () => {
                 </div>
               </Card>
             </Col>
-
             {renderNodeDetail()}
           </Row>
         </div>
