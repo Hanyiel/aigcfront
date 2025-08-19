@@ -7,7 +7,7 @@ import {
   Menu,
   Typography,
   Avatar,
-  Breadcrumb,
+  Breadcrumb, Form,
 } from 'antd';
 import {
   HomeOutlined,
@@ -21,6 +21,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import '../../styles/userCenter/UserCenter.css';
 import {Note, NoteDetail} from "../../contexts/userCenter/UserNoteContext";
+import {Question, QuestionDetail} from "../../contexts/userCenter/UserQuestionContext";
+import QuestionsManagementPage from "./QuestionsManagementPage";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -75,18 +77,43 @@ interface NoteManagementContextType {
   notes: Note[];
   setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
 }
+interface QuestionManagementContextType {
+  selectedQuestion: Question | null;
+  setSelectedQuestion: React.Dispatch<React.SetStateAction<Question | null>>;
+  selectedQuestionDetail: QuestionDetail | null;
+  setSelectedQuestionDetail: React.Dispatch<React.SetStateAction<QuestionDetail | null>>;
+  questionTypes: string[];
+  setQuestionTypes: React.Dispatch<React.SetStateAction<string[]>>;
+  questionSubjects: string[];
+  setQuestionSubjects: React.Dispatch<React.SetStateAction<string[]>>;
+  questions: Question[];
+  setQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
+}
 
 export const NoteManagementContext = createContext<NoteManagementContextType>({
-    selectedNote: null,
-    setSelectedNote: () => {},
-    selectedNoteDetail: null,
-    setSelectedNoteDetail: () => {},
-    selectedSubject: null,
-    setSelectedSubject: () => {},
-    subjects: [],
-    setSubjects: () => {},
-    notes: [],
-    setNotes: () => {}
+  selectedNote: null,
+  setSelectedNote: () => {},
+  selectedNoteDetail: null,
+  setSelectedNoteDetail: () => {},
+  selectedSubject: null,
+  setSelectedSubject: () => {},
+  subjects: [],
+  setSubjects: () => {},
+  notes: [],
+  setNotes: () => {}
+});
+
+export const QuestionManagementContext = createContext<QuestionManagementContextType>({
+  selectedQuestion: null,
+  setSelectedQuestion: () => {},
+  selectedQuestionDetail: null,
+  setSelectedQuestionDetail: () => {},
+  questionTypes: [],
+  setQuestionTypes: () => {},
+  questionSubjects: [],
+  setQuestionSubjects: () => {},
+  questions: [],
+  setQuestions: () => {}
 });
 
 const UserCenter: React.FC = () => {
@@ -99,6 +126,13 @@ const UserCenter: React.FC = () => {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  // 题目部分数据
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedQuestionDetail, setSelectedQuestionDetail] = useState<QuestionDetail | null>(null);
+  const [questionSubjects, setQuestionSubjects] = useState<string[]>([]);
+  const [questionTypes, setQuestionTypes] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+
   // 在组件挂载时从本地存储获取用户名
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
@@ -329,7 +363,20 @@ const UserCenter: React.FC = () => {
               notes,
               setNotes
             }}>
-              <Outlet />
+              <QuestionManagementContext.Provider value={{
+                selectedQuestion,
+                setSelectedQuestion,
+                selectedQuestionDetail,
+                setSelectedQuestionDetail,
+                questionTypes,
+                setQuestionTypes,
+                questionSubjects,
+                setQuestionSubjects,
+                questions,
+                setQuestions
+              }}>
+                <Outlet />
+              </QuestionManagementContext.Provider>
             </NoteManagementContext.Provider>
           </Content>
         </Layout>

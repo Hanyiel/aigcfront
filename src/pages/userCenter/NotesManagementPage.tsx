@@ -175,6 +175,8 @@ const NotesManagementPage: React.FC = () => {
       }
 
       const result = await response.json();
+
+      console.log("传来笔记数据", result.data)
       if (result.code === 200 && result.data) {
         setNotes(result.data.notes || []);
         setPagination(prev => ({
@@ -355,6 +357,14 @@ const NotesManagementPage: React.FC = () => {
       navigate('/notes/index')
     }
   }
+
+  const getTagColor = (index: number) => {
+    const colors = [
+      'magenta', 'red', 'volcano', 'orange', 'gold',
+      'lime', 'green', 'cyan', 'blue', 'geekblue', 'purple'
+    ];
+    return colors[index % colors.length];
+  };
 
   /* ======== 思维导图 ======== */
 
@@ -943,7 +953,7 @@ const NotesManagementPage: React.FC = () => {
                             </div>
                           }
                           style={{
-                            maxHeight: '500px',
+                            maxHeight: '340px',
                             width: '100%',
                             objectFit: 'contain'
                           }}
@@ -957,6 +967,24 @@ const NotesManagementPage: React.FC = () => {
                   <Tag color={selectedNote.hasMindMap ? 'green' : 'red'}>思维导图</Tag>
                   <Tag color={selectedNote.hasKeywords ? 'green' : 'red'}>关键词</Tag>
                   <Tag color={selectedNote.hasExplanation ? 'green' : 'red'}>讲解</Tag>
+                </div>
+                <Divider orientation="left">关键词</Divider>
+                <div className="management-keywords-container">
+                  {selectedNoteDetail?.keywords && selectedNoteDetail.keywords.length > 0 ? (
+                      <div className="management-keywords-list">
+                        {selectedNoteDetail.keywords.map((keyword, index) => (
+                            <Tag
+                                key={index}
+                                color={getTagColor(index)}
+                                className="keyword-tag"
+                            >
+                              {keyword.term}
+                            </Tag>
+                        ))}
+                      </div>
+                  ) : (
+                      <div className="no-keywords">暂无关键词</div>
+                  )}
                 </div>
               </Card>
             </Col>

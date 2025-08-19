@@ -8,12 +8,14 @@ import { QuestionKeywordData, useQuestionKeywords} from "../QuestionKeywordsCont
 import { useQuestionExplanationContext} from "../QuestionExplanationContext";
 import { GradingResult, useAutoGrade} from "../AutoGradeContext";
 import {useImageContext} from "../ImageContext";
+import { RelatedNote, RelatedData, useRelatedNote} from "../RelatedNoteContext";
 
 const API_URL = 'http://localhost:8000/api';
 
 export interface Question {
   questionId: string;
   type: string;
+  subject: string; // 添加科目字段
   isWrong: boolean;
   hasExtract: boolean;
   hasKeywords: boolean;
@@ -23,6 +25,8 @@ export interface Question {
   imageName?: string;
   createTime: string;
   updateTime: string;
+  content?: string; // 添加内容字段
+
 }
 
 export interface QuestionDetail {
@@ -32,12 +36,12 @@ export interface QuestionDetail {
   keywords?: QuestionKeywordData[];
   explanation?: string;
   AutoScoreReport?: GradingResult;
-  relatedItems?: string;
+  relatedItems?: RelatedData;
 }
 
 
 interface UserQuestionContextType {
-  prepareQuestionRegenarate: (question: Question, questionDetail: QuestionDetail, image: File) => void
+  prepareQuestionRegenerate: (question: Question, questionDetail: QuestionDetail, image: File) => void
 }
 
 const UserQuestionContext = createContext<UserQuestionContextType>({} as UserQuestionContextType);
@@ -59,7 +63,7 @@ const UserQuestionProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     addImage
   }=useImageContext()
 
-  const prepareQuestionRegenarate = (question: Question, questionDetail: QuestionDetail, image: File) => {
+  const prepareQuestionRegenerate = (question: Question, questionDetail: QuestionDetail, image: File) => {
     const questionId = `${question.questionId}--saved`
     if(questionDetail.content){
       const questionExtractData: QuestionExtractData = {
@@ -80,18 +84,19 @@ const UserQuestionProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })
     }
     if(questionDetail.AutoScoreReport){
-      saveGradeResult(questionDetail.AutoScoreReport)
+      saveGradeResult(questionDetail.AutoScoreReport);
     }
     addImage(image, questionId)
+    console.log("将题目添加到工作台成功")
   }
   return (
-    <UserQuestionContext.Provider
-      value={{
-        prepareQuestionRegenarate
-      }}
-    >
-      {children}
-    </UserQuestionContext.Provider>
+      <UserQuestionContext.Provider
+          value={{
+            prepareQuestionRegenerate
+          }}
+      >
+        {children}
+      </UserQuestionContext.Provider>
   );
 };
 

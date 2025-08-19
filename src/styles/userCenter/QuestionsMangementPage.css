@@ -164,11 +164,11 @@
 }
 
 .question-detail-container {
-    height: calc(80vh - 120px);
+  padding: 16px;
 }
 
 .question-summary-card {
-    height: 100%;
+  height: calc(80vh - 120px);
 }
 
 .question-header-card {
@@ -183,7 +183,7 @@
 }
 
 .question-detail-card {
-    height: 100%;
+  height: 100%;
 }
 
 .question-summary-detail {
@@ -316,55 +316,65 @@
 
 /* 批改结果样式 */
 .grading-detail {
-  padding: 10px;
+  padding: 16px;
 }
 
 .grading-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid #f0f0f0;
 }
 
 .score-display {
   display: flex;
-  align-items: baseline;
+  align-items: center;
 }
 
 .score-label {
   font-size: 16px;
-  color: #595959;
+  font-weight: 500;
+  margin-right: 8px;
 }
 
 .score-value {
   font-size: 24px;
   font-weight: bold;
   color: #1890ff;
-  margin-left: 8px;
 }
 
-.feedback-section, .mistakes-section, .improvement-tips {
-  margin-bottom: 24px;
+.status-tag {
+  margin-left: 16px;
 }
 
-.feedback-section h4, .mistakes-section h4, .improvement-tips h4 {
-  color: #1890ff;
+.answers-section {
+  margin-bottom: 20px;
+}
+
+.answers-section h4 {
   margin-bottom: 12px;
-  font-weight: 500;
+  color: #262626;
 }
 
-.feedback-content {
-  padding: 16px;
-  background: #f9f9f9;
-  border-radius: 4px;
+.mistakes-section,
+.knowledge-points-section {
+  margin-bottom: 20px;
 }
 
-.mistakes-section .ant-list-item {
-  padding: 8px 0;
-  border-bottom: none;
+.mistakes-section h4,
+.knowledge-points-section h4 {
+  margin-bottom: 12px;
+  color: #262626;
 }
+
+.knowledge-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 
 /* 响应式调整 */
 @media (max-width: 1200px) {

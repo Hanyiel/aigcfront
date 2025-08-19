@@ -43,6 +43,7 @@ import { useNavigate } from "react-router-dom";
 import { UserQuestionContext } from '../../contexts/userCenter/UserQuestionContext';
 import { logout } from "../../services/auth";
 import { Question, QuestionDetail } from "../../contexts/userCenter/UserQuestionContext"
+import { QuestionManagementContext} from "./UserCenter";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -56,21 +57,28 @@ const UPLOADS_URL = 'http://localhost:8000/uploads';
 type QuestionsSubTabKey = 'all-questions' | 'incorrect-questions' | 'question-detail';
 
 // 具体题目子标签类型
-type QuestionDetailTabKey = 'extract' | 'explanation' | 'related-notes' | 'grading';
+type QuestionDetailTabKey = 'extract' | 'explanation' | 'related-notes' | 'auto-score-report';
 
 const QuestionsManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const [questionsSubTab, setQuestionsSubTab] = useState<QuestionsSubTabKey>('all-questions');
   const [questionDetailTab, setQuestionDetailTab] = useState<QuestionDetailTabKey>('extract');
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [selectedQuestionDetail, setSelectedQuestionDetail] = useState<QuestionDetail | null>(null);
-  const [questionDetail, setQuestionDetail] = useState<QuestionDetail | null>(null); // 更新为 QuestionDetail 类型
-  const [explanation, setExplanation] = useState<string | null>(null);
+
+  const questionManagementContext = useContext(QuestionManagementContext);
+  const {
+    selectedQuestion,
+    setSelectedQuestion,
+    selectedQuestionDetail,
+    setSelectedQuestionDetail,
+    questionTypes,
+    setQuestionTypes,
+    questionSubjects,
+    setQuestionSubjects,
+    questions,
+    setQuestions
+  }=questionManagementContext || {};
+
   const [searchForm] = Form.useForm();
-  const [isSearching, setIsSearching] = useState(false);
-  const [subjects, setSubjects] = useState<string[]>([]);
-  const [questionTypes, setQuestionTypes] = useState<string[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
   const [pagination, setPagination] = useState({
     pageNum: 1,
     pageSize: 10,
@@ -98,13 +106,29 @@ const QuestionsManagementPage: React.FC = () => {
   };
 
   // 重新编辑处理函数
-  const reEditQuestion = () => {
-    if (selectedQuestion && questionDetail && imageFile) {
-      questionContext.prepareQuestionRegenarate(selectedQuestion, questionDetail, imageFile);
+  const reEdit = () => {
+    if (selectedQuestion && selectedQuestionDetail && imageFile) {
+      questionContext.prepareQuestionRegenerate(selectedQuestion, selectedQuestionDetail, imageFile);
       navigate('/questions/index');
     } else {
       message.warning('无法重新编辑，请确保题目信息已加载完成');
     }
+  };
+
+  // 从题目列表中提取科目和题型数据
+  const extractSubjectsAndTypesFromQuestions = (questions: Question[]) => {
+    const subjects = new Set<string>();
+    const types = new Set<string>();
+
+    questions.forEach(question => {
+      if (question.subject) subjects.add(question.subject);
+      if (question.type) types.add(question.type);
+    });
+
+    return {
+      subjects: Array.from(subjects),
+      types: Array.from(types)
+    };
   };
 
   // 获取科目列表
@@ -133,7 +157,7 @@ const QuestionsManagementPage: React.FC = () => {
 
       const result = await response.json();
       if (result.code === 200 && result.data?.subject) {
-        setSubjects(result.data.subject);
+        setQuestionSubjects(result.data.subject);
       }
     } catch (err) {
       message.error(err instanceof Error ? err.message : '获取学科失败');
@@ -175,7 +199,7 @@ const QuestionsManagementPage: React.FC = () => {
   };
 
   // 获取题目列表
-  const getQuestions = async (isWrongOnly: boolean = false) => {
+  const getAllQuestions = async (isWrongOnly: boolean = false) => {
     try {
       setLoading(prev => ({ ...prev, questions: true }));
       const token = localStorage.getItem('authToken');
@@ -208,13 +232,49 @@ const QuestionsManagementPage: React.FC = () => {
       }
 
       const result = await response.json();
-      console.log("获取结果", result);
       if (result.code === 200 && result.data) {
-        setQuestions(result.data.questions || []);
+        // 正确映射后端数据到 Question 接口
+        const mappedQuestions = (result.data.questions || []).map((q: any) => ({
+          questionId: q.questionId,
+          type: q.type,
+          subject: q.subject,
+          isWrong: q.isWrong,
+          hasExtract: !!q.content,
+          hasKeywords: q.hasKeywords,
+          hasExplanation: q.hasExplanation,
+          hasAutoScoreReport: q.hasAutoScoreReport,
+          hasRelatedItems: q.hasRelatedItems,
+          imageName: q.imageName,
+          createTime: q.createTime,
+          updateTime: q.updateTime,
+          content: q.content
+        }));
+
+        setQuestions(mappedQuestions);
         setPagination(prev => ({
           ...prev,
           total: result.data.total || 0
         }));
+
+        // 从题目列表中提取科目和题型
+        const { subjects, types } = extractSubjectsAndTypesFromQuestions(mappedQuestions);
+
+        // 更新科目和题型状态
+        if (subjects.length > 0) {
+          // 将 Set 转换为数组，然后合并去重
+          setQuestionSubjects(prev => {
+            const combined = [...prev, ...subjects];
+            return Array.from(new Set(combined));
+          });
+        }
+
+        if (types.length > 0) {
+          // 将 Set 转换为数组，然后合并去重
+          setQuestionTypes(prev => {
+            const combined = [...prev, ...types];
+            return Array.from(new Set(combined));
+          });
+        }
       }
     } catch (err) {
       message.error(err instanceof Error ? err.message : '获取题目失败');
@@ -225,7 +285,10 @@ const QuestionsManagementPage: React.FC = () => {
 
   // 获取题目详情
   const fetchQuestionDetails = async (questionId: string) => {
-    if (!questionId) return;
+    if (!questionId) {
+      message.warning("请选择题目");
+      return;
+    }
 
     setLoading(prev => ({ ...prev, detail: true }));
 
@@ -250,16 +313,34 @@ const QuestionsManagementPage: React.FC = () => {
       // 获取自动评分报告
       let autoScoreReport = null;
       try {
-        const scoreResponse = await fetch(`${API_URL}/questions/${questionId}/score`, {
+        const scoreResponse = await fetch(`${API_URL}/questions/${questionId}/auto-score`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-
         if (scoreResponse.ok) {
           const scoreResult = await scoreResponse.json();
           autoScoreReport = scoreResult.data?.autoScoreReport || null;
+
+          // 确保数组字段是数组类型
+          if (autoScoreReport) {
+            autoScoreReport.correct_answer = Array.isArray(autoScoreReport.correct_answer)
+                ? autoScoreReport.correct_answer
+                : [autoScoreReport.correct_answer || ''];
+
+            autoScoreReport.your_answer = Array.isArray(autoScoreReport.your_answer)
+                ? autoScoreReport.your_answer
+                : [autoScoreReport.your_answer || ''];
+
+            autoScoreReport.error_analysis = Array.isArray(autoScoreReport.error_analysis)
+                ? autoScoreReport.error_analysis
+                : [autoScoreReport.error_analysis || ''];
+
+            autoScoreReport.knowledge_point = Array.isArray(autoScoreReport.knowledge_point)
+                ? autoScoreReport.knowledge_point
+                : [autoScoreReport.knowledge_point || ''];
+          }
         }
       } catch (scoreError) {
         console.warn('获取评分报告失败:', scoreError);
@@ -283,17 +364,57 @@ const QuestionsManagementPage: React.FC = () => {
         console.warn('获取讲解失败:', explanationError);
       }
 
+      // 获取关键词
+      let keywordsData = null;
+      try {
+        const keywordsResponse = await fetch(`${API_URL}/questions/${questionId}/keywords`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (keywordsResponse.ok) {
+          const keywordsResult = await keywordsResponse.json();
+          keywordsData = keywordsResult.data?.keywords || null;
+        }
+      } catch (keywordsError) {
+        console.warn('获取关键词失败:', keywordsError);
+      }
+
+      // 获取相关笔记
+      let relatedItemsData = null;
+      try {
+        const relatedItemsResponse = await fetch(`${API_URL}/questions/${questionId}/related-items`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (relatedItemsResponse.ok) {
+          const relatedItemsResult = await relatedItemsResponse.json();
+          relatedItemsData = relatedItemsResult.data?.relatedItems || null;
+
+          console.log("相关笔记获取", relatedItemsResult);
+        }
+      } catch (relatedItemsError) {
+        console.warn('获取相关笔记失败:', relatedItemsError);
+      }
+
       // 组合所有数据
-      setQuestionDetail({
+      setSelectedQuestionDetail({
         questionId,
         title: basicData.title || '无标题',
         content: basicData.content || '无内容',
         explanation: explanationData,
         AutoScoreReport: autoScoreReport,
-        // 其他字段根据实际情况添加
+        keywords: keywordsData,
+        relatedItems: relatedItemsData
       });
 
     } catch (error) {
+      console.error('获取题目详情失败:', error);
       message.error('获取题目详情失败');
     } finally {
       setLoading(prev => ({ ...prev, detail: false }));
@@ -331,12 +452,21 @@ const QuestionsManagementPage: React.FC = () => {
 
   // 处理搜索
   const handleQuestionSearch = (values: any) => {
-    getQuestions(questionsSubTab === 'incorrect-questions');
+    getAllQuestions(questionsSubTab === 'incorrect-questions');
   };
 
   const resetSearch = () => {
     searchForm.resetFields();
-    getQuestions(questionsSubTab === 'incorrect-questions');
+    getAllQuestions(questionsSubTab === 'incorrect-questions');
+  };
+
+  // 生成不同颜色的标签
+  const getTagColor = (index: number) => {
+    const colors = [
+      'magenta', 'red', 'volcano', 'orange', 'gold',
+      'lime', 'green', 'cyan', 'blue', 'geekblue', 'purple'
+    ];
+    return colors[index % colors.length];
   };
 
   // 渲染题目列表项
@@ -346,11 +476,7 @@ const QuestionsManagementPage: React.FC = () => {
           <div className="question-item-header">
             <div className="question-item-title">
               <QuestionCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />
-              {questionDetail ? (
-                  questionDetail.content?.substring(0, 30) || '无标题'
-              ):(
-                  ""
-              )}
+              {question.content?.substring(0, 30) || '无标题'}
               {question.isWrong && (
                   <Badge
                       count="错题"
@@ -366,17 +492,14 @@ const QuestionsManagementPage: React.FC = () => {
             </div>
             <div className="question-item-meta">
               <Tag color="blue">{question.type}</Tag>
+              <Tag color="geekblue">{question.subject}</Tag>
               <span className="question-date">{question.createTime?.split(' ')[0] || ''}</span>
             </div>
           </div>
 
           <div className="question-item-body">
             <div className="question-summary">
-              {questionDetail ? (
-                  questionDetail.content?.substring(0, 100) || '无内容'
-              ):(
-                  "暂无内容"
-              )}
+              {question.content?.substring(0, 100) || '无内容'}
             </div>
 
             <div className="question-item-tags">
@@ -445,7 +568,7 @@ const QuestionsManagementPage: React.FC = () => {
                   }}
               >
                 <Select.Option value="">全部</Select.Option>
-                {subjects.map((subject) => (
+                {questionSubjects.map((subject) => (
                     <Select.Option key={subject} value={subject}>
                       {subject}
                     </Select.Option>
@@ -467,9 +590,17 @@ const QuestionsManagementPage: React.FC = () => {
               </Select>
               <Button
                   icon={questions.length > 0 ? <FilterOutlined /> : <SearchOutlined />}
-                  onClick={() => getQuestions(false)}
+                  onClick={() => getAllQuestions(false)}
               >
                 {questions.length > 0 ? '刷新' : '查询'}
+              </Button>
+              {/* 添加筛选按钮 */}
+              <Button
+                  icon={<FilterOutlined />}
+                  onClick={() => getAllQuestions(false)}
+                  style={{ marginLeft: 8 }}
+              >
+                筛选
               </Button>
             </div>
 
@@ -511,11 +642,11 @@ const QuestionsManagementPage: React.FC = () => {
         <Spin spinning={loading.questions}>
           <div className="questions-grid">
             <div className="questions-filter">
-              <Form form={searchForm} layout="inline" onFinish={() => getQuestions(true)}>
+              <Form form={searchForm} layout="inline" onFinish={() => getAllQuestions(true)}>
                 <Form.Item name="subject" style={{ marginBottom: 16 }}>
                   <Select placeholder="学科" style={{ width: 120 }}>
                     <Select.Option value="">全部</Select.Option>
-                    {subjects.map((subject) => (
+                    {questionSubjects.map((subject) => (
                         <Select.Option key={subject} value={subject}>
                           {subject}
                         </Select.Option>
@@ -576,11 +707,12 @@ const QuestionsManagementPage: React.FC = () => {
     );
   };
 
+  // 摘要页面
   const renderExtractDetail = () => {
     return (
         <div className="question-management-detail-content">
           <div className="question-management-detail-header">
-            笔记摘要
+            题目摘要
           </div>
           <div className={"question-detail-scroll-container"}>
             <div className="explanation-text">
@@ -588,7 +720,7 @@ const QuestionsManagementPage: React.FC = () => {
                   remarkPlugins={[remarkMath]}
                   rehypePlugins={[rehypeKatex]}
               >
-                {selectedQuestionDetail?.content}
+                {selectedQuestionDetail?.content || '暂无内容'}
               </ReactMarkdown>
             </div>
           </div>
@@ -596,9 +728,9 @@ const QuestionsManagementPage: React.FC = () => {
     )
   }
 
-
+  // 讲解页面
   const renderExplanationDetail = () => {
-    if (!questionDetail) return null;
+    if (!selectedQuestionDetail) return null;
 
     return (
         <div className="question-management-detail-content">
@@ -608,93 +740,187 @@ const QuestionsManagementPage: React.FC = () => {
           <div className={"question-detail-scroll-container"}>
             <div className="explanation-scroll-container">
               <div className="explanation-text">
-                {questionDetail.explanation ? (
-                    <pre>{questionDetail.explanation}</pre>
+                {selectedQuestionDetail.explanation ? (
+                    <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                    >
+                      {selectedQuestionDetail.explanation}
+                    </ReactMarkdown>
                 ) : (
                     <Empty description="暂无讲解内容"/>
                 )}
               </div>
             </div>
           </div>
+        </div>
+    );
+  };
 
-          <div className="explanation-scroll-container">
-            <div className="explanation-text">
-              {questionDetail.explanation ? (
-                  <pre>{questionDetail.explanation}</pre>
-              ) : (
-                  <Empty description="暂无讲解内容"/>
-              )}
+  // 自动批改结果页面
+  const renderGradingDetail = () => {
+    if (!selectedQuestionDetail?.AutoScoreReport) return (
+        <div className="question-management-detail-content">
+          <div className="question-management-detail-header">
+            批改结果
+          </div>
+          <Empty description="暂无批改结果" />
+        </div>
+    );
+
+    const report = selectedQuestionDetail.AutoScoreReport;
+
+    // 确保所有字段都是数组类型
+    const correctAnswer = Array.isArray(report.correct_answer)
+        ? report.correct_answer
+        : [report.correct_answer || ''];
+
+    const yourAnswer = Array.isArray(report.your_answer)
+        ? report.your_answer
+        : [report.your_answer || ''];
+
+    const errorAnalysis = Array.isArray(report.error_analysis)
+        ? report.error_analysis
+        : [report.error_analysis || ''];
+
+    const knowledgePoints = Array.isArray(report.knowledge_point)
+        ? report.knowledge_point
+        : [report.knowledge_point || ''];
+
+    return (
+        <div className="question-management-detail-content">
+          <div className="question-management-detail-header">
+            批改结果
+          </div>
+          <div className="grading-detail">
+            <div className="grading-header">
+              <div className="score-display">
+                <span className="score-label">得分：</span>
+                <span className="score-value">{report.score}/10</span>
+              </div>
+              <div className="status-tag">
+                {report.score >= 6 ? (
+                    <Tag icon={<CheckCircleOutlined />} color="success">
+                      回答正确
+                    </Tag>
+                ) : (
+                    <Tag icon={<CloseCircleOutlined />} color="error">
+                      回答错误
+                    </Tag>
+                )}
+              </div>
             </div>
+
+            <div className="answers-section">
+              <h4>答案对比</h4>
+              <Descriptions bordered column={1} size="small">
+                <Descriptions.Item label="标准答案">
+                  {correctAnswer.join('; ') || '无'}
+                </Descriptions.Item>
+                <Descriptions.Item label="你的答案">
+                  {yourAnswer.join('; ') || '无'}
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+
+            {errorAnalysis.length > 0 && errorAnalysis[0] && (
+                <div className="mistakes-section">
+                  <h4>错误分析</h4>
+                  <List
+                      size="small"
+                      dataSource={errorAnalysis}
+                      renderItem={(mistake, index) => (
+                          <List.Item>
+                            <Text>{index + 1}. {mistake}</Text>
+                          </List.Item>
+                      )}
+                  />
+                </div>
+            )}
+
+            {knowledgePoints.length > 0 && knowledgePoints[0] && (
+                <div className="knowledge-points-section">
+                  <h4>涉及知识点</h4>
+                  <div className="knowledge-points">
+                    {knowledgePoints.map((point, index) => (
+                        <Tag key={index} color="blue">{point}</Tag>
+                    ))}
+                  </div>
+                </div>
+            )}
           </div>
         </div>
     );
   };
 
-  const renderGradingDetail = () => {
-    if (!questionDetail?.AutoScoreReport) return null;
+  // 相关笔记页面
+  const renderRelatedNotesDetail = () => {
+    if (!selectedQuestionDetail?.relatedItems) {
+      return (
+          <div className="question-management-detail-content">
+            <div className="question-management-detail-header">
+              相关笔记
+            </div>
+            <Empty description="暂无相关笔记" />
+          </div>
+      );
+    }
 
-    const report = questionDetail.AutoScoreReport;
+    const { related_notes, related_questions } = selectedQuestionDetail.relatedItems;
 
     return (
-        <div className="grading-detail">
-          <div className="grading-header">
-            <div className="score-display">
-              <span className="score-label">得分：</span>
-              <span className="score-value">{report.score}/10</span>
-            </div>
-            <div className="status-tag">
-              {report.score >= 6 ? (
-                  <Tag icon={<CheckCircleOutlined />} color="success">
-                    回答正确
-                  </Tag>
+        <div className="question-management-detail-content">
+          <div className="question-management-detail-header">
+            相关笔记
+          </div>
+          <div className="question-detail-scroll-container">
+            <div className="related-notes-container">
+              <h3>相关笔记</h3>
+              {related_notes && related_notes.length > 0 ? (
+                  <List
+                      itemLayout="horizontal"
+                      dataSource={related_notes}
+                      renderItem={note => (
+                          <List.Item>
+                            <List.Item.Meta
+                                title={<a>{note.title}</a>}
+                                description={
+                                  <div>
+                                    <div>{note.content.substring(0, 100)}...</div>
+                                    <div>相似度: {(note.similarity * 100).toFixed(2)}%</div>
+                                  </div>
+                                }
+                            />
+                          </List.Item>
+                      )}
+                  />
               ) : (
-                  <Tag icon={<CloseCircleOutlined />} color="error">
-                    回答错误
-                  </Tag>
+                  <Empty description="暂无相关笔记" />
+              )}
+
+              <h3>相关题目</h3>
+              {related_questions && related_questions.length > 0 ? (
+                  <List
+                      itemLayout="horizontal"
+                      dataSource={related_questions}
+                      renderItem={question => (
+                          <List.Item>
+                            <List.Item.Meta
+                                title={<a>题目 {question.question_id}</a>}
+                                description={
+                                  <div>
+                                    <div>{question.content.substring(0, 100)}...</div>
+                                    <div>相似度: {(question.similarity * 100).toFixed(2)}%</div>
+                                  </div>
+                                }
+                            />
+                          </List.Item>
+                      )}
+                  />
+              ) : (
+                  <Empty description="暂无相关题目" />
               )}
             </div>
-          </div>
-
-          <div className="feedback-section">
-            <h4>批改反馈</h4>
-            <div className="feedback-content">
-              <Text>{report.error_analysis?.join(' ') || '无反馈信息'}</Text>
-            </div>
-          </div>
-
-          {report.error_analysis && report.error_analysis.length > 0 && (
-              <div className="mistakes-section">
-                <h4>错误分析</h4>
-                <List
-                    size="small"
-                    dataSource={report.error_analysis}
-                    renderItem={(mistake, index) => (
-                        <List.Item>
-                          <Text>{index + 1}. {mistake}</Text>
-                        </List.Item>
-                    )}
-                />
-              </div>
-          )}
-
-          <div className="improvement-tips">
-            <h4>解题思路</h4>
-            <Collapse bordered={false} defaultActiveKey={['1']}>
-              <Panel header="解题步骤" key="1">
-                {/*<ul>*/}
-                {/*  {report.explanation?.map((step, index) => (*/}
-                {/*    <li key={index}>{step}</li>*/}
-                {/*  ))}*/}
-                {/*</ul>*/}
-              </Panel>
-              <Panel header="知识点" key="2">
-                <ul>
-                  {report.knowledge_point?.map((point, index) => (
-                      <li key={index}>{point}</li>
-                  ))}
-                </ul>
-              </Panel>
-            </Collapse>
           </div>
         </div>
     );
@@ -708,21 +934,22 @@ const QuestionsManagementPage: React.FC = () => {
           <Card
               className="question-detail-card"
               tabList={[
-                { key: 'explanation', tab: '智能讲解' },
-                { key: 'grading', tab: '批改结果' },
                 { key: 'extract', tab: '摘要内容'},
+                { key: 'explanation', tab: '智能讲解' },
+                { key: 'auto-score-report', tab: '批改结果' },
+                { key: 'related-notes', tab: '相关笔记' },
               ]}
               activeTabKey={questionDetailTab}
               onTabChange={(key) => setQuestionDetailTab(key as QuestionDetailTabKey)}
               extra={
                 <div style={{
-                  position: 'relative', // 添加相对定位
-                  zIndex: 1, // 确保按钮在层级最上方
+                  position: 'relative',
+                  zIndex: 1,
                   height: '100%',
                   display: 'flex',
                   alignItems: 'center',
-                  marginTop: 0, // 移除负边距
-                  marginBottom: -50 // 移除负边距
+                  marginTop: 0,
+                  marginBottom: -50
                 }}>
                   <Button
                       type="primary"
@@ -732,20 +959,21 @@ const QuestionsManagementPage: React.FC = () => {
                         padding: '0 15px',
                         display: 'flex',
                         alignItems: 'center',
-                        position: 'relative', // 确保按钮在层级上方
-                        zIndex: 2 // 更高的层级
+                        position: 'relative',
+                        zIndex: 2
                       }}
-                      // onClick={reEdite}
+                      onClick={reEdit}
                   >
                     前往编辑
                   </Button>
                 </div>
               }
           >
-            <Spin>
-              {questionDetailTab === 'explanation' && renderExplanationDetail()}
-              {questionDetailTab === 'grading' && renderGradingDetail()}
+            <Spin spinning={loading.detail}>
               {questionDetailTab === 'extract' && renderExtractDetail()}
+              {questionDetailTab === 'explanation' && renderExplanationDetail()}
+              {questionDetailTab === 'auto-score-report' && renderGradingDetail()}
+              {questionDetailTab === 'related-notes' && renderRelatedNotesDetail()}
             </Spin>
           </Card>
         </Col>
@@ -774,19 +1002,20 @@ const QuestionsManagementPage: React.FC = () => {
 
     return (
         <div className="question-detail-container">
-          <Row gutter={8}>
-            <Col span={10}>
+          <Row gutter={24}>
+            <Col span={8}>
               <Card
                   title={selectedQuestion.questionId}
                   className="question-summary-card"
                   extra={
                     <div className="note-tags-container">
                       <Tag color="blue">{selectedQuestion.type}</Tag>
+                      <Tag color="geekblue">{selectedQuestion.subject}</Tag>
                     </div>
                   }
               >
                 <Descriptions bordered size="small" column={1}>
-                  <Descriptions.Item label="笔记ID">{selectedQuestion.questionId}</Descriptions.Item>
+                  <Descriptions.Item label="题目ID">{selectedQuestion.questionId}</Descriptions.Item>
                   <Descriptions.Item label="创建时间">{selectedQuestion.createTime}</Descriptions.Item>
                   <Descriptions.Item label="更新时间">{selectedQuestion.updateTime}</Descriptions.Item>
                 </Descriptions>
@@ -794,7 +1023,7 @@ const QuestionsManagementPage: React.FC = () => {
                     <div className="image-preview">
                       <Image
                           src={`${UPLOADS_URL}/${selectedQuestion.imageName}`}
-                          alt="笔记原图"
+                          alt="题目原图"
                           placeholder={
                             <div style={{
                               background: '#f5f5f5',
@@ -803,11 +1032,11 @@ const QuestionsManagementPage: React.FC = () => {
                               alignItems: 'center',
                               justifyContent: 'center'
                             }}>
-                              <span>加载笔记原图...</span>
+                              <span>加载题目原图...</span>
                             </div>
                           }
                           style={{
-                            maxHeight: '500px',
+                            maxHeight: '340px',
                             width: '100%',
                             objectFit: 'contain'
                           }}
@@ -817,10 +1046,30 @@ const QuestionsManagementPage: React.FC = () => {
 
                 <Divider orientation="left">资源状态</Divider>
                 <div className="resource-status">
-                  <Tag color={selectedQuestionDetail?.content ? 'green' : 'red'}>摘要</Tag>
+                  <Tag color={selectedQuestion.hasExtract ? 'green' : 'red'}>摘要</Tag>
                   <Tag color={selectedQuestion.hasKeywords ? 'green' : 'red'}>关键词</Tag>
                   <Tag color={selectedQuestion.hasExplanation ? 'green' : 'red'}>讲解</Tag>
-                  <Tag color={selectedQuestion.hasAutoScoreReport ? 'green' : 'red'}>智能讲解</Tag>
+                  <Tag color={selectedQuestion.hasAutoScoreReport ? 'green' : 'red'}>批改报告</Tag>
+                  <Tag color={selectedQuestion.hasRelatedItems ? 'green' : 'red'}>相关笔记</Tag>
+                </div>
+
+                <Divider orientation="left">关键词</Divider>
+                <div className="management-keywords-container">
+                  {selectedQuestionDetail?.keywords && selectedQuestionDetail.keywords.length > 0 ? (
+                      <div className="management-keywords-list">
+                        {selectedQuestionDetail.keywords.map((keyword, index) => (
+                            <Tag
+                                key={index}
+                                color={getTagColor(index)}
+                                className="keyword-tag"
+                            >
+                              {keyword.term}
+                            </Tag>
+                        ))}
+                      </div>
+                  ) : (
+                      <div className="no-keywords">暂无关键词</div>
+                  )}
                 </div>
               </Card>
             </Col>
@@ -841,10 +1090,10 @@ const QuestionsManagementPage: React.FC = () => {
           activeTabKey={questionsSubTab}
           onTabChange={(key) => {
             setQuestionsSubTab(key as QuestionsSubTabKey);
-            // if (key !== 'question-detail') {
-            //   setSelectedQuestion(null);
-            //   setQuestionDetail(null);
-            // }
+            if (key !== 'question-detail') {
+              setSelectedQuestion(null);
+              setSelectedQuestionDetail(null);
+            }
           }}
           extra={
             <Button

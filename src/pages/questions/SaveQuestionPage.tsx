@@ -16,7 +16,7 @@ import '../../styles/questions/SaveQuestionPage.css'; // Note: You might need to
 import {QuestionExtractData, useQuestionExtract} from "../../contexts/QuestionExtractContext";
 import {QuestionKeywordData, useQuestionKeywords} from "../../contexts/QuestionKeywordsContext";
 import {QuestionExplanation, useQuestionExplanationContext} from "../../contexts/QuestionExplanationContext";
-import { useRelatedNote } from "../../contexts/RelatedNoteContext";
+import {RelatedData, useRelatedNote} from "../../contexts/RelatedNoteContext";
 import {GradingCode, GradingResult, useAutoGrade} from "../../contexts/AutoGradeContext";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -44,7 +44,7 @@ interface SaveData {
     explanation?: QuestionExplanation,
     keywords?: QuestionKeywordData[],
     autograde?: GradingResult,
-    // related:
+    related?: RelatedData;
 }
 
 const SaveQuestionPage = () => {
@@ -70,7 +70,7 @@ const SaveQuestionPage = () => {
         extract: true,
         explanation: false,
         keywords: false,
-        // autograde: false,
+        autograde: false,
         related: false
     });
 
@@ -96,8 +96,8 @@ const SaveQuestionPage = () => {
                 return;
             }
             formData.append('image', image);
-            if(!image)
-                formData.append('options', JSON.stringify(saveOptions));
+
+            formData.append('options', JSON.stringify(saveOptions));
 
             if(currentExtract)
                 saveData.extract = currentExtract;
@@ -107,6 +107,9 @@ const SaveQuestionPage = () => {
                 saveData.explanation = currentExplanation;
             if(currentGradingResult)
                 saveData.autograde = currentGradingResult;
+            if (saveOptions.related && relatedData) {
+                saveData.related = relatedData;
+            }
             formData.append('extra', JSON.stringify(saveData));
 
             const { data } = await saveQuestionToAPI(formData);
@@ -216,50 +219,50 @@ const SaveQuestionPage = () => {
                         )}
                     </Card>
                 );
-            // case 'autograde':
-            //     return (
-            //         <Card
-            //             title={<><CheckCircleOutlined /> 自动批改</>}
-            //             key="autograde"
-            //             className="preview-card"
-            //         >
-            //             {currentGradingResult ? (
-            //                 <div className="autograde-content">
-            //                     <p>得分: {currentGradingResult.score}</p>
-            //                     <p>标准答案:
-            //                         <ReactMarkdown
-            //                               remarkPlugins={[remarkMath]}
-            //                               rehypePlugins={[rehypeKatex]}
-            //                           >
-            //                         {currentGradingResult.correct_answer.join(', ')}
-            //                           </ReactMarkdown>
-            //                     </p>
-            //                     <p>您的答案:
-            //                         <ReactMarkdown
-            //                               remarkPlugins={[remarkMath]}
-            //                               rehypePlugins={[rehypeKatex]}
-            //                           >
-            //                         {currentGradingResult.your_answer.join(', ')}
-            //                           </ReactMarkdown>
-            //                     </p>
-            //                     {currentGradingResult.error_analysis.length > 0 && (
-            //                         <div>
-            //                             <p>错误分析:</p>
-            //                             <ul>
-            //                                 {currentGradingResult.error_analysis.map((analysis, index) => (
-            //                                     <li key={index}>{analysis}</li>
-            //                                 ))}
-            //                             </ul>
-            //                         </div>
-            //                     )}
-            //                 </div>
-            //             ) : (
-            //                 <div className="no-content">
-            //                     暂无自动批改数据
-            //                 </div>
-            //             )}
-            //         </Card>
-            //     );
+            case 'autograde':
+                return (
+                    <Card
+                        title={<><CheckCircleOutlined /> 自动批改</>}
+                        key="autograde"
+                        className="preview-card"
+                    >
+                        {currentGradingResult ? (
+                            <div className="autograde-content">
+                                <p>得分: {currentGradingResult.score}</p>
+                                <p>标准答案:
+                                    <ReactMarkdown
+                                          remarkPlugins={[remarkMath]}
+                                          rehypePlugins={[rehypeKatex]}
+                                      >
+                                    {currentGradingResult.correct_answer.join(', ')}
+                                      </ReactMarkdown>
+                                </p>
+                                <p>您的答案:
+                                    <ReactMarkdown
+                                          remarkPlugins={[remarkMath]}
+                                          rehypePlugins={[rehypeKatex]}
+                                      >
+                                    {currentGradingResult.your_answer.join(', ')}
+                                      </ReactMarkdown>
+                                </p>
+                                {currentGradingResult.error_analysis.length > 0 && (
+                                    <div>
+                                        <p>错误分析:</p>
+                                        <ul>
+                                            {currentGradingResult.error_analysis.map((analysis, index) => (
+                                                <li key={index}>{analysis}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="no-content">
+                                暂无自动批改数据
+                            </div>
+                        )}
+                    </Card>
+                );
             case 'related':
                 return (
                     <Card
@@ -367,11 +370,11 @@ const SaveQuestionPage = () => {
                                                     <TagsOutlined/> 知识点
                                                 </Checkbox>
                                             </Col>
-                                            {/*<Col span={6}>*/}
-                                            {/*    <Checkbox value="autograde">*/}
-                                            {/*        <CheckCircleOutlined /> 自动批改*/}
-                                            {/*    </Checkbox>*/}
-                                            {/*</Col>*/}
+                                            <Col span={8}>
+                                                <Checkbox value="autograde">
+                                                    <CheckCircleOutlined /> 自动批改
+                                                </Checkbox>
+                                            </Col>
                                             <Col span={8}>
                                                 <Checkbox value="related">
                                                     <BookOutlined/> 相关笔记

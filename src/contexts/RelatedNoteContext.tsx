@@ -19,7 +19,7 @@ export interface RelatedQuestion {
   similarity: number;
 }
 
-interface RelatedData {
+export interface RelatedData {
   related_notes: RelatedNote[];
   related_questions: RelatedQuestion[];
   knowledge_graph: string[];
