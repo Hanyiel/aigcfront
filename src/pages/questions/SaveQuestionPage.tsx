@@ -60,8 +60,8 @@ const SaveQuestionPage = () => {
     const { getQuestionExtractByImage } = useQuestionExtract();
     const { getKeywordsByQuestionImage } = useQuestionKeywords();
     const { getExplanationByImage } = useQuestionExplanationContext();
-    const { relatedData } = useRelatedNote();
-    const { gradingResults, currentGrading } = useAutoGrade();
+    const { getRelatedNotesByImage } = useRelatedNote();
+    const { getGradingByImageId } = useAutoGrade(); // 修改这里
     const [loading, setLoading] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -78,7 +78,8 @@ const SaveQuestionPage = () => {
     const currentExtract = selectedImage ? getQuestionExtractByImage(selectedImage.id) : undefined;
     const currentKeywords = selectedImage ? getKeywordsByQuestionImage(selectedImage.id) : [];
     const currentExplanation = selectedImage ? getExplanationByImage(selectedImage.id) : null;
-    const currentGradingResult = selectedImage ? gradingResults.find(result => result.imageId === selectedImage.id) : null;
+    const currentGradingResult = selectedImage ? getGradingByImageId(selectedImage.id) : null; // 修改这里
+    const currentRelatedData = selectedImage ? getRelatedNotesByImage(selectedImage.id) : null;
 
     // Handle save operation
     const handleSave = async () => {
@@ -107,8 +108,8 @@ const SaveQuestionPage = () => {
                 saveData.explanation = currentExplanation;
             if(currentGradingResult)
                 saveData.autograde = currentGradingResult;
-            if (saveOptions.related && relatedData) {
-                saveData.related = relatedData;
+            if (saveOptions.related && currentRelatedData) {
+                saveData.related = currentRelatedData;
             }
             formData.append('extra', JSON.stringify(saveData));
 
@@ -270,10 +271,10 @@ const SaveQuestionPage = () => {
                         key="related"
                         className="preview-card"
                     >
-                        {relatedData && relatedData.related_notes.length > 0 ? (
+                        {currentRelatedData && currentRelatedData.related_notes.length > 0 ? (
                             <div className="related-content">
                                 <List
-                                    dataSource={relatedData.related_notes}
+                                    dataSource={currentRelatedData.related_notes}
                                     renderItem={note => (
                                         <List.Item>
                                             <div>
@@ -430,7 +431,7 @@ const SaveQuestionPage = () => {
                                     </div>
                                     <div className="question-image-info">
                                             <span className="question-image-name">
-                                                {item.name}
+                                                {item.name.length > 20 ? item.name.substring(0, 20)+"..." : item.name}
                                             </span>
                                         <span className="question-image-date">
                                                 {new Date(item.timestamp).toLocaleDateString()}

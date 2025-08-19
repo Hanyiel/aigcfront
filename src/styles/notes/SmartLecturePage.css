@@ -39,10 +39,9 @@
 }
 
 /* 讲解内容区域 */
-.explanation-content {
+.smart-explanation-content {
   padding: 24px;
   height: 100%;
-  display: flex;
   flex-direction: column;
   gap: 16px;
 }

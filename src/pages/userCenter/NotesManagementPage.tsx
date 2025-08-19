@@ -18,7 +18,8 @@ import {
   Image,
   message,
   Spin,
-  Modal
+  Modal,
+  Form
 } from 'antd';
 import {
   SearchOutlined,
@@ -42,12 +43,11 @@ import { useNavigate } from 'react-router-dom';
 import '../../styles/userCenter/NotesManagementPage.css';
 import {NoteManagementContext} from "./UserCenter";
 import { logout } from "../../services/auth";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import ReactMarkdown from "react-markdown";
-
 import {MindNode, MindMapData} from "../../contexts/MindMapContext"
 import {Note, NoteDetail, useUserNoteContext} from "../../contexts/userCenter/UserNoteContext"
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import ReactMarkdown from "react-markdown";
 
 const API_URL = 'http://localhost:8000/api';
 const UPLOADS_URL = 'http://localhost:8000/uploads';
@@ -65,6 +65,7 @@ const NotesManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const [notesSubTab, setNotesSubTab] = useState<NotesSubTabKey>('all-notes');
   const [noteDetailTab, setNoteDetailTab] = useState<NoteDetailTabKey>('original');
+  const [searchForm] = Form.useForm();
 
   const noteManagementContext = useContext(NoteManagementContext);
 
@@ -108,6 +109,19 @@ const NotesManagementPage: React.FC = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [startTransform, setStartTransform] = useState({ x: 0, y: 0, scale: 1 });
 
+
+  // 从笔记列表中提取科目数据
+  const extractSubjectsAndTypesFromNotes = (notes: Note[]) => {
+    const subjects = new Set<string>();
+
+    notes.forEach(note => {
+      if (note.subject) subjects.add(note.subject);
+    });
+
+    return {
+      subjects: Array.from(subjects),
+    };
+  };
   // 获取学科列表 (POST)
   const getSubjects = async () => {
     try {
@@ -144,16 +158,28 @@ const NotesManagementPage: React.FC = () => {
   };
 
   // 获取所有笔记 (POST)
-  const getAllNotes = async () => {
+  const getAllNotes = async (isFilter: boolean = false) => {
     try {
       setLoading(prev => ({ ...prev, notes: true }));
       const token = localStorage.getItem('authToken');
 
-      const requestBody = {
+      // 获取表单值
+      const formValues = searchForm.getFieldsValue();
+
+      // 构建请求体
+      const requestData = {
         pageNum: pagination.pageNum,
         pageSize: pagination.pageSize,
-        subject: selectedSubject || null
+        subject: formValues.subject || undefined,
+        keyword: formValues.keyword || undefined
       };
+
+      // 过滤掉空值
+      const filteredRequestBody = Object.fromEntries(
+        Object.entries(requestData).filter(([_, value]) =>
+          value !== undefined && value !== '' && value !== null
+        )
+      );
 
       const response = await fetch(`${API_URL}/notes`, {
         method: 'POST',
@@ -161,7 +187,7 @@ const NotesManagementPage: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(filteredRequestBody)
       });
 
       if (response.status === 401) {
@@ -183,6 +209,17 @@ const NotesManagementPage: React.FC = () => {
           ...prev,
           total: result.data.total || 0
         }));
+
+        // 从笔记列表中提取科目数据
+        const { subjects: extractedSubjects } = extractSubjectsAndTypesFromNotes(result.data.notes || []);
+
+        // 更新科目状态，合并去重
+        if (extractedSubjects.length > 0) {
+          setSubjects(prev => {
+            const combined = [...prev, ...extractedSubjects];
+            return Array.from(new Set(combined));
+          });
+        }
       }
       console.log("note: ", result.data)
     } catch (err) {
@@ -703,40 +740,67 @@ const NotesManagementPage: React.FC = () => {
       </List.Item>
   );
 
+  // 处理搜索
+  const handleNoteSearch = () => {
+    getAllNotes(false);
+  };
+
+  // 重置搜索
+  const resetSearch = () => {
+    searchForm.resetFields();
+    getAllNotes(false);
+  };
+
   const renderAllNodePage = () => {
     return (
         <Spin spinning={loading.notes || loading.subjects}>
           <div className="notes-grid">
             <div className="notes-filter">
-              <Input
-                  placeholder="搜索笔记标题或内容..."
-                  prefix={<SearchOutlined />}
-                  style={{ width: 300, marginRight: 16 }}
-              />
-              <Select
-                  placeholder="全部学科"
-                  style={{ width: 200, marginRight: 16 }}
-                  value={selectedSubject}
-                  onChange={(value) => setSelectedSubject(value)}
-                  allowClear
-                  loading={loading.subjects}
-              >
-                <Select.Option value={null}>全部学科</Select.Option>
-                {subjects.map((subject) => (
-                    <Select.Option key={subject} value={subject}>
-                      {subject}
-                    </Select.Option>
-                ))}
-              </Select>
-              <Button
-                  icon={notes.length > 0 ? <ReloadOutlined /> : <SearchOutlined />}
-                  onClick={() => {
-                    setSelectedSubject(null);
-                    getAllNotes();
-                  }}
-              >
-                {notes.length > 0 ? '刷新' : '查询'}
-              </Button>
+              <Form form={searchForm} layout="inline" onFinish={handleNoteSearch}>
+                {/*<Form.Item name="keyword" style={{ marginBottom: 16 }}>*/}
+                {/*  <Input*/}
+                {/*    placeholder="搜索笔记标题或内容..."*/}
+                {/*    prefix={<SearchOutlined />}*/}
+                {/*    style={{ width: 300, marginRight: 16 }}*/}
+                {/*  />*/}
+                {/*</Form.Item>*/}
+                <Form.Item name="subject" style={{ marginBottom: 16 }}>
+                  <Select
+                    placeholder="全部学科"
+                    style={{ width: 200, marginRight: 16 }}
+                    allowClear
+                    loading={loading.subjects}
+                  >
+                    {subjects.map((subject) => (
+                        <Select.Option key={subject} value={subject}>
+                          {subject}
+                        </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item style={{ marginBottom: 16 }}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={notes.length > 0 ? <ReloadOutlined /> : <SearchOutlined />}
+                  >
+                    {notes.length > 0 ? '刷新' : '查询'}
+                  </Button>
+                  <Button
+                    icon={<FilterOutlined />}
+                    onClick={() => getAllNotes(true)}
+                    style={{ marginLeft: 8 }}
+                  >
+                    筛选
+                  </Button>
+                  <Button
+                    style={{ marginLeft: 8 }}
+                    onClick={resetSearch}
+                  >
+                    重置
+                  </Button>
+                </Form.Item>
+              </Form>
             </div>
             {notes.length > 0 ? (
                 <div className="notes-list-container">
@@ -751,6 +815,7 @@ const NotesManagementPage: React.FC = () => {
                         total: pagination.total,
                         onChange: (page, pageSize) => {
                           setPagination(prev => ({ ...prev, pageNum: page, pageSize }));
+                          getAllNotes(false);
                         },
                         showSizeChanger: true,
                         showTotal: total => `共 ${total} 条笔记`

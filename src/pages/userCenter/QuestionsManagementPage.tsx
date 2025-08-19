@@ -36,7 +36,7 @@ import {
   ArrowLeftOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  EditOutlined
+  EditOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import '../../styles/userCenter/QuestionsMangementPage.css';
 import { useNavigate } from "react-router-dom";
@@ -204,14 +204,22 @@ const QuestionsManagementPage: React.FC = () => {
       setLoading(prev => ({ ...prev, questions: true }));
       const token = localStorage.getItem('authToken');
       const formValues = searchForm.getFieldsValue();
+
+      // 确保我们使用表单中的筛选条件
       const requestBody = {
         isWrong: isWrongOnly ? true : undefined,
         pageNum: pagination.pageNum,
         pageSize: pagination.pageSize,
         subject: formValues.subject || undefined,
-        type: formValues.type || undefined
+        type: formValues.type || undefined,
+        keyword: formValues.keyword || undefined
       };
-
+      // 使用 Object.fromEntries 和 Object.entries 过滤掉空值
+      const filteredRequestBody = Object.fromEntries(
+          Object.entries(requestBody).filter(([_, value]) =>
+              value !== undefined && value !== ''
+          )
+      );
       const response = await fetch(`${API_URL}/questions`, {
         method: 'POST',
         headers: {
@@ -555,53 +563,55 @@ const QuestionsManagementPage: React.FC = () => {
         <Spin spinning={loading.questions || loading.subjects}>
           <div className="questions-grid">
             <div className="notes-filter">
-              <Input
-                  placeholder="搜索题目内容..."
-                  prefix={<SearchOutlined />}
-                  style={{ width: 300, marginRight: 16 }}
-              />
-              <Select
-                  placeholder="学科"
-                  style={{ width: 120, marginRight: 16 }}
-                  onChange={(value) => {
-                    searchForm.setFieldsValue({ subject: value });
-                  }}
-              >
-                <Select.Option value="">全部</Select.Option>
-                {questionSubjects.map((subject) => (
-                    <Select.Option key={subject} value={subject}>
-                      {subject}
-                    </Select.Option>
-                ))}
-              </Select>
-              <Select
-                  placeholder="题型"
-                  style={{ width: 120, marginRight: 16 }}
-                  onChange={(value) => {
-                    searchForm.setFieldsValue({ type: value });
-                  }}
-              >
-                <Select.Option value="">全部</Select.Option>
-                {questionTypes.map((type) => (
-                    <Select.Option key={type} value={type}>
-                      {type}
-                    </Select.Option>
-                ))}
-              </Select>
-              <Button
-                  icon={questions.length > 0 ? <FilterOutlined /> : <SearchOutlined />}
-                  onClick={() => getAllQuestions(false)}
-              >
-                {questions.length > 0 ? '刷新' : '查询'}
-              </Button>
-              {/* 添加筛选按钮 */}
-              <Button
-                  icon={<FilterOutlined />}
-                  onClick={() => getAllQuestions(false)}
-                  style={{ marginLeft: 8 }}
-              >
-                筛选
-              </Button>
+              <Form form={searchForm} layout="inline" onFinish={() => getAllQuestions(false)}>
+                {/*<Form.Item name="keyword" style={{ marginBottom: 16 }}>*/}
+                {/*  <Input*/}
+                {/*      placeholder="搜索题目内容..."*/}
+                {/*      prefix={<SearchOutlined />}*/}
+                {/*      style={{ width: 300, marginRight: 16 }}*/}
+                {/*  />*/}
+                {/*</Form.Item>*/}
+                <Form.Item name="subject" style={{ marginBottom: 16 }}>
+                  <Select placeholder="学科" style={{ width: 120, marginRight: 16 }}>
+                    <Select.Option value="">全部</Select.Option>
+                    {questionSubjects.map((subject) => (
+                        <Select.Option key={subject} value={subject}>
+                          {subject}
+                        </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item name="type" style={{ marginBottom: 16 }}>
+                  <Select placeholder="题型" style={{ width: 120, marginRight: 16 }}>
+                    <Select.Option value="">全部</Select.Option>
+                    {questionTypes.map((type) => (
+                        <Select.Option key={type} value={type}>
+                          {type}
+                        </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item style={{ marginBottom: 16 }}>
+                  <Button
+                      type="primary"
+                      htmlType="submit"
+                      icon={questions.length > 0 ? <ReloadOutlined /> : <SearchOutlined />}
+                  >
+                    {questions.length > 0 ? '刷新' : '查询'}
+                  </Button>
+                  {/* 筛选按钮现在也使用表单提交 */}
+                  <Button
+                      icon={<FilterOutlined />}
+                      onClick={() => getAllQuestions(false)}
+                      style={{ marginLeft: 8 }}
+                  >
+                    筛选
+                  </Button>
+                  <Button style={{ marginLeft: 8 }} onClick={resetSearch}>
+                    重置
+                  </Button>
+                </Form.Item>
+              </Form>
             </div>
 
             {questions.length > 0 ? (
@@ -641,10 +651,17 @@ const QuestionsManagementPage: React.FC = () => {
     return (
         <Spin spinning={loading.questions}>
           <div className="questions-grid">
-            <div className="questions-filter">
+            <div className="notes-filter">
               <Form form={searchForm} layout="inline" onFinish={() => getAllQuestions(true)}>
+                {/*<Form.Item name="keyword" style={{ marginBottom: 16 }}>*/}
+                {/*  <Input*/}
+                {/*      placeholder="搜索题目内容..."*/}
+                {/*      prefix={<SearchOutlined />}*/}
+                {/*      style={{ width: 300, marginRight: 16 }}*/}
+                {/*  />*/}
+                {/*</Form.Item>*/}
                 <Form.Item name="subject" style={{ marginBottom: 16 }}>
-                  <Select placeholder="学科" style={{ width: 120 }}>
+                  <Select placeholder="学科" style={{ width: 120, marginRight: 16 }}>
                     <Select.Option value="">全部</Select.Option>
                     {questionSubjects.map((subject) => (
                         <Select.Option key={subject} value={subject}>
@@ -654,7 +671,7 @@ const QuestionsManagementPage: React.FC = () => {
                   </Select>
                 </Form.Item>
                 <Form.Item name="type" style={{ marginBottom: 16 }}>
-                  <Select placeholder="题型" style={{ width: 120 }}>
+                  <Select placeholder="题型" style={{ width: 120, marginRight: 16 }}>
                     <Select.Option value="">全部</Select.Option>
                     {questionTypes.map((type) => (
                         <Select.Option key={type} value={type}>
@@ -664,8 +681,19 @@ const QuestionsManagementPage: React.FC = () => {
                   </Select>
                 </Form.Item>
                 <Form.Item style={{ marginBottom: 16 }}>
-                  <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
-                    搜索
+                  <Button
+                      type="primary"
+                      htmlType="submit"
+                      icon={questions.length > 0 ? <ReloadOutlined /> : <SearchOutlined />}
+                  >
+                    {questions.length > 0 ? '刷新' : '查询'}
+                  </Button>
+                  <Button
+                      icon={<FilterOutlined />}
+                      onClick={() => getAllQuestions(true)}
+                      style={{ marginLeft: 8 }}
+                  >
+                    筛选
                   </Button>
                   <Button style={{ marginLeft: 8 }} onClick={resetSearch}>
                     重置
@@ -673,7 +701,6 @@ const QuestionsManagementPage: React.FC = () => {
                 </Form.Item>
               </Form>
             </div>
-
             {questions.length > 0 ? (
                 <div className="questions-list-container">
                   <List
@@ -699,14 +726,13 @@ const QuestionsManagementPage: React.FC = () => {
                     description="暂无错题记录"
                     style={{ margin: '40px 0' }}
                 >
-                  <p>太棒了！您目前没有错题记录，继续保持！</p>
+                  <p>您目前没有错题记录</p>
                 </Empty>
             )}
           </div>
         </Spin>
     );
   };
-
   // 摘要页面
   const renderExtractDetail = () => {
     return (
@@ -898,28 +924,28 @@ const QuestionsManagementPage: React.FC = () => {
                   <Empty description="暂无相关笔记" />
               )}
 
-              <h3>相关题目</h3>
-              {related_questions && related_questions.length > 0 ? (
-                  <List
-                      itemLayout="horizontal"
-                      dataSource={related_questions}
-                      renderItem={question => (
-                          <List.Item>
-                            <List.Item.Meta
-                                title={<a>题目 {question.question_id}</a>}
-                                description={
-                                  <div>
-                                    <div>{question.content.substring(0, 100)}...</div>
-                                    <div>相似度: {(question.similarity * 100).toFixed(2)}%</div>
-                                  </div>
-                                }
-                            />
-                          </List.Item>
-                      )}
-                  />
-              ) : (
-                  <Empty description="暂无相关题目" />
-              )}
+              {/*<h3>相关题目</h3>*/}
+              {/*{related_questions && related_questions.length > 0 ? (*/}
+              {/*    <List*/}
+              {/*        itemLayout="horizontal"*/}
+              {/*        dataSource={related_questions}*/}
+              {/*        renderItem={question => (*/}
+              {/*            <List.Item>*/}
+              {/*              <List.Item.Meta*/}
+              {/*                  title={<a>题目 {question.question_id}</a>}*/}
+              {/*                  description={*/}
+              {/*                    <div>*/}
+              {/*                      <div>{question.content.substring(0, 100)}...</div>*/}
+              {/*                      <div>相似度: {(question.similarity * 100).toFixed(2)}%</div>*/}
+              {/*                    </div>*/}
+              {/*                  }*/}
+              {/*              />*/}
+              {/*            </List.Item>*/}
+              {/*        )}*/}
+              {/*    />*/}
+              {/*) : (*/}
+              {/*    <Empty description="暂无相关题目" />*/}
+              {/*)}*/}
             </div>
           </div>
         </div>

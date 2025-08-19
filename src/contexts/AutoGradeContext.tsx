@@ -1,5 +1,4 @@
-// src/contexts/AutoGradeContext.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { message } from 'antd';
 
 export type GradingCode = 0 | 1 | 2;
@@ -15,113 +14,92 @@ export interface GradingResult {
   timestamp: number;          // 批改时间戳
 }
 
+interface GradingImageData {
+  questionImageId: string;
+  gradingResult: GradingResult;
+  createdAt: number;
+}
+
 interface AutoGradeContextType {
-  gradingResults: GradingResult[];
+  gradingData: GradingImageData[];
   currentGrading: GradingResult | null;
-  loading: boolean;
-  error: Error | null;
-  submitForGrading: (file: File, imageId: string) => Promise<GradingResult>;
-  saveGradeResult: (result: GradingResult) => void;
+  saveGradingResult: (questionImageId: string, gradingResult: GradingResult) => void;
+  deleteGradingResult: (questionImageId: string) => void;
+  getGradingByImageId: (questionImageId: string) => GradingResult | null;
+  updateGradingResult: (questionImageId: string, newGradingResult: GradingResult) => void;
   setCurrentGrading: (imageId: string) => void;
   clearResults: () => void;
 }
 
 const AutoGradeContext = createContext<AutoGradeContextType>({} as AutoGradeContextType);
 
-export const AutoGradeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [gradingResults, setGradingResults] = useState<GradingResult[]>([]);
-  const [currentGrading, setCurrentResult] = useState<GradingResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export const AutoGradeProvider = ({ children }: { children: React.ReactNode }) => {
+  const [gradingData, setGradingData] = useState<GradingImageData[]>(() => {
+    const saved = localStorage.getItem('gradingData');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  // 提交批改请求
-  const submitForGrading = useCallback(async (file: File, imageId: string) => {
-    setLoading(true);
-    setError(null);
+  const [currentGrading, setCurrentGradingState] = useState<GradingResult | null>(null);
 
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-      console.log(localStorage.getItem('authToken'))
+  // 持久化存储
+  useEffect(() => {
+    localStorage.setItem('gradingData', JSON.stringify(gradingData));
+  }, [gradingData]);
 
-      const response = await fetch('http://localhost:8000/api/questions/autograde', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '批改请求失败');
+  const saveGradingResult = (questionImageId: string, gradingResult: GradingResult) => {
+    setGradingData(prev => [
+      ...prev.filter(k => k.questionImageId !== questionImageId),
+      {
+        questionImageId,
+        gradingResult,
+        createdAt: Date.now()
       }
-      const responseJson = await response.json();
-      const responseData = responseJson.data;
-      console.log(responseData);
+    ]);
+    setCurrentGradingState(gradingResult);
+  };
 
-      // 转换API响应到GradingResult结构
-      const gradingResult: GradingResult = {
-        imageId,
-        code: responseData.code,
-        score: responseData.score,
-        correct_answer: Array.isArray(responseData.correct_answer)
-          ? responseData.correct_answer
-          : [responseData.correct_answer],
-        your_answer: Array.isArray(responseData.your_answer)
-          ? responseData.your_answer
-          : [responseData.your_answer],
-        error_analysis: responseData.error_analysis || [],
-        knowledge_point: responseData.knowledge_points || [],
-        timestamp: Date.now()
-      };
-      console.log(gradingResult);
-      setCurrentResult(gradingResult);
-      return gradingResult;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('批改失败'));
-      message.error('批改失败，请检查网络或图片格式');
-      throw err;
-    } finally {
-      setLoading(false);
+  const updateGradingResult = (questionImageId: string, newGradingResult: GradingResult) => {
+    setGradingData(prev =>
+      prev.map(item =>
+        item.questionImageId === questionImageId
+          ? { ...item, gradingResult: newGradingResult }
+          : item
+      )
+    );
+    setCurrentGradingState(newGradingResult);
+  };
+
+  const deleteGradingResult = (questionImageId: string) => {
+    setGradingData(prev => prev.filter(k => k.questionImageId !== questionImageId));
+    if (currentGrading?.imageId === questionImageId) {
+      setCurrentGradingState(null);
     }
-  }, []);
+  };
 
-  // 保存批改结果
-  const saveGradeResult = useCallback((result: GradingResult) => {
-    setGradingResults(prev => {
-      const existingIndex = prev.findIndex(r => r.imageId === result.imageId);
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = result;
-        return updated;
-      }
-      return [...prev, result];
-    });
-    setCurrentResult(result);
-  }, []);
+  const getGradingByImageId = (questionImageId: string) => {
+    if (!questionImageId) return null;
+    return gradingData.find(k => k.questionImageId === questionImageId)?.gradingResult || null;
+  };
 
-  // 设置当前批改结果
-  const setCurrentGrading = useCallback((imageId: string) => {
-    const result = gradingResults.find(r => r.imageId === imageId);
-    setCurrentResult(result || null);
-  }, [gradingResults]);
+  const setCurrentGrading = (imageId: string) => {
+    const result = gradingData.find(k => k.questionImageId === imageId)?.gradingResult || null;
+    setCurrentGradingState(result);
+  };
 
-  // 清空结果
-  const clearResults = useCallback(() => {
-    setGradingResults([]);
-    setCurrentResult(null);
-  }, []);
+  const clearResults = () => {
+    setGradingData([]);
+    setCurrentGradingState(null);
+  };
 
   return (
     <AutoGradeContext.Provider
       value={{
-        gradingResults,
+        gradingData,
         currentGrading,
-        loading,
-        error,
-        submitForGrading,
-        saveGradeResult,
+        saveGradingResult,
+        deleteGradingResult,
+        getGradingByImageId,
+        updateGradingResult,
         setCurrentGrading,
         clearResults
       }}

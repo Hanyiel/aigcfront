@@ -421,13 +421,10 @@ const QuestionKeywordsPage = () => {
                           />
                         </div>
                         <div className="question-image-info">
-                          <span className="qeustion-image-name">{item.name}</span>
+                          <span className="question-image-name">{item.name.length > 20 ? item.name.substring(0, 20)+"..." : item.name}</span>
                           <span className="question-image-date">
                       {new Date(item.timestamp).toLocaleDateString()}
                     </span>
-                          {getKeywordsByQuestionImage(item.id)?.length > 0 && (
-                              <Tag color="green" className="explanation-tag">已提取关键词</Tag>
-                          )}
                         </div>
                       </List.Item>
                   )}

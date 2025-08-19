@@ -1,5 +1,4 @@
-// src/pages/questions/RelatedNotePage.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Row,
@@ -22,7 +21,7 @@ import {
     LinkOutlined, ApartmentOutlined, FileImageOutlined
 } from '@ant-design/icons';
 import { useQuestionImageContext } from '../../contexts/QuestionImageContext';
-import { useRelatedNote } from '../../contexts/RelatedNoteContext';
+import {RelatedData, useRelatedNote} from '../../contexts/RelatedNoteContext';
 import { useAuth } from '../../contexts/AuthContext';
 import '../../styles/questions/RelatedNotePage.css';
 import remarkMath from "remark-math";
@@ -43,13 +42,27 @@ const RelatedNotePage = () => {
         getImageFile
     } = useQuestionImageContext();
     const {
-        relatedData,
-        loading,
-        fetchRelatedData
+        saveRelatedNotes,
+        getRelatedNotesByImage,
+        updateRelatedNotes
     } = useRelatedNote();
     const { isAuthenticated } = useAuth();
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [currentRelatedData, setCurrentRelatedData] = useState<RelatedData | null >(null);
+    const [loading, setLoading] = useState(false);
     const uploadRef = useRef<HTMLInputElement>(null);
+
+    // 监听选择的图片变化
+    useEffect(() => {
+        if (selectedImage) {
+            // 根据图片ID获取关联数据
+            const relatedData = getRelatedNotesByImage(selectedImage.id);
+            setCurrentRelatedData(relatedData);
+        } else {
+            // 没有选择图片时清空当前数据
+            setCurrentRelatedData(null);
+        }
+    }, [selectedImage, getRelatedNotesByImage]);
 
     const handleUpload = (file: File) => {
         if (!file.type.startsWith('image/')) {
@@ -65,9 +78,43 @@ const RelatedNotePage = () => {
             message.warning('请先选择图片');
             return;
         }
+
         const file = getImageFile(selectedImage.id);
-        if (file) {
-            await fetchRelatedData(file);
+        if (!file) {
+            message.error('图片文件不存在');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('http://localhost:8000/api/questions/relate', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('authToken')}`
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '获取关联数据失败');
+            }
+
+            const responseData = await response.json();
+            const result = responseData.data;
+            console.log('result', result);
+
+            // 保存数据到Context
+            saveRelatedNotes(selectedImage.id, result);
+            setCurrentRelatedData(result);
+            message.success('成功获取关联数据');
+        } catch (err) {
+            message.error(err instanceof Error ? err.message : '获取关联数据失败');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -87,13 +134,13 @@ const RelatedNotePage = () => {
     const renderRelatedResourceEditor = () => {
         return (
             <Spin spinning={loading} tip="正在查找关联内容...">
-                {relatedData ? (
+                {currentRelatedData ? (
                     <div className="related-content">
                         {/* 知识点图谱 */}
                         <div className="knowledge-graph">
                             <Title level={4}><LinkOutlined/> 知识图谱关联</Title>
                             <div className="tags">
-                                {relatedData.knowledge_graph.map((kg, index) => (
+                                {currentRelatedData.knowledge_graph.map((kg, index) => (
                                     <Tag key={index} color="geekblue">{kg}</Tag>
                                 ))}
                             </div>
@@ -102,17 +149,16 @@ const RelatedNotePage = () => {
                         {/* 相关笔记 */}
                         <Collapse defaultActiveKey={['notes']} ghost>
                             <Panel header={<>
-                                <FileTextOutlined/> 关联笔记（{relatedData.related_notes.length}）</>}
+                                <FileTextOutlined/> 关联笔记（{currentRelatedData.related_notes.length}）</>}
                                    key="notes">
                                 <List
                                     itemLayout="vertical"
-                                    dataSource={relatedData.related_notes}
-                                    renderItem={note => (
+                                    dataSource={currentRelatedData.related_notes}
+                                    renderItem={note  => (
                                         <List.Item className="note-item">
                                             <div className="note-header">
                                                 <Tag color="blue">{note.subject}</Tag>
                                                 <Title level={5}>{note.title}</Title>
-                                                {/*<Text type="secondary">相似度：{(note.similarity * 100).toFixed(1)}%</Text>*/}
                                             </div>
                                             <Text className="related-note-content">
                                                 {typeof note.content === 'string'
@@ -129,30 +175,6 @@ const RelatedNotePage = () => {
                                 />
                             </Panel>
                         </Collapse>
-
-                        {/* 相关问题 */}
-                        {/*<Collapse defaultActiveKey={['questions']} ghost>*/}
-                        {/*    <Panel header={<><QuestionCircleOutlined /> 关联问题（{relatedData.related_questions.length}）</>} key="questions">*/}
-                        {/*        <List*/}
-                        {/*            dataSource={relatedData.related_questions}*/}
-                        {/*            renderItem={question => (*/}
-                        {/*                <List.Item className="question-item">*/}
-                        {/*                    <div className="question-header">*/}
-                        {/*                        <Tag color="orange">{question.subject_id}</Tag>*/}
-                        {/*                        {question.content}*/}
-                        {/*                        /!*<Text type="secondary">相似度：{(question.similarity * 100).toFixed(1)}%</Text>*!/*/}
-                        {/*                    </div>*/}
-                        {/*                    <div className="question-answer">*/}
-                        {/*                        <Text type="secondary">参考答案：</Text>*/}
-                        {/*                        {typeof question.answer === 'string'*/}
-                        {/*                            ? question.answer*/}
-                        {/*                            : "答案格式异常"}*/}
-                        {/*                    </div>*/}
-                        {/*                </List.Item>*/}
-                        {/*            )}*/}
-                        {/*        />*/}
-                        {/*    </Panel>*/}
-                        {/*</Collapse>*/}
                     </div>
                 ) : (
                     <Empty description="选择图片后查询关联内容"/>
@@ -218,23 +240,25 @@ const RelatedNotePage = () => {
                                             alt={item.name}
                                             className="question-thumbnail"
                                             onClick={(e) => {
-                                                e.stopPropagation(); // 阻止事件冒泡到列表项
-                                                setPreviewImage(item.url); // 设置预览图片
+                                                e.stopPropagation();
+                                                setPreviewImage(item.url);
                                             }}
-                                            style={{cursor: 'pointer'}} // 添加指针样式表示可点击
+                                            style={{cursor: 'pointer'}}
                                         />
                                         <FileImageOutlined
                                             className="question-file-icon"
-                                            style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                                            style={item.has_saved
+                                                ? {backgroundColor: 'mediumseagreen'}
+                                                : {backgroundColor: 'darkorange'}}
                                             onClick={(e) => {
-                                                e.stopPropagation(); // 阻止事件冒泡到列表项
-                                                setPreviewImage(item.url); // 设置预览图片
+                                                e.stopPropagation();
+                                                setPreviewImage(item.url);
                                             }}
                                         />
                                     </div>
                                     <div className="question-image-info">
                                         <span className="question-image-name">
-                                            {item.name}
+                                            {item.name.length > 20 ? item.name.substring(0, 20)+"..." : item.name}
                                         </span>
                                         <span className="question-image-date">
                                             {new Date(item.timestamp).toLocaleDateString()}

@@ -156,7 +156,7 @@ const QuestionExplanationPage = () => {
         }
 
         return (
-            <div className="explanation-content">
+            <div className="smart-explanation-content">
                 {isEditing ? (
                     <TextArea
                         autoSize={{ minRows: 15, maxRows: 25 }}
@@ -277,14 +277,11 @@ const QuestionExplanationPage = () => {
                                     </div>
                                     <div className="question-image-info">
                                         <span className="question-image-name">
-                                            {item.name}
+                                            {item.name.length > 20 ? item.name.substring(0, 20)+"..." : item.name}
                                         </span>
-                                        <span className="qeustion-image-date">
+                                        <span className="question-image-date">
                                             {new Date(item.timestamp).toLocaleDateString()}
                                         </span>
-                                        {getExplanationId(item.id) && (
-                                            <Tag color="green" className="explanation-tag">已生成解析</Tag>
-                                        )}
                                     </div>
                                 </List.Item>
                             )}

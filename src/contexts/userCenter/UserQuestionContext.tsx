@@ -7,7 +7,6 @@ import { QuestionExtractData, useQuestionExtract} from "../QuestionExtractContex
 import { QuestionKeywordData, useQuestionKeywords} from "../QuestionKeywordsContext";
 import { useQuestionExplanationContext} from "../QuestionExplanationContext";
 import { GradingResult, useAutoGrade} from "../AutoGradeContext";
-import {useImageContext} from "../ImageContext";
 import { RelatedNote, RelatedData, useRelatedNote} from "../RelatedNoteContext";
 
 const API_URL = 'http://localhost:8000/api';
@@ -57,11 +56,11 @@ const UserQuestionProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     addExplanation
   }=useQuestionExplanationContext()
   const {
-    saveGradeResult
+    saveGradingResult
   }=useAutoGrade()
   const {
     addImage
-  }=useImageContext()
+  }=useQuestionImageContext()
 
   const prepareQuestionRegenerate = (question: Question, questionDetail: QuestionDetail, image: File) => {
     const questionId = `${question.questionId}--saved`
@@ -84,7 +83,7 @@ const UserQuestionProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })
     }
     if(questionDetail.AutoScoreReport){
-      saveGradeResult(questionDetail.AutoScoreReport);
+      saveGradingResult(questionId, questionDetail.AutoScoreReport);
     }
     addImage(image, questionId)
     console.log("将题目添加到工作台成功")

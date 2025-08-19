@@ -1,5 +1,4 @@
-// src/contexts/RelatedNoteContext.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { message } from 'antd';
 
 export interface RelatedNote {
@@ -25,66 +24,72 @@ export interface RelatedData {
   knowledge_graph: string[];
 }
 
+interface RelatedNoteImageData {
+  questionImageId: string;
+  data: RelatedData;
+  createdAt: number;
+}
+
 interface RelatedNoteContextType {
-  relatedData: RelatedData | null;
-  loading: boolean;
-  error: string | null;
-  fetchRelatedData: (file: File) => Promise<void>;
-  clearData: () => void;
+  relatedNoteData: RelatedNoteImageData[];
+  saveRelatedNotes: (questionImageId: string, data: RelatedData) => void;
+  deleteRelatedNotes: (questionImageId: string) => void;
+  getRelatedNotesByImage: (questionImageId: string) => RelatedData | null;
+  updateRelatedNotes: (questionImageId: string, newData: RelatedData) => void;
 }
 
 const RelatedNoteContext = createContext<RelatedNoteContextType>({} as RelatedNoteContextType);
 
-export const RelatedNoteProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [relatedData, setRelatedData] = useState<RelatedData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const RelatedNoteProvider = ({ children }: { children: React.ReactNode }) => {
+  const [relatedNoteData, setRelatedNoteData] = useState<RelatedNoteImageData[]>(() => {
+    const saved = localStorage.getItem('relatedNoteData');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const fetchRelatedData = useCallback(async (file: File) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
+  // 持久化存储
+  useEffect(() => {
+    localStorage.setItem('relatedNoteData', JSON.stringify(relatedNoteData));
+  }, [relatedNoteData]);
 
-      const response = await fetch('http://localhost:8000/api/questions/relate', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '获取关联数据失败');
+  const saveRelatedNotes = (questionImageId: string, data: RelatedData) => {
+    setRelatedNoteData(prev => [
+      ...prev.filter(k => k.questionImageId !== questionImageId),
+      {
+        questionImageId,
+        data,
+        createdAt: Date.now()
       }
-      const responseData = await response.json();
-      const result = responseData.data;
-      console.log('result',result);
-      console.log('data',result.data);
+    ]);
+  };
 
-      setRelatedData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '未知错误');
-      message.error('获取关联数据失败');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const updateRelatedNotes = (questionImageId: string, newData: RelatedData) => {
+    setRelatedNoteData(prev =>
+      prev.map(item =>
+        item.questionImageId === questionImageId
+          ? { ...item, data: newData }
+          : item
+      )
+    );
+  };
 
-  const clearData = useCallback(() => {
-    setRelatedData(null);
-  }, []);
+  const deleteRelatedNotes = (questionImageId: string) => {
+    setRelatedNoteData(prev => prev.filter(k => k.questionImageId !== questionImageId));
+  };
+
+  const getRelatedNotesByImage = (questionImageId: string) => {
+    if (!questionImageId) return null;
+    return relatedNoteData.find(k => k.questionImageId === questionImageId)?.data || null;
+  };
 
   return (
-    <RelatedNoteContext.Provider value={{
-      relatedData,
-      loading,
-      error,
-      fetchRelatedData,
-      clearData
-    }}>
+    <RelatedNoteContext.Provider
+      value={{
+        relatedNoteData,
+        saveRelatedNotes,
+        deleteRelatedNotes,
+        getRelatedNotesByImage,
+        updateRelatedNotes
+      }}>
       {children}
     </RelatedNoteContext.Provider>
   );

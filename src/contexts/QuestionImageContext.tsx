@@ -14,7 +14,7 @@ export interface QuestionImage {
 
 interface QuestionImageContextType {
   images: QuestionImage[];
-  addImage: (file: File) => void;  // 改为同步操作
+  addImage: (file: File, imageId?: string) => void;  // 改为同步操作
   removeImage: (imageId: string) => void;
   selectedImage: QuestionImage | null;
   setSelectedImage: (image: QuestionImage | null) => void;

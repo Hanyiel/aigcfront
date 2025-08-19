@@ -298,7 +298,7 @@ const SmartLectureLayout = () => {
                         </div>
                         <div className="note-image-info">
                             <span className="note-image-name">
-                              {item.name}
+                              {item.name.length > 20 ? item.name.substring(0, 20)+"..." : item.name}
                             </span>
                           <span className="note-image-date">
                               {new Date(item.timestamp).toLocaleDateString()}

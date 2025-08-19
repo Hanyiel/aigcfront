@@ -1,4 +1,3 @@
-// src/pages/grading/AutoGradePage.tsx
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Row,
@@ -52,8 +51,10 @@ const AutoGradePage = () => {
   const navigate = useNavigate();
   const {
     currentGrading,
-    loading,
-    submitForGrading,
+    saveGradingResult,
+    getGradingByImageId,
+    setCurrentGrading,
+    clearResults
   } = useAutoGrade();
   const {
     images,
@@ -68,7 +69,19 @@ const AutoGradePage = () => {
   const [result, setResult] = useState<GradingResult | null>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false); // 将loading状态移到页面组件
 
+  // 监听选择的图片变化
+  useEffect(() => {
+    if (selectedImage) {
+      // 根据图片ID获取批改结果
+      const gradingResult = getGradingByImageId(selectedImage.id);
+      setCurrentGrading(selectedImage.id);
+    } else {
+      // 没有选择图片时清空当前批改结果
+      setCurrentGrading('');
+    }
+  }, [selectedImage, getGradingByImageId, setCurrentGrading]);
 
   // 图片上传处理
   const handleUpload = (file: File) => {
@@ -87,6 +100,60 @@ const AutoGradePage = () => {
     return false;
   };
 
+  // 提交批改请求
+  const submitForGrading = async (file: File, imageId: string) => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      console.log(localStorage.getItem('authToken'))
+
+      const response = await fetch('http://localhost:8000/api/questions/autograde', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '批改请求失败');
+      }
+
+      const responseJson = await response.json();
+      const responseData = responseJson.data;
+      console.log(responseData);
+
+      // 转换API响应到GradingResult结构
+      const gradingResult: GradingResult = {
+        imageId,
+        code: responseData.code,
+        score: responseData.score,
+        correct_answer: Array.isArray(responseData.correct_answer)
+          ? responseData.correct_answer
+          : [responseData.correct_answer],
+        your_answer: Array.isArray(responseData.your_answer)
+          ? responseData.your_answer
+          : [responseData.your_answer],
+        error_analysis: responseData.error_analysis || [],
+        knowledge_point: responseData.knowledge_points || [],
+        timestamp: Date.now()
+      };
+
+      console.log(gradingResult);
+
+      // 保存结果到Context
+      saveGradingResult(imageId, gradingResult);
+      return gradingResult;
+    } catch (err) {
+      message.error('批改失败，请检查网络或图片格式');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGrade = async () => {
     if (!selectedImage) {
       message.warning('请选择需要解析的图片');
@@ -98,7 +165,7 @@ const AutoGradePage = () => {
         message.error('图片数据获取失败');
         return;
       }
-      // 使用context中的submit方法
+      // 使用页面中的submit方法
       await submitForGrading(file, selectedImage.id);
 
     } catch (err) {
@@ -112,6 +179,7 @@ const AutoGradePage = () => {
       }
     }
   };
+
   const getStatusConfig = (code: number) => {
     switch (code) {
       case 0:
@@ -175,9 +243,7 @@ const AutoGradePage = () => {
 
   const renderToolbar = () => (
       <div className="toolbar">
-        <Button>
-          编辑模式
-        </Button>
+
         <Button
             type="primary"
             onClick={handleGrade}
@@ -335,6 +401,12 @@ const AutoGradePage = () => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   removeImage(item.id);
+                                  // 同时删除对应的批改结果
+                                  const gradingResult = getGradingByImageId(item.id);
+                                  if (gradingResult) {
+                                    // 这里需要添加删除批改结果的方法到context中
+                                    clearResults()
+                                  }
                                 }}
                             >
                               删除
@@ -354,7 +426,9 @@ const AutoGradePage = () => {
                           />
                           <FileImageOutlined
                               className="question-file-icon"
-                              style={item.has_saved ? {backgroundColor: 'mediumseagreen'} : {backgroundColor: 'darkorange'}}
+                              style={item.has_saved
+                                  ? {backgroundColor: 'mediumseagreen'}
+                                  : {backgroundColor: 'darkorange'}}
                               onClick={(e) => {
                                 e.stopPropagation(); // 阻止事件冒泡到列表项
                                 setPreviewImage(item.url); // 设置预览图片
@@ -363,7 +437,7 @@ const AutoGradePage = () => {
                         </div>
                         <div className="question-image-info">
                           <span className="question-image-name">
-                            {item.name}
+                            {item.name.length > 20 ? item.name.substring(0, 20)+"..." : item.name}
                           </span>
                           <span className="question-image-date">
                             {new Date(item.timestamp).toLocaleDateString()}
