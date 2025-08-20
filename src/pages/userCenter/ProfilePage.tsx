@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {
     Card,
     Row,
@@ -22,6 +22,11 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/userCenter/ProfilePage.css';
+import {Note, NoteDetail, useUserNoteContext} from "../../contexts/userCenter/UserNoteContext"
+import { Question, QuestionDetail } from "../../contexts/userCenter/UserQuestionContext"
+
+import {NoteManagementContext, QuestionManagementContext} from "./UserCenter";
+
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -44,6 +49,36 @@ const ProfilePage: React.FC = () => {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [username, setUsername] = useState('LinkMind用户'); // 添加用户名状态
+
+    // 笔记部分数据
+    const noteManagementContext = useContext(NoteManagementContext);
+
+    const{
+        selectedNote = null,
+        setSelectedNote = () => {},
+        selectedNoteDetail = null,
+        setSelectedNoteDetail = () => {},
+        selectedSubject = null,
+        setSelectedSubject = () => {},
+        subjects = [],
+        setSubjects = () => {},
+        notes = [],
+        setNotes = () => {}
+    } = noteManagementContext || {};
+
+    const questionManagementContext = useContext(QuestionManagementContext);
+    const {
+        selectedQuestion,
+        setSelectedQuestion,
+        selectedQuestionDetail,
+        setSelectedQuestionDetail,
+        questionTypes,
+        setQuestionTypes,
+        questionSubjects,
+        setQuestionSubjects,
+        questions,
+        setQuestions
+    }=questionManagementContext || {};
 
     useEffect(() => {
         const storedUsername = localStorage.getItem('username');
@@ -286,42 +321,35 @@ const ProfilePage: React.FC = () => {
                 )}
             </Card>
 
-            <Row gutter={24} style={{ marginTop: 24 }}>
-                <Col span={6}>
+            <Row gutter={36} style={{ marginTop: 36, alignItems: "center" }}>
+                <Col span={1}>
+
+                </Col>
+                <Col span={10}>
                     <Card className="stat-card">
                         <Statistic
                             title="创建的笔记"
-                            value={userData.usageStats.notesCreated}
+                            value={notes.length > 0 ? notes.length : "请前往笔记管理页面获取笔记数据或者新建笔记"}
+                            style={{ height : 160, alignItems: "center", paddingTop: 40}}
                             prefix={<BookOutlined />}
                         />
                     </Card>
                 </Col>
-                <Col span={6}>
+                <Col span={2}>
+
+                </Col>
+                <Col span={10}>
                     <Card className="stat-card">
                         <Statistic
                             title="处理的题目"
-                            value={userData.usageStats.questionsProcessed}
+                            value={questions.length > 0 ? questions.length : "请前往题目管理页面获取题目数据或者新建题目"}
+                            style={{ height : 160, alignItems: "center", paddingTop: 40}}
                             prefix={<SolutionOutlined />}
                         />
                     </Card>
                 </Col>
-                <Col span={6}>
-                    <Card className="stat-card">
-                        <Statistic
-                            title="生成的导图"
-                            value={userData.usageStats.mindMapsGenerated}
-                            prefix={<FileTextOutlined />}
-                        />
-                    </Card>
-                </Col>
-                <Col span={6}>
-                    <Card className="stat-card">
-                        <Statistic
-                            title="提取的关键词"
-                            value={userData.usageStats.keywordsExtracted}
-                            prefix={<QuestionCircleOutlined />}
-                        />
-                    </Card>
+                <Col span={1}>
+
                 </Col>
             </Row>
         </>
