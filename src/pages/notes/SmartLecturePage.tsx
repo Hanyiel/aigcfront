@@ -105,6 +105,11 @@ const SmartLectureLayout = () => {
       const formData = new FormData();
       formData.append('image', selectedImage.file);
       console.log("token:", token)
+      if(explanation)
+        formData.append('regenerate', 'true');
+      else {
+        formData.append('regenerate', 'false');
+      }
       const response = await fetch('http://localhost:8000/api/notes/explanation', {
         method: 'POST',
         headers: {

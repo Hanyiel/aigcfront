@@ -103,6 +103,11 @@ const ExtractPage = () => {
 
       const formData = new FormData();
       formData.append('image', file);
+      if(result)
+        formData.append('regenerate', 'true');
+      else {
+        formData.append('regenerate', 'false');
+      }
 
       const apiResponse = await fetch('http://localhost:8000/api/notes/extract', {
         method: 'POST',

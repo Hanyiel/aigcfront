@@ -89,6 +89,8 @@ const RelatedNotePage = () => {
             setLoading(true);
             const formData = new FormData();
             formData.append('image', file);
+            formData.append('regenerate', 'true');
+
 
             const response = await fetch('http://localhost:8000/api/questions/relate', {
                 method: 'POST',

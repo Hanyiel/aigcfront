@@ -151,6 +151,11 @@ const MindMapPage = () => {
       const formData = new FormData();
       formData.append('image', imageFile);
       formData.append('style', layoutStyle);
+      if(mindMapData)
+        formData.append('regenerate', 'true');
+      else {
+        formData.append('regenerate', 'false');
+      }
 
       const response = await fetch('http://localhost:8000/api/notes/mindmap', {
         method: 'POST',

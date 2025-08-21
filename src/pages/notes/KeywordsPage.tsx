@@ -110,6 +110,11 @@ const KeywordsPage = () => {
             const formData = new FormData();
             formData.append('image', imageFile);
             formData.append('max_keywords', '5');
+            if(keywords)
+                formData.append('regenerate', 'true');
+            else {
+                formData.append('regenerate', 'false');
+            }
             const response = await fetch('http://localhost:8000/api/notes/keywords', {
                 method: 'POST',
                 headers: {

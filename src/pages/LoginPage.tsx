@@ -18,6 +18,7 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     logout();
+    localStorage.clear();
     if (isAuthenticated()) {
       navigate('/home', { replace: true });
     }

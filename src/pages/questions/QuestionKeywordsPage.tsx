@@ -111,6 +111,8 @@ const QuestionKeywordsPage = () => {
       const formData = new FormData();
       formData.append('image', imageFile);
       formData.append('max_keywords', '5');
+      formData.append('regenerate', 'true');
+
       const response = await fetch('http://localhost:8000/api/questions/keywords', {
         method: 'POST',
         headers: {
@@ -248,7 +250,7 @@ const QuestionKeywordsPage = () => {
           <div className="empty-state">
             <Empty description={
               <span>
-                {selectedQuestionImage ? '点击生成讲解获取解析' : '请先选择题目图片'}
+                {selectedQuestionImage ? '点击生成讲解获取关键词' : '请先选择题目图片'}
               </span>
             }/>
           </div>

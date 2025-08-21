@@ -90,6 +90,8 @@ export const QuestionExplanationProvider: React.FC<{ children: React.ReactNode }
       const token = localStorage.getItem('authToken');
 
       formData.append('image', file);
+      formData.append('regenerate', 'true');
+
 
       const response = await fetch('http://localhost:8000/api/questions/explanation', {
         method: 'POST',
