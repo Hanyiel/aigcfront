@@ -20,6 +20,7 @@ interface QuestionImageContextType {
   setSelectedImage: (image: QuestionImage | null) => void;
   getImageFile: (imageId: string) => File | null;  // 新增文件获取方法
   getExplanationId: (imageId: string) => string | null;
+  setSaved: (imageI: string) => void;
 }
 
 const QuestionImageContext = createContext<QuestionImageContextType>({} as QuestionImageContextType);
@@ -80,6 +81,16 @@ export const QuestionImageProvider: React.FC<{ children: React.ReactNode }> = ({
     return localStorage.getItem(`question_exp_${imageId}`);
   }, []);
 
+  const setSaved = useCallback((imageId: string) => {
+    setImages(prevImages =>
+      prevImages.map(img =>
+        img.id === imageId
+          ? { ...img, has_saved: true }
+          : img
+      )
+    );
+  }, []);
+
   return (
       <QuestionImageContext.Provider value={{
         images,
@@ -88,7 +99,8 @@ export const QuestionImageProvider: React.FC<{ children: React.ReactNode }> = ({
         selectedImage,
         setSelectedImage,
         getImageFile,
-        getExplanationId
+        getExplanationId,
+        setSaved
       }}>
         {children}
       </QuestionImageContext.Provider>

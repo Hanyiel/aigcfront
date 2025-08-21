@@ -55,7 +55,8 @@ const SaveQuestionPage = () => {
         removeImage,
         selectedImage,
         setSelectedImage,
-        getImageFile
+        getImageFile,
+        setSaved
     } = useQuestionImageContext();
     const { getQuestionExtractByImage } = useQuestionExtract();
     const { getKeywordsByQuestionImage } = useQuestionKeywords();
@@ -90,7 +91,8 @@ const SaveQuestionPage = () => {
         try {
             setLoading(true);
             const formData = new FormData();
-            const image = getImageFile(selectedImage.id);
+            const save_image_id = selectedImage.id
+            const image = getImageFile(save_image_id);
             const saveData: SaveData = {};
             if (!image) {
                 message.error('图片数据获取失败');
@@ -114,6 +116,7 @@ const SaveQuestionPage = () => {
             formData.append('extra', JSON.stringify(saveData));
 
             const { data } = await saveQuestionToAPI(formData);
+            setSaved(save_image_id)
 
             message.success(`题目保存成功！ID: ${data.question_id}`);
             setLoading(false);
