@@ -326,7 +326,10 @@ const ProfilePage: React.FC = () => {
 
                 </Col>
                 <Col span={10}>
-                    <Card className="stat-card">
+                    <Card
+                        className="stat-card"
+                        onClick={()=>navigate("../notes-management")}
+                    >
                         <Statistic
                             title="创建的笔记"
                             value={notes.length > 0 ? notes.length : "请前往笔记管理页面获取笔记数据或者新建笔记"}
@@ -339,7 +342,10 @@ const ProfilePage: React.FC = () => {
 
                 </Col>
                 <Col span={10}>
-                    <Card className="stat-card">
+                    <Card
+                        className="stat-card"
+                        onClick={()=>navigate("../questions-management")}
+                    >
                         <Statistic
                             title="处理的题目"
                             value={questions.length > 0 ? questions.length : "请前往题目管理页面获取题目数据或者新建题目"}

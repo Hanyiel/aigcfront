@@ -639,7 +639,9 @@ const QuestionsManagementPage: React.FC = () => {
                     description="暂无题目数据"
                     style={{ margin: '40px 0' }}
                 >
-                  <Button type="primary" icon={<PlusOutlined />}>添加新题目</Button>
+                  <p>
+                    请刷新或者新建问题
+                  </p>
                 </Empty>
             )}
           </div>
@@ -726,7 +728,9 @@ const QuestionsManagementPage: React.FC = () => {
                     description="暂无错题记录"
                     style={{ margin: '40px 0' }}
                 >
-                  <p>您目前没有错题记录</p>
+                  <p>
+                    请刷新或者新建问题
+                  </p>
                 </Empty>
             )}
           </div>

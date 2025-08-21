@@ -828,7 +828,9 @@ const NotesManagementPage: React.FC = () => {
                     description="暂无笔记数据"
                     style={{ margin: '40px 0' }}
                 >
-                  <Button type="primary" icon={<PlusOutlined />}>创建新笔记</Button>
+                  <p>
+                    请刷新或者新建笔记
+                  </p>
                 </Empty>
             )}
           </div>

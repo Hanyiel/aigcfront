@@ -59,6 +59,9 @@ const UserQuestionProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     saveGradingResult
   }=useAutoGrade()
   const {
+    saveRelatedNotes
+  }=useRelatedNote()
+  const {
     addImage
   }=useQuestionImageContext()
 
@@ -84,6 +87,9 @@ const UserQuestionProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     if(questionDetail.AutoScoreReport){
       saveGradingResult(questionId, questionDetail.AutoScoreReport);
+    }
+    if(questionDetail.relatedItems){
+      saveRelatedNotes(questionId, questionDetail.relatedItems);
     }
     addImage(image, questionId)
     console.log("将题目添加到工作台成功")
