@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/userCenter/NotesManagementPage.css';
-import {NoteManagementContext} from "./UserCenter";
+import {NoteManagementContext, CountContext} from "./UserCenter";
 import { logout } from "../../services/auth";
 import {MindNode, MindMapData} from "../../contexts/MindMapContext"
 import {Note, NoteDetail, useUserNoteContext} from "../../contexts/userCenter/UserNoteContext"
@@ -82,6 +82,13 @@ const NotesManagementPage: React.FC = () => {
     setNotes = () => {}
   } = noteManagementContext || {};
 
+  const countContext = useContext(CountContext);
+
+  const {
+    setMindmap_count,
+    setKeywords_count
+  }= countContext;
+
   const [pagination, setPagination] = useState({
     pageNum: 1,
     pageSize: 10,
@@ -109,7 +116,6 @@ const NotesManagementPage: React.FC = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [startTransform, setStartTransform] = useState({ x: 0, y: 0, scale: 1 });
 
-
   // 从笔记列表中提取科目数据
   const extractSubjectsAndTypesFromNotes = (notes: Note[]) => {
     const subjects = new Set<string>();
@@ -117,11 +123,25 @@ const NotesManagementPage: React.FC = () => {
     notes.forEach(note => {
       if (note.subject) subjects.add(note.subject);
     });
-
     return {
       subjects: Array.from(subjects),
     };
   };
+
+  const extractCount = (notes: Note[]) => {
+    let mindMap_count = 0;
+    notes.forEach(note=> {
+      console.log(note.noteId ,"为", note.hasMindMap)
+      if (note.hasMindMap) {
+        mindMap_count++;
+        console.log(mindMap_count)
+      }
+    })
+    console.log("获得思维导图数量: ", mindMap_count);
+    return {
+      mindMap_count
+    }
+  }
   // 获取学科列表 (POST)
   const getSubjects = async () => {
     try {
@@ -150,6 +170,22 @@ const NotesManagementPage: React.FC = () => {
       if (result.code === 200 && result.data?.subject) {
         setSubjects(result.data.subject);
       }
+
+      const keywordsRes = await fetch(`${API_URL}/notes/subject`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      if (!keywordsRes.ok) {
+        throw new Error(`请求失败: ${response.statusText}`);
+      }
+
+      const keywords_result = await response.json();
+      if (result.code === 200 && result.data?.subject) {
+        setKeywords_count(keywords_result.data.keywords_num);
+      }
     } catch (err) {
       message.error(err instanceof Error ? err.message : '获取学科失败');
     } finally {
@@ -176,9 +212,9 @@ const NotesManagementPage: React.FC = () => {
 
       // 过滤掉空值
       const filteredRequestBody = Object.fromEntries(
-        Object.entries(requestData).filter(([_, value]) =>
-          value !== undefined && value !== '' && value !== null
-        )
+          Object.entries(requestData).filter(([_, value]) =>
+              value !== undefined && value !== '' && value !== null
+          )
       );
 
       const response = await fetch(`${API_URL}/notes`, {
@@ -212,6 +248,9 @@ const NotesManagementPage: React.FC = () => {
 
         // 从笔记列表中提取科目数据
         const { subjects: extractedSubjects } = extractSubjectsAndTypesFromNotes(result.data.notes || []);
+        // 获取思维导图数量数据
+        const mindMap_count = extractCount(result.data.notes || []);
+        setMindmap_count(mindMap_count.mindMap_count);
 
         // 更新科目状态，合并去重
         if (extractedSubjects.length > 0) {
@@ -220,6 +259,20 @@ const NotesManagementPage: React.FC = () => {
             return Array.from(new Set(combined));
           });
         }
+
+        //获取关键词数据
+        const keywordsRes = await fetch(`http://localhost:8000/keywords_num`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!keywordsRes.ok) {
+          message.error(`请求关键词数据失败: ${keywordsRes.statusText}`);
+        }
+
+        const keywords_result = await keywordsRes.json();
+        setKeywords_count(keywords_result.keywords_num);
       }
       console.log("note: ", result.data)
     } catch (err) {
@@ -766,10 +819,10 @@ const NotesManagementPage: React.FC = () => {
                 {/*</Form.Item>*/}
                 <Form.Item name="subject" style={{ marginBottom: 16 }}>
                   <Select
-                    placeholder="全部学科"
-                    style={{ width: 200, marginRight: 16 }}
-                    allowClear
-                    loading={loading.subjects}
+                      placeholder="全部学科"
+                      style={{ width: 200, marginRight: 16 }}
+                      allowClear
+                      loading={loading.subjects}
                   >
                     {subjects.map((subject) => (
                         <Select.Option key={subject} value={subject}>
@@ -780,22 +833,22 @@ const NotesManagementPage: React.FC = () => {
                 </Form.Item>
                 <Form.Item style={{ marginBottom: 16 }}>
                   <Button
-                    type="primary"
-                    htmlType="submit"
-                    icon={notes.length > 0 ? <ReloadOutlined /> : <SearchOutlined />}
+                      type="primary"
+                      htmlType="submit"
+                      icon={notes.length > 0 ? <ReloadOutlined /> : <SearchOutlined />}
                   >
                     {notes.length > 0 ? '刷新' : '查询'}
                   </Button>
                   <Button
-                    icon={<FilterOutlined />}
-                    onClick={() => getAllNotes(true)}
-                    style={{ marginLeft: 8 }}
+                      icon={<FilterOutlined />}
+                      onClick={() => getAllNotes(true)}
+                      style={{ marginLeft: 8 }}
                   >
                     筛选
                   </Button>
                   <Button
-                    style={{ marginLeft: 8 }}
-                    onClick={resetSearch}
+                      style={{ marginLeft: 8 }}
+                      onClick={resetSearch}
                   >
                     重置
                   </Button>

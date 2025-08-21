@@ -7,7 +7,7 @@ import {
   Menu,
   Typography,
   Avatar,
-  Breadcrumb, Form,
+  Breadcrumb, Form, message,
 } from 'antd';
 import {
   HomeOutlined,
@@ -26,6 +26,9 @@ import QuestionsManagementPage from "./QuestionsManagementPage";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
+
+const API_URL = 'http://localhost:8000/api';
+
 
 // 左侧菜单类型
 type MainTabKey = 'profile' | 'security' | 'notes-management' | 'questions-management';
@@ -116,11 +119,26 @@ export const QuestionManagementContext = createContext<QuestionManagementContext
   setQuestions: () => {}
 });
 
+export interface CountContextType {
+  mindmap_count: number ;
+  setMindmap_count: React.Dispatch<React.SetStateAction<number >>
+  keywords_count: number ;
+  setKeywords_count: React.Dispatch<React.SetStateAction<number >>;
+}
+
+export const CountContext = createContext<CountContextType>({
+  mindmap_count: 0,
+  setMindmap_count: () => {},
+  keywords_count: 0,
+  setKeywords_count: () => {},
+})
+
 const UserCenter: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [notesSubTab, setNotesSubTab] = useState<NotesSubTabKey>('all-notes');
   const [username, setUsername] = useState('LinkMind用户'); // 添加用户名状态
+  // 笔记部分数据
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [selectedNoteDetail, setSelectedNoteDetail] = useState<NoteDetail | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -132,7 +150,9 @@ const UserCenter: React.FC = () => {
   const [questionSubjects, setQuestionSubjects] = useState<string[]>([]);
   const [questionTypes, setQuestionTypes] = useState<string[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
-
+  // 统计部分数据
+  const [mindmap_count, setMindmap_count] = useState<number>(0)
+  const [keywords_count, setKeywords_count] = useState<number>(0)
   // 在组件挂载时从本地存储获取用户名
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
@@ -284,9 +304,9 @@ const UserCenter: React.FC = () => {
   };
 
   return (
-      <Layout className="home-layout">
+      <Layout className="user-center-home-layout">
         {/* ========== 导航栏 ========== */}
-        <Header className="header">
+        <Header className="user-center-header">
           <div className="brand">
             <span className="brand-name">LinkMind</span>
             <span className="brand-sub">智能学习云脑引擎</span>
@@ -303,7 +323,7 @@ const UserCenter: React.FC = () => {
 
         <Layout className="user-center-layout">
           <Sider
-              width={250}
+              width={240}
               theme="light"
               className="fixed-sider"
           >
@@ -375,7 +395,14 @@ const UserCenter: React.FC = () => {
                 questions,
                 setQuestions
               }}>
-                <Outlet />
+                <CountContext.Provider value={{
+                  mindmap_count,
+                  setMindmap_count,
+                  keywords_count,
+                  setKeywords_count,
+                }}>
+                  <Outlet />
+                </CountContext.Provider>
               </QuestionManagementContext.Provider>
             </NoteManagementContext.Provider>
           </Content>

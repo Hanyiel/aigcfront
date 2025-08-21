@@ -1,8 +1,8 @@
 /* src/styles/UserCenter.css */
 
 /* ========== 整体布局 ========= */
-.home-layout {
-  min-height: 100vh;
+.user-center-home-layout {
+  min-height: 100%;
 }
 
 .user-center-layout {
@@ -10,13 +10,13 @@
   min-height: calc(100vh - 64px); /* 减去Header高度 */
 }
 
-.header {
+.user-center-header {
   background: #fff;
   padding: 0 24px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .brand {
@@ -55,14 +55,21 @@
 }
 /* ============ 侧边栏区域 ============ */
 .fixed-sider {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  z-index: 9;
-  overflow: auto;
-  box-shadow: 2px 0 8px 0 rgba(29, 35, 41, 0.05);
+  border-top: 1px solid rgba(0,0,0,0.05);
 }
+@media (max-width: 768px) {
+  .note-content {
+    padding: 12px;
+  }
 
+  .app-name {
+    font-size: 18px;
+  }
+
+  .side-nav {
+    width: 80px !important;
+  }
+}
 /* ============ 内容区域 ============ */
 .user-center-content {
   padding: 24px;

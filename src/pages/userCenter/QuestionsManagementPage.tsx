@@ -43,7 +43,7 @@ import { useNavigate } from "react-router-dom";
 import { UserQuestionContext } from '../../contexts/userCenter/UserQuestionContext';
 import { logout } from "../../services/auth";
 import { Question, QuestionDetail } from "../../contexts/userCenter/UserQuestionContext"
-import { QuestionManagementContext} from "./UserCenter";
+import { QuestionManagementContext, CountContext} from "./UserCenter";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -77,6 +77,11 @@ const QuestionsManagementPage: React.FC = () => {
     questions,
     setQuestions
   }=questionManagementContext || {};
+
+  const countContext = useContext(CountContext);
+  const {
+    setKeywords_count
+  }=countContext
 
   const [searchForm] = Form.useForm();
   const [pagination, setPagination] = useState({
@@ -283,6 +288,20 @@ const QuestionsManagementPage: React.FC = () => {
             return Array.from(new Set(combined));
           });
         }
+
+        //获取关键词数据
+        const keywordsRes = await fetch(`http://localhost:8000/keywords_num`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!keywordsRes.ok) {
+          message.error(`请求关键词数据失败: ${keywordsRes.statusText}`);
+        }
+
+        const keywords_result = await keywordsRes.json();
+        setKeywords_count(keywords_result.keywords_num);
       }
     } catch (err) {
       message.error(err instanceof Error ? err.message : '获取题目失败');

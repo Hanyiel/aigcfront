@@ -103,6 +103,7 @@ const NoteSavePage = () => {
                 saveData.explanation = currentExplanation;
 
             formData.append('extra', JSON.stringify(saveData));
+            console.log(formData)
             const { data } = await saveNoteToAPI(formData);
 
             setSaved(selectedImage.id)

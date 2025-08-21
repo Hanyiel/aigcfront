@@ -25,7 +25,7 @@ import '../../styles/userCenter/ProfilePage.css';
 import {Note, NoteDetail, useUserNoteContext} from "../../contexts/userCenter/UserNoteContext"
 import { Question, QuestionDetail } from "../../contexts/userCenter/UserQuestionContext"
 
-import {NoteManagementContext, QuestionManagementContext} from "./UserCenter";
+import {NoteManagementContext, QuestionManagementContext, CountContext} from "./UserCenter";
 
 
 const { Header, Sider, Content } = Layout;
@@ -65,7 +65,7 @@ const ProfilePage: React.FC = () => {
         notes = [],
         setNotes = () => {}
     } = noteManagementContext || {};
-
+    // 题目部分数据
     const questionManagementContext = useContext(QuestionManagementContext);
     const {
         selectedQuestion,
@@ -79,6 +79,13 @@ const ProfilePage: React.FC = () => {
         questions,
         setQuestions
     }=questionManagementContext || {};
+    // 统计部分数据
+    const countContext = useContext(CountContext);
+    const {
+        mindmap_count,
+        keywords_count
+    }=countContext
+
 
     useEffect(() => {
         const storedUsername = localStorage.getItem('username');
@@ -322,10 +329,7 @@ const ProfilePage: React.FC = () => {
             </Card>
 
             <Row gutter={36} style={{ marginTop: 36, alignItems: "center" }}>
-                <Col span={1}>
-
-                </Col>
-                <Col span={10}>
+                <Col span={6}>
                     <Card
                         className="stat-card"
                         onClick={()=>navigate("../notes-management")}
@@ -333,29 +337,45 @@ const ProfilePage: React.FC = () => {
                         <Statistic
                             title="创建的笔记"
                             value={notes.length > 0 ? notes.length : "请前往笔记管理页面获取笔记数据或者新建笔记"}
-                            style={{ height : 160, alignItems: "center", paddingTop: 40}}
+                            style={{ height : 200, alignItems: "center", paddingTop: 40}}
                             prefix={<BookOutlined />}
                         />
                     </Card>
                 </Col>
-                <Col span={2}>
-
-                </Col>
-                <Col span={10}>
+                <Col span={6}>
                     <Card
                         className="stat-card"
                         onClick={()=>navigate("../questions-management")}
                     >
                         <Statistic
                             title="处理的题目"
-                            value={questions.length > 0 ? questions.length : "请前往题目管理页面获取题目数据或者新建题目"}
-                            style={{ height : 160, alignItems: "center", paddingTop: 40}}
+                            value={questions.length > 0 ? questions.length : "请前往题目管理页面获取题目数据" +
+                                "或者新建题目"}
+                            style={{ height : 200, alignItems: "center", paddingTop: 40}}
                             prefix={<SolutionOutlined />}
                         />
                     </Card>
                 </Col>
-                <Col span={1}>
-
+                <Col span={6}>
+                    <Card className="stat-card">
+                        <Statistic
+                            title="生成的导图"
+                            value={mindmap_count > 0 ? mindmap_count : "请前往笔记管理页面获取笔记数据" +
+                                "或新建笔记"}
+                            style={{ height : 200, alignItems: "center", paddingTop: 40}}
+                            prefix={<FileTextOutlined />}
+                        />
+                    </Card>
+                </Col>
+                <Col span={6}>
+                    <Card className="stat-card">
+                        <Statistic
+                            title="提取的关键词"
+                            value={keywords_count > 0 ? keywords_count : "请前往笔记或题目管理刷新数据或新建问题或笔记"}
+                            style={{ height : 200, alignItems: "center", paddingTop: 40}}
+                            prefix={<QuestionCircleOutlined />}
+                        />
+                    </Card>
                 </Col>
             </Row>
         </>
