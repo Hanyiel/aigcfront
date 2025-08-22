@@ -80,6 +80,7 @@ const QuestionsManagementPage: React.FC = () => {
 
   const countContext = useContext(CountContext);
   const {
+    keywords_count,
     setKeywords_count
   }=countContext
 
@@ -208,6 +209,24 @@ const QuestionsManagementPage: React.FC = () => {
     try {
       setLoading(prev => ({ ...prev, questions: true }));
       const token = localStorage.getItem('authToken');
+
+      if(!keywords_count){
+        //获取关键词数据
+        const keywordsRes = await fetch(`http://localhost:8000/keywords_num`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!keywordsRes.ok) {
+          message.error(`请求关键词数据失败: ${keywordsRes.statusText}`);
+        }
+
+        const keywords_result = await keywordsRes.json();
+        setKeywords_count(keywords_result.keywords_num);
+      }
+
+
       const formValues = searchForm.getFieldsValue();
 
       // 确保我们使用表单中的筛选条件
@@ -289,19 +308,6 @@ const QuestionsManagementPage: React.FC = () => {
           });
         }
 
-        //获取关键词数据
-        const keywordsRes = await fetch(`http://localhost:8000/keywords_num`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!keywordsRes.ok) {
-          message.error(`请求关键词数据失败: ${keywordsRes.statusText}`);
-        }
-
-        const keywords_result = await keywordsRes.json();
-        setKeywords_count(keywords_result.keywords_num);
       }
     } catch (err) {
       message.error(err instanceof Error ? err.message : '获取题目失败');
@@ -566,9 +572,7 @@ const QuestionsManagementPage: React.FC = () => {
 
           <Dropdown overlay={
             <Menu>
-              <Menu.Item icon={<FileTextOutlined />}>导出题目</Menu.Item>
-              <Menu.Item icon={<AudioOutlined />}>语音讲解</Menu.Item>
-              <Menu.Item danger>删除记录</Menu.Item>
+              <Menu.Item danger>删除</Menu.Item>
             </Menu>
           } trigger={['click']}>
             <Button icon={<MoreOutlined />} size="middle" />

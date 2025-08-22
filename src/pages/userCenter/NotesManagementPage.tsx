@@ -86,6 +86,7 @@ const NotesManagementPage: React.FC = () => {
 
   const {
     setMindmap_count,
+      keywords_count,
     setKeywords_count
   }= countContext;
 
@@ -199,6 +200,23 @@ const NotesManagementPage: React.FC = () => {
       setLoading(prev => ({ ...prev, notes: true }));
       const token = localStorage.getItem('authToken');
 
+      if(!keywords_count){
+        //获取关键词数据
+        const keywordsRes = await fetch(`http://localhost:8000/keywords_num`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!keywordsRes.ok) {
+          message.error(`请求关键词数据失败: ${keywordsRes.statusText}`);
+        }
+
+        const keywords_result = await keywordsRes.json();
+        setKeywords_count(keywords_result.keywords_num);
+      }
+
+
       // 获取表单值
       const formValues = searchForm.getFieldsValue();
 
@@ -260,19 +278,6 @@ const NotesManagementPage: React.FC = () => {
           });
         }
 
-        //获取关键词数据
-        const keywordsRes = await fetch(`http://localhost:8000/keywords_num`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!keywordsRes.ok) {
-          message.error(`请求关键词数据失败: ${keywordsRes.statusText}`);
-        }
-
-        const keywords_result = await keywordsRes.json();
-        setKeywords_count(keywords_result.keywords_num);
       }
       console.log("note: ", result.data)
     } catch (err) {
@@ -786,7 +791,11 @@ const NotesManagementPage: React.FC = () => {
             />
           </Tooltip>
 
-          <Dropdown overlay={renderResourceMenu(note)} trigger={['click']}>
+          <Dropdown overlay={
+            <Menu>
+              <Menu.Item danger>删除</Menu.Item>
+            </Menu>
+          } trigger={['click']}>
             <Button icon={<MoreOutlined />} size="middle" />
           </Dropdown>
         </div>
