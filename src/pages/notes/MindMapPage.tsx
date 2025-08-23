@@ -19,7 +19,8 @@ import {
   ApartmentOutlined,
   PlusOutlined,
   UploadOutlined,
-  LoadingOutlined, SaveOutlined, EditOutlined, DragOutlined, FileImageOutlined
+  LoadingOutlined, SaveOutlined, EditOutlined, DragOutlined, FileImageOutlined,
+  DeleteOutlined // 添加删除图标
 } from '@ant-design/icons';
 import { useImageContext } from '../../contexts/ImageContext';
 import { useMindMapContext, MindNode, MindMapData } from '../../contexts/MindMapContext';
@@ -286,14 +287,6 @@ const MindMapPage = () => {
 
     // 关闭模态框
     setIsTextModalVisible(false);
-    // // 选中新节点并进入编辑模式
-    // setEditingNodeId(newNodeId);
-    // setEditingText('新节点');
-    //
-    // // 短暂延迟后重新打开编辑模态框
-    // setTimeout(() => {
-    //   setIsTextModalVisible(true);
-    // }, 100);
   };
 
   // 查找节点
@@ -391,6 +384,65 @@ const MindMapPage = () => {
       ...prev,
       nodes: updateNode(prev.nodes)
     }));
+  };
+
+  // 删除节点
+  const deleteNode = (nodeId: string) => {
+
+    console.log("id", nodeId)
+    if (!selectedImage) return;
+
+    // 检查是否是根节点
+    const isRootNode = mindMapData.nodes.some(node => node.id === nodeId);
+    if (isRootNode) {
+      message.error('不能删除根节点');
+      return;
+    }
+
+    updateMindMap(selectedImage.id, (prev) => {
+      const removeNode = (nodes: MindNode[]): MindNode[] => {
+        return nodes
+          .filter(node => node.id !== nodeId) // 先过滤掉要删除的节点
+          .map(node => {
+            // 对剩余的节点递归处理子节点
+            if (node.children.length > 0) {
+              return {
+                ...node,
+                children: removeNode(node.children)
+              };
+            }
+            return node;
+          });
+      };
+
+      return {
+        ...prev,
+        nodes: removeNode(prev.nodes)
+      };
+    });
+
+    const removeNode = (nodes: MindNode[]): MindNode[] => {
+      return nodes
+          .filter(node => node.id !== nodeId) // 先过滤掉要删除的节点
+          .map(node => {
+            // 对剩余的节点递归处理子节点
+            if (node.children.length > 0) {
+              return {
+                ...node,
+                children: removeNode(node.children)
+              };
+            }
+            return node;
+          });
+    };
+
+    setMindMapData(prev => ({
+      ...prev,
+      nodes: removeNode(prev.nodes)
+    }));
+
+    message.success('节点已删除');
+    setIsTextModalVisible(false);
   };
 
   // 处理鼠标按下事件（开始拖拽）
@@ -596,6 +648,22 @@ const MindMapPage = () => {
     setIsTextModalVisible(false);
   };
 
+  // 处理删除节点
+  const handleDeleteNode = () => {
+    if (!editingNodeId) return;
+
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这个节点吗？此操作不可撤销。',
+      okText: '确定',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        deleteNode(editingNodeId);
+      }
+    });
+  };
+
   const renderMindMapEditor = () => {
     return (
         <div style={{position: 'relative', height: 'calc(100vh - 200px)'}}>
@@ -750,8 +818,14 @@ const MindMapPage = () => {
                 >
                   添加子节点
                 </Button>,
-                <Button key="back" onClick={() => setIsTextModalVisible(false)}>
-                  取消
+                <Button
+                    key="delete"
+                    danger
+                    onClick={handleDeleteNode}
+                    icon={<DeleteOutlined />}
+                    disabled={!editingNodeId}
+                >
+                  删除
                 </Button>,
                 <Button
                     key="submit"

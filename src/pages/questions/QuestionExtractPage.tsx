@@ -114,9 +114,9 @@ const QuestionExtractPage = () => {
       const formData = new FormData();
       formData.append('image', file);
       if(result)
-        formData.append('regenerate', 'true');
+        formData.append('regenerate', JSON.stringify(true));
       else {
-        formData.append('regenerate', 'false');
+        formData.append('regenerate', JSON.stringify(false));
       }
 
       const apiResponse = await fetch('http://localhost:8000/api/questions/extract', {
