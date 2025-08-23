@@ -137,75 +137,9 @@ const QuestionsManagementPage: React.FC = () => {
     };
   };
 
-  // 获取科目列表
-  const getSubjects = async () => {
-    try {
-      setLoading(prev => ({ ...prev, subjects: true }));
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_URL}/questions/subject`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-      });
-
-      if (response.status === 401) {
-        logout();
-        navigate('/login');
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`请求失败: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      if (result.code === 200 && result.data?.subject) {
-        setQuestionSubjects(result.data.subject);
-      }
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : '获取学科失败');
-    } finally {
-      setLoading(prev => ({ ...prev, subjects: false }));
-    }
-  };
-
-  // 获取题型列表
-  const getQuestionTypes = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_URL}/questions/type`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-      });
-
-      if (response.status === 401) {
-        logout();
-        navigate('/login');
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`请求失败: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      if (result.code === 200 && result.data?.subject) {
-        setQuestionTypes(result.data.subject);
-      }
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : '获取题型失败');
-    }
-  };
 
   // 获取题目列表
-  const getAllQuestions = async (isWrongOnly: boolean = false) => {
+  const getAllQuestions = async (isWrongOnly: boolean = false, pageNum?: number, pageSize?: number) => {
     try {
       setLoading(prev => ({ ...prev, questions: true }));
       const token = localStorage.getItem('authToken');
@@ -238,6 +172,13 @@ const QuestionsManagementPage: React.FC = () => {
         type: formValues.type || undefined,
         keyword: formValues.keyword || undefined
       };
+
+      if (pageNum){
+        requestBody.pageNum = pageNum
+      }
+      if(pageSize){
+        requestBody.pageSize = pageSize
+      }
       // 使用 Object.fromEntries 和 Object.entries 过滤掉空值
       const filteredRequestBody = Object.fromEntries(
           Object.entries(requestBody).filter(([_, value]) =>
@@ -650,6 +591,7 @@ const QuestionsManagementPage: React.FC = () => {
                         total: pagination.total,
                         onChange: (page, pageSize) => {
                           setPagination(prev => ({ ...prev, pageNum: page, pageSize }));
+                          getAllQuestions(false, page, pageSize)
                         },
                         showSizeChanger: true,
                         showTotal: total => `共 ${total} 条题目`
@@ -739,6 +681,7 @@ const QuestionsManagementPage: React.FC = () => {
                         total: pagination.total,
                         onChange: (page, pageSize) => {
                           setPagination(prev => ({ ...prev, pageNum: page, pageSize }));
+                          getAllQuestions(true, page, pageSize)
                         },
                         showSizeChanger: true,
                         showTotal: total => `共 ${total} 条题目`

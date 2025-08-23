@@ -143,10 +143,22 @@
 .notes-list-container {
   position: relative;
   flex: 1;
+  height: calc(76vh - 160px);
+  overflow-y: auto;
   border: 1px solid #f0f0f0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
   margin-top: 16px;
+}
+/* 确保分页组件固定在底部 */
+.ant-list-pagination {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 16px;
+  margin: 0;
+  border-top: 1px solid #f0f0f0;
+  z-index: 10;
 }
 
 /* 列表布局 */

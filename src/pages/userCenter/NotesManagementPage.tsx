@@ -1,50 +1,46 @@
-import React, {useEffect, useState, useRef, useContext} from 'react';
+import React, {useCallback, useContext, useEffect, useRef, useState} from 'react';
 import {
-  Card,
   Button,
-  Row,
+  Card,
   Col,
-  Input,
-  Select,
-  Tag,
-  Tooltip,
-  Empty,
-  List,
-  Dropdown,
-  Menu,
-  Tabs,
   Descriptions,
   Divider,
+  Dropdown,
+  Empty,
+  Form,
   Image,
+  List,
+  Menu,
   message,
-  Spin,
   Modal,
-  Form
+  Row,
+  Select,
+  Spin,
+  Tag,
+  Tooltip
 } from 'antd';
 import {
-  SearchOutlined,
-  PlusOutlined,
-  FilterOutlined,
-  TagsOutlined,
-  ClusterOutlined,
-  AudioOutlined,
-  FileTextFilled,
-  LinkOutlined,
-  FileOutlined,
-  EyeOutlined,
-  MoreOutlined,
   ArrowLeftOutlined,
-  ReloadOutlined,
+  AudioOutlined,
+  ClusterOutlined,
   EditOutlined,
-  DragOutlined,
-  SaveOutlined
+  EyeOutlined,
+  FileOutlined,
+  FileTextFilled,
+  FilterOutlined,
+  LinkOutlined,
+  MoreOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+  TagsOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import '../../styles/userCenter/NotesManagementPage.css';
-import {NoteManagementContext, CountContext} from "./UserCenter";
-import { logout } from "../../services/auth";
-import {MindNode, MindMapData} from "../../contexts/MindMapContext"
-import {Note, NoteDetail, useUserNoteContext} from "../../contexts/userCenter/UserNoteContext"
+import {CountContext, NoteManagementContext} from "./UserCenter";
+import {logout} from "../../services/auth";
+import {MindMapData, MindNode} from "../../contexts/MindMapContext"
+import {Note, useUserNoteContext} from "../../contexts/userCenter/UserNoteContext"
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import ReactMarkdown from "react-markdown";
@@ -84,9 +80,11 @@ const NotesManagementPage: React.FC = () => {
 
   const countContext = useContext(CountContext);
 
+
+
   const {
     setMindmap_count,
-      keywords_count,
+    keywords_count,
     setKeywords_count
   }= countContext;
 
@@ -132,73 +130,21 @@ const NotesManagementPage: React.FC = () => {
   const extractCount = (notes: Note[]) => {
     let mindMap_count = 0;
     notes.forEach(note=> {
-      console.log(note.noteId ,"为", note.hasMindMap)
       if (note.hasMindMap) {
         mindMap_count++;
-        console.log(mindMap_count)
       }
     })
-    console.log("获得思维导图数量: ", mindMap_count);
     return {
       mindMap_count
     }
   }
-  // 获取学科列表 (POST)
-  const getSubjects = async () => {
-    try {
-      setLoading(prev => ({ ...prev, subjects: true }));
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_URL}/notes/subject`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-      });
-
-      if (response.status === 401) {
-        logout();
-        navigate('/login');
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`请求失败: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      if (result.code === 200 && result.data?.subject) {
-        setSubjects(result.data.subject);
-      }
-
-      const keywordsRes = await fetch(`${API_URL}/notes/subject`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
-      if (!keywordsRes.ok) {
-        throw new Error(`请求失败: ${response.statusText}`);
-      }
-
-      const keywords_result = await response.json();
-      if (result.code === 200 && result.data?.subject) {
-        setKeywords_count(keywords_result.data.keywords_num);
-      }
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : '获取学科失败');
-    } finally {
-      setLoading(prev => ({ ...prev, subjects: false }));
-    }
-  };
 
   // 获取所有笔记 (POST)
-  const getAllNotes = async (isFilter: boolean = false) => {
+  const getAllNotes = async (isFilter: boolean = false, pageNum?: number, pageSize?: number) => {
     try {
       setLoading(prev => ({ ...prev, notes: true }));
       const token = localStorage.getItem('authToken');
+
 
       if(!keywords_count){
         //获取关键词数据
@@ -227,6 +173,16 @@ const NotesManagementPage: React.FC = () => {
         subject: formValues.subject || undefined,
         keyword: formValues.keyword || undefined
       };
+
+      if(pageNum){
+        requestData.pageNum = pageNum;
+      }
+      if(pageSize){
+        requestData.pageSize = pageSize;
+      }
+
+
+      console.log("请求体", requestData);
 
       // 过滤掉空值
       const filteredRequestBody = Object.fromEntries(
@@ -261,7 +217,7 @@ const NotesManagementPage: React.FC = () => {
         setNotes(result.data.notes || []);
         setPagination(prev => ({
           ...prev,
-          total: result.data.total || 0
+          total: Number(result.data.total) || 0
         }));
 
         // 从笔记列表中提取科目数据
@@ -865,7 +821,7 @@ const NotesManagementPage: React.FC = () => {
               </Form>
             </div>
             {notes.length > 0 ? (
-                <div className="notes-list-container">
+                <div className="questions-list-container">
                   <List
                       className="notes-list"
                       itemLayout="horizontal"
@@ -875,9 +831,10 @@ const NotesManagementPage: React.FC = () => {
                         current: pagination.pageNum,
                         pageSize: pagination.pageSize,
                         total: pagination.total,
-                        onChange: (page, pageSize) => {
+                        onChange: async (page, pageSize) => {
                           setPagination(prev => ({ ...prev, pageNum: page, pageSize }));
-                          getAllNotes(false);
+                          console.log("现在的", pagination)
+                          await  getAllNotes(false, page, pageSize);
                         },
                         showSizeChanger: true,
                         showTotal: total => `共 ${total} 条笔记`
