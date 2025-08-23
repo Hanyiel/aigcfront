@@ -1,5 +1,5 @@
 // src/pages/UserCenter.tsx
-import React, {useState, useEffect, createContext} from 'react'; // 添加 useEffect
+import React, {useState, useEffect, createContext} from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import {
@@ -7,7 +7,10 @@ import {
   Menu,
   Typography,
   Avatar,
-  Breadcrumb, Form, message,
+  Breadcrumb,
+  Form,
+  message,
+  Modal // 添加Modal组件
 } from 'antd';
 import {
   HomeOutlined,
@@ -28,7 +31,6 @@ const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
 const API_URL = 'http://localhost:8000/api';
-
 
 // 左侧菜单类型
 type MainTabKey = 'profile' | 'security' | 'notes-management' | 'questions-management';
@@ -280,6 +282,30 @@ const UserCenter: React.FC = () => {
     navigate('/home');
   };
 
+  // 登出函数
+  const log_out = () => {
+    // 显示确认对话框
+    Modal.confirm({
+      title: '确认退出',
+      content: '确定要退出登录？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        // 清除本地存储
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('username');
+        // 显示退出成功消息
+        message.success('已成功退出登录');
+        // 跳转到登录页
+        navigate('/login');
+      },
+      onCancel: () => {
+        // 用户点击取消，不做任何操作
+        console.log('用户取消退出登录');
+      },
+    });
+  }
+
   // 生成面包屑路径
   const getBreadcrumbPath = () => {
     const paths = [
@@ -359,11 +385,7 @@ const UserCenter: React.FC = () => {
               <Menu.Item
                   key="logout"
                   icon={<LogoutOutlined />}
-                  onClick={() => {
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('username'); // 登出时清除用户名
-                    navigate('/login');
-                  }}
+                  onClick={log_out} // 使用新的登出函数
               >
                 退出登录
               </Menu.Item>
