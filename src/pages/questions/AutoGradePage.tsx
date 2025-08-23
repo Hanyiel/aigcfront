@@ -135,11 +135,11 @@ const AutoGradePage = () => {
         code: responseData.code,
         score: responseData.score,
         correct_answer: Array.isArray(responseData.correct_answer)
-          ? responseData.correct_answer
-          : [responseData.correct_answer],
+            ? responseData.correct_answer
+            : [responseData.correct_answer],
         your_answer: Array.isArray(responseData.your_answer)
-          ? responseData.your_answer
-          : [responseData.your_answer],
+            ? responseData.your_answer
+            : [responseData.your_answer],
         error_analysis: responseData.error_analysis || [],
         knowledge_point: responseData.knowledge_points || [],
         timestamp: Date.now()
@@ -230,17 +230,15 @@ const AutoGradePage = () => {
           <div className="answer-title">
             <Text strong>{title}</Text>
           </div>
-          <div className="answer-content">
-            {validAnswers.length > 0 ? (
-                validAnswers.map((answer, idx) => (
-                    <Tag key={idx} className="answer-tag">
-                      <LatexRenderer content={answer} />
-                    </Tag>
-                ))
-            ) : (
-                <Text type="secondary">无内容</Text>
-            )}
-          </div>
+          {validAnswers.length > 0 ? (
+              validAnswers.map((answer, idx) => (
+                  <div className="answer-content">
+                    <LatexRenderer content={answer} />
+                  </div>
+              ))
+          ) : (
+              <Text type="secondary">无内容</Text>
+          )}
         </div>
     );
   };
@@ -269,9 +267,9 @@ const AutoGradePage = () => {
                   background: `linear-gradient(15deg, ${getStatusConfig(currentGrading.code).color}10, #ffffff)`,
                   borderLeft: `4px solid ${getStatusConfig(currentGrading.code).color}`
                 }}>
-                  <div className="status-icon-wrapper">
-                    {getStatusConfig(currentGrading.code).icon}
-                  </div>
+                  {/*<div className="status-icon-wrapper">*/}
+                  {/*  {getStatusConfig(currentGrading.code).icon}*/}
+                  {/*</div>*/}
                   <div className="status-info">
                     <Title
                         level={3}
@@ -309,16 +307,13 @@ const AutoGradePage = () => {
                           {safeArray(currentGrading.error_analysis).length > 0 ? (
                               <div className="error-analysis">
                                 {safeArray(currentGrading.error_analysis).map((item, idx) => (
-                                    <div key={idx} className="analysis-item">
-                                      <WarningOutlined className="warning-icon"/>
-                                      <span><ReactMarkdown
-                                          remarkPlugins={[remarkMath]}
-                                          rehypePlugins={[rehypeKatex]}
-                                      >
+                                    <span ><ReactMarkdown
+                                        remarkPlugins={[remarkMath]}
+                                        rehypePlugins={[rehypeKatex]}
+                                    >
                                             {item}
                                           </ReactMarkdown>
                                           </span>
-                                    </div>
                                 ))}
                               </div>
                           ) : (
@@ -328,29 +323,29 @@ const AutoGradePage = () => {
                       </Panel>
                     </Collapse>
                 )}
-                {/* 知识点展示优化 */}
-                <Collapse defaultActiveKey={['knowledge']} ghost>
-                  <Panel header={<><ReadOutlined/> 关联知识点</>} key="knowledge">
-                    <div className="knowledge-points">
-                      {safeArray(currentGrading.knowledge_point).length > 0 ? (
-                          <Space size={[8, 16]} wrap>
-                            {safeArray(currentGrading.knowledge_point).map((kp, index) => (
-                                <Tag
-                                    key={index}
-                                    icon={<TagOutlined/>}
-                                    color="geekblue"
-                                    className="knowledge-tag"
-                                >
-                                  <LatexRenderer content={kp}/>
-                                </Tag>
-                            ))}
-                          </Space>
-                      ) : (
-                          <Alert message="未关联到知识点体系" type="info" showIcon/>
-                      )}
-                    </div>
-                  </Panel>
-                </Collapse>
+                {/*/!* 知识点展示优化 *!/*/}
+                {/*<Collapse defaultActiveKey={['knowledge']} ghost>*/}
+                {/*  <Panel header={<><ReadOutlined/> 关联知识点</>} key="knowledge">*/}
+                {/*    <div className="knowledge-points">*/}
+                {/*      {safeArray(currentGrading.knowledge_point).length > 0 ? (*/}
+                {/*          <Space size={[8, 16]} wrap>*/}
+                {/*            {safeArray(currentGrading.knowledge_point).map((kp, index) => (*/}
+                {/*                <Tag*/}
+                {/*                    key={index}*/}
+                {/*                    icon={<TagOutlined/>}*/}
+                {/*                    color="geekblue"*/}
+                {/*                    className="knowledge-tag"*/}
+                {/*                >*/}
+                {/*                  <LatexRenderer content={kp}/>*/}
+                {/*                </Tag>*/}
+                {/*            ))}*/}
+                {/*          </Space>*/}
+                {/*      ) : (*/}
+                {/*          <Alert message="未关联到知识点体系" type="info" showIcon/>*/}
+                {/*      )}*/}
+                {/*    </div>*/}
+                {/*  </Panel>*/}
+                {/*</Collapse>*/}
               </div>
           ) : (
               <Empty description="请先上传题目进行批改" imageStyle={{height: 60}}/>
