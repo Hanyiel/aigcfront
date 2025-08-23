@@ -95,7 +95,8 @@ const ExtractPage = () => {
     try {
       setExtracting(true);
       const token = localStorage.getItem('authToken');
-      const file = getImageFile(selectedImage.id);
+      const imageId = selectedImage.id
+      const file = getImageFile(imageId);
       if (!file) {
         message.error('图片数据获取失败');
         return;
@@ -103,11 +104,11 @@ const ExtractPage = () => {
 
       const formData = new FormData();
       formData.append('image', file);
-      if(result)
-        formData.append('regenerate', 'true');
-      else {
-        formData.append('regenerate', 'false');
-      }
+      // if(result)
+      //   formData.append('regenerate', JSON.stringify(true));
+      // else {
+      //   formData.append('regenerate', JSON.stringify(true));
+      // }
 
       const apiResponse = await fetch('http://localhost:8000/api/notes/extract', {
         method: 'POST',
@@ -130,10 +131,10 @@ const ExtractPage = () => {
       const resultData = await apiResponse.json();
       console.log("result", resultData.data)
 
-      const extractData = {
+      const extractData: ExtractData = {
+        ...resultData.data,
         extract_id: `ext_${Date.now()}`,
-        note_id: selectedImage.id,
-        ...resultData.data
+        note_id: imageId,
       };
 
       console.log("extractData",extractData)

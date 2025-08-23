@@ -141,9 +141,9 @@ const QuestionExtractPage = () => {
 
       console.log("quesre", data)
       const extractData: QuestionExtractData = {
+        ...data.data,
         extract_id: `q_${Date.now()}`,
         image_id: selectedImage.id,
-        ...data.data
       };
 
       saveQuestionExtract(extractData);
@@ -212,14 +212,14 @@ const QuestionExtractPage = () => {
 
     if(!result){
       return (
-                <div className="empty-state">
-                    <Empty description={
-                        <span>
+          <div className="empty-state">
+            <Empty description={
+              <span>
                             {selectedImage ? '点击右上角生成摘要' : '请先选择题目图片'}
                         </span>
-                    }/>
-                </div>
-            );
+            }/>
+          </div>
+      );
     }
 
     return (
